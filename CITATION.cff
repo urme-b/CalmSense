@@ -1,0 +1,44 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+type: software
+title: "CalmSense: Multimodal Physiological Stress Detection"
+version: 1.0.0
+date-released: 2025-02-04
+url: "https://github.com/urme-b/CalmSense"
+repository-code: "https://github.com/urme-b/CalmSense"
+license: MIT
+authors:
+  - family-names: "Bose"
+    given-names: "Urme"
+keywords:
+  - stress-detection
+  - physiological-signals
+  - machine-learning
+  - deep-learning
+  - explainable-ai
+  - heart-rate-variability
+  - electrodermal-activity
+  - wesad
+abstract: >-
+  CalmSense is a multimodal physiological stress detection system
+  that classifies baseline, stress, and amusement states from
+  wearable sensor data. The system implements end-to-end signal
+  processing, 60+ biomarker extraction, 13 ML/DL models with
+  Leave-One-Subject-Out cross-validation, and SHAP/LIME-based
+  clinical interpretation.
+references:
+  - type: article
+    authors:
+      - family-names: "Schmidt"
+        given-names: "Philip"
+      - family-names: "Reiss"
+        given-names: "Attila"
+      - family-names: "Duerichen"
+        given-names: "Robert"
+      - family-names: "Marber"
+        given-names: "Claus"
+      - family-names: "Van Laerhoven"
+        given-names: "Kristof"
+    title: "Introducing WESAD, a Multimodal Dataset for Wearable Stress and Affect Detection"
+    journal: "Proceedings of the 20th ACM International Conference on Multimodal Interaction"
+    year: 2018
