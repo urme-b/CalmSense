@@ -19,24 +19,23 @@ services:
       - MODEL_PATH=/app/models/trained
       - LOG_LEVEL=INFO
       - PYTHONPATH=/app
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+        reservations:
+          memory: 1G
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 10s
+      start_period: 60s
     restart: unless-stopped
     networks:
       - calmsense-network
 
-  # ==========================================================================
-  # Development Services (use with
-  # ==========================================================================
-
 networks:
   calmsense-network:
     driver: bridge
-
-volumes:
-  model-data:
-  output-data:

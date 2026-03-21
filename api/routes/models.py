@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException
+import re
+
+from fastapi import APIRouter, Depends, HTTPException, Path
 
 from ..schemas import (
     ModelInfo,
@@ -10,8 +12,15 @@ from ..schemas import (
 from ..dependencies import get_model_manager
 from ..model_manager import ModelManager
 
+_MODEL_NAME_RE = re.compile(r"^[\w\-\.]+$")
 
 router = APIRouter()
+
+
+def _validate_model_name(model_name: str) -> str:
+    if not _MODEL_NAME_RE.match(model_name) or ".." in model_name:
+        raise HTTPException(status_code=400, detail="Invalid model name")
+    return model_name
 
 
 @router.get(
@@ -79,6 +88,7 @@ async def get_default_model(model_manager: ModelManager = Depends(get_model_mana
 async def get_model_info(
     model_name: str, model_manager: ModelManager = Depends(get_model_manager)
 ):
+    _validate_model_name(model_name)
     info = model_manager.get_model_info(model_name)
 
     if info is None:
@@ -159,6 +169,7 @@ async def load_model(
 async def unload_model(
     model_name: str, model_manager: ModelManager = Depends(get_model_manager)
 ):
+    _validate_model_name(model_name)
     if not model_manager.is_model_loaded(model_name):
         raise HTTPException(
             status_code=404, detail=f"Model '{model_name}' is not loaded"
@@ -182,6 +193,7 @@ async def unload_model(
 async def set_default_model(
     model_name: str, model_manager: ModelManager = Depends(get_model_manager)
 ):
+    _validate_model_name(model_name)
     success = model_manager.set_default_model(model_name)
 
     if not success:
@@ -200,8 +212,9 @@ async def set_default_model(
     description="Get the expected feature names for a model.",
 )
 async def get_feature_names(
-    model_name: str, model_manager: ModelManager = Depends(get_model_manager)
+    model_name: str, model_manager: ModelManager = Depends(get_model_manager),
 ):
+    _validate_model_name(model_name)
     feature_names = model_manager.get_feature_names(model_name)
 
     if feature_names is None:

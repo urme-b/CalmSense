@@ -1,3 +1,4 @@
+import asyncio
 import time
 import base64
 import io
@@ -139,50 +140,53 @@ async def _get_shap_explanation(
     try:
         from src.explainability import SHAPExplainer
 
-        model_type = "kernel"
-        if hasattr(model, "get_booster"):
-            model_type = "tree"
-        elif hasattr(model, "feature_importances_"):
-            model_type = "tree"
-        elif hasattr(model, "forward"):
-            model_type = "deep"
+        def _compute():
+            model_type = "kernel"
+            if hasattr(model, "get_booster"):
+                model_type = "tree"
+            elif hasattr(model, "feature_importances_"):
+                model_type = "tree"
+            elif hasattr(model, "forward"):
+                model_type = "deep"
 
-        background_data = getattr(model_manager, "training_data", None)
-        if background_data is None:
-            background_data = np.random.randn(100, len(features))
+            background_data = getattr(model_manager, "training_data", None)
+            if background_data is None:
+                background_data = np.random.randn(100, len(features))
 
-        explainer = SHAPExplainer(
-            model=model, model_type=model_type, background_data=background_data
-        )
-
-        shap_values = explainer.compute_shap_values(
-            features.reshape(1, -1), feature_names=feature_names
-        )
-
-        top_features = explainer.get_top_features(
-            shap_values["shap_values"], feature_names, n=num_features
-        )
-
-        feature_importances = [
-            FeatureImportance(
-                feature_name=row["feature"],
-                importance=row["mean_abs_shap"],
-                direction="positive" if row["mean_shap"] > 0 else "negative",
+            explainer = SHAPExplainer(
+                model=model, model_type=model_type, background_data=background_data
             )
-            for _, row in top_features.iterrows()
-        ]
 
-        visualization_base64 = None
-        if include_viz:
-            fig = explainer.plot_summary(
-                shap_values["shap_values"], feature_names, max_display=num_features
+            shap_values = explainer.compute_shap_values(
+                features.reshape(1, -1), feature_names=feature_names
             )
-            visualization_base64 = fig_to_base64(fig)
-            import matplotlib.pyplot as plt
 
-            plt.close(fig)
+            top_features = explainer.get_top_features(
+                shap_values["shap_values"], feature_names, n=num_features
+            )
 
-        return feature_importances, visualization_base64
+            importances = [
+                FeatureImportance(
+                    feature_name=row["feature"],
+                    importance=row["mean_abs_shap"],
+                    direction="positive" if row["mean_shap"] > 0 else "negative",
+                )
+                for _, row in top_features.iterrows()
+            ]
+
+            viz = None
+            if include_viz:
+                fig = explainer.plot_summary(
+                    shap_values["shap_values"], feature_names, max_display=num_features
+                )
+                viz = fig_to_base64(fig)
+                import matplotlib.pyplot as plt
+
+                plt.close(fig)
+
+            return importances, viz
+
+        return await asyncio.to_thread(_compute)
 
     except ImportError:
         return _get_basic_feature_importance(model, feature_names, num_features), None
@@ -194,37 +198,40 @@ async def _get_lime_explanation(
     try:
         from src.explainability import LIMEExplainer
 
-        training_data = getattr(model_manager, "training_data", None)
-        if training_data is None:
-            training_data = np.random.randn(100, len(features))
+        def _compute():
+            training_data = getattr(model_manager, "training_data", None)
+            if training_data is None:
+                training_data = np.random.randn(100, len(features))
 
-        explainer = LIMEExplainer(
-            model=model,
-            feature_names=feature_names,
-            class_names=["Baseline", "Stress", "Amusement"],
-            training_data=training_data,
-        )
-
-        explanation = explainer.explain_instance(features, num_features=num_features)
-
-        feature_importances = [
-            FeatureImportance(
-                feature_name=feat,
-                importance=abs(weight),
-                direction="positive" if weight > 0 else "negative",
+            explainer = LIMEExplainer(
+                model=model,
+                feature_names=feature_names,
+                class_names=["Baseline", "Stress", "Amusement"],
+                training_data=training_data,
             )
-            for feat, weight in explanation["feature_importance"].items()
-        ]
 
-        visualization_base64 = None
-        if include_viz:
-            fig = explainer.plot_explanation(explanation)
-            visualization_base64 = fig_to_base64(fig)
-            import matplotlib.pyplot as plt
+            explanation = explainer.explain_instance(features, num_features=num_features)
 
-            plt.close(fig)
+            importances = [
+                FeatureImportance(
+                    feature_name=feat,
+                    importance=abs(weight),
+                    direction="positive" if weight > 0 else "negative",
+                )
+                for feat, weight in explanation["feature_importance"].items()
+            ]
 
-        return feature_importances, visualization_base64
+            viz = None
+            if include_viz:
+                fig = explainer.plot_explanation(explanation)
+                viz = fig_to_base64(fig)
+                import matplotlib.pyplot as plt
+
+                plt.close(fig)
+
+            return importances, viz
+
+        return await asyncio.to_thread(_compute)
 
     except ImportError:
         return _get_basic_feature_importance(model, feature_names, num_features), None

@@ -253,18 +253,7 @@ const PredictionPanel: React.FC = () => {
       setCurrentPrediction(result);
       setHistory((prev) => [result, ...prev].slice(0, 10));
     } catch (err: any) {
-      // Mock data fallback
-      const mockResult: PredictionResponse = {
-        prediction: 1,
-        class_name: 'Stress',
-        probabilities: { 'Baseline': 0.15, 'Stress': 0.72, 'Amusement': 0.13 },
-        confidence: 0.72,
-        model_used: 'random_forest',
-        inference_time_ms: 4.5,
-        timestamp: new Date().toISOString(),
-      };
-      setCurrentPrediction(mockResult);
-      setHistory((prev) => [mockResult, ...prev].slice(0, 10));
+      setError(err.message || 'Prediction failed — check API connection');
     } finally {
       setLoading(false);
     }

@@ -156,9 +156,13 @@ class SHAPExplainer(LoggerMixin):
         if isinstance(shap_values, list):
             if class_idx is not None:
                 sv = shap_values[class_idx]
+            elif len(shap_values) == 2:
+                sv = shap_values[1]
             else:
-                # Default to positive class
-                sv = shap_values[1] if len(shap_values) == 2 else shap_values[-1]
+                self.logger.warning(
+                    f"Multiclass ({len(shap_values)} classes) without class_idx, using class 1"
+                )
+                sv = shap_values[1]
         else:
             sv = shap_values
 

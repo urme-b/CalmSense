@@ -42,19 +42,34 @@ class ECGProcessor(LoggerMixin):
         self, ecg: np.ndarray, method: str = "pantompkins"
     ) -> np.ndarray:
         ecg = np.asarray(ecg).flatten()
+        duration_sec = len(ecg) / self.sampling_rate
 
         try:
             import neurokit2 as nk
 
             _, info = nk.ecg_peaks(ecg, sampling_rate=int(self.sampling_rate))
-            r_peaks = info["ECG_R_Peaks"]
-            self.logger.debug(f"Detected {len(r_peaks)} R-peaks using neurokit2")
-            return np.array(r_peaks)
+            r_peaks = np.array(info["ECG_R_Peaks"])
         except ImportError:
             self.logger.debug("neurokit2 not available, using Pan-Tompkins")
+            r_peaks = self._pan_tompkins(ecg)
 
-        r_peaks = self._pan_tompkins(ecg)
-        self.logger.debug(f"Detected {len(r_peaks)} R-peaks using Pan-Tompkins")
+        # Validate peak count
+        n_peaks = len(r_peaks)
+        expected_min = int(0.5 * duration_sec)
+        expected_max = int(3.5 * duration_sec)
+
+        if n_peaks < expected_min:
+            self.logger.warning(
+                f"Suspiciously few R-peaks: {n_peaks} in {duration_sec:.1f}s "
+                f"(expected >={expected_min})"
+            )
+        elif n_peaks > expected_max:
+            self.logger.warning(
+                f"Suspiciously many R-peaks: {n_peaks} in {duration_sec:.1f}s "
+                f"(expected <={expected_max})"
+            )
+
+        self.logger.debug(f"Detected {n_peaks} R-peaks in {duration_sec:.1f}s")
         return r_peaks
 
     def _pan_tompkins(self, ecg: np.ndarray) -> np.ndarray:

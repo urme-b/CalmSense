@@ -256,10 +256,20 @@ class SignalWindower(LoggerMixin):
                 if not validation["is_valid"]:
                     valid_mask[i] = False
 
-        n_valid = np.sum(valid_mask)
-        self.logger.info(
-            f"Multimodal windowing complete: {n_valid}/{n_windows} valid windows"
-        )
+        # Filter invalid windows
+        n_valid = int(np.sum(valid_mask))
+        if n_valid < n_windows:
+            self.logger.info(
+                f"Filtering {n_windows - n_valid} invalid windows "
+                f"({n_valid}/{n_windows} kept)"
+            )
+            for name in all_windows:
+                all_windows[name] = all_windows[name][valid_mask]
+            if window_labels is not None:
+                window_labels = window_labels[valid_mask]
+            valid_mask = np.ones(n_valid, dtype=bool)
+
+        self.logger.info(f"Multimodal windowing complete: {n_valid} valid windows")
 
         return all_windows, window_labels, valid_mask
 

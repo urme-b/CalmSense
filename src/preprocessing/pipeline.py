@@ -189,9 +189,11 @@ class PreprocessingPipeline(LoggerMixin):
                         signals_to_window["RR"] = rr_resampled
 
             elif modality == "EDA_chest":
-                signals_to_window["EDA_chest"] = results.get("filtered_eda")
-                signals_to_window["EDA_tonic"] = results.get("tonic")
-                signals_to_window["EDA_phasic"] = results.get("phasic")
+                filtered_eda = results.get("filtered_eda")
+                signals_to_window["EDA_chest"] = filtered_eda
+                # Fallback if missing
+                signals_to_window["EDA_tonic"] = results.get("tonic") or filtered_eda
+                signals_to_window["EDA_phasic"] = results.get("phasic") or filtered_eda
 
             elif modality == "Resp":
                 signals_to_window["Resp"] = results.get("filtered_resp")

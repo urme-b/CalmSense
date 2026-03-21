@@ -1,6 +1,10 @@
+import io
+import re
 import time
 import json
 import pickle
+from collections import defaultdict
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional, Any, Tuple
 from datetime import datetime, timezone
@@ -17,6 +21,35 @@ except ImportError:
     TORCH_AVAILABLE = False
 
 from src.logging_config import LoggerMixin
+
+_SAFE_PICKLE_MODULES = frozenset({
+    "sklearn", "numpy", "scipy", "xgboost", "lightgbm",
+    "catboost", "collections", "builtins", "copyreg",
+    "_pickle", "operator", "types", "functools", "copy",
+    "joblib", "numbers", "io",
+})
+
+
+class _RestrictedUnpickler(pickle.Unpickler):
+    def find_class(self, module: str, name: str) -> type:
+        if module.split(".")[0] not in _SAFE_PICKLE_MODULES:
+            raise pickle.UnpicklingError(f"Forbidden: {module}.{name}")
+        return super().find_class(module, name)
+
+
+@dataclass
+class ModelVersion:
+    name: str
+    version: str = "1.0.0"
+    schema_hash: str = ""
+    loaded_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+
+    @staticmethod
+    def parse_filename(filename: str) -> Tuple[str, str]:
+        match = re.search(r"_v?(\d+\.\d+\.\d+)", filename)
+        if match:
+            return filename[: match.start()], match.group(1)
+        return filename, "1.0.0"
 
 
 class ModelManager(LoggerMixin):
@@ -47,9 +80,10 @@ class ModelManager(LoggerMixin):
 
         self.models: Dict[str, Any] = {}
         self.model_info: Dict[str, Dict] = {}
+        self.model_versions: Dict[str, ModelVersion] = {}
         self.model_access_times: Dict[str, datetime] = {}
+        self._model_refs: Dict[str, int] = defaultdict(int)
 
-        # RLock for reentrant locking
         self._lock = RLock()
 
         self.inference_count = 0
@@ -68,11 +102,15 @@ class ModelManager(LoggerMixin):
             for model_path in self.models_dir.glob(f"**/*{ext}"):
                 model_name = model_path.stem
                 if model_name not in self.model_info:
+                    _, version = ModelVersion.parse_filename(model_name)
+                    self.model_versions[model_name] = ModelVersion(
+                        name=model_name, version=version
+                    )
                     self.model_info[model_name] = {
                         "path": str(model_path),
                         "type": self._infer_model_type(model_path),
                         "is_loaded": False,
-                        "version": "1.0.0",
+                        "version": version,
                         "num_classes": len(self.CLASS_NAMES),
                     }
 
@@ -127,7 +165,10 @@ class ModelManager(LoggerMixin):
                 model_path = self.model_info[model_name]["path"]
 
             if len(self.models) >= self.max_models_in_memory:
-                self._evict_oldest_model()
+                if not self._evict_oldest_model():
+                    self.logger.warning(
+                        f"Cannot evict models, limit ({self.max_models_in_memory}) may be exceeded"
+                    )
 
             start_time = time.time()
 
@@ -142,14 +183,23 @@ class ModelManager(LoggerMixin):
                     self.model_info[model_name]["is_loaded"] = True
                     self.model_info[model_name]["load_time_ms"] = load_time_ms
                 else:
+                    _, version = ModelVersion.parse_filename(model_name)
                     self.model_info[model_name] = {
                         "path": model_path,
                         "type": self._infer_model_type(Path(model_path)),
                         "is_loaded": True,
                         "load_time_ms": load_time_ms,
-                        "version": "1.0.0",
+                        "version": version,
                         "num_classes": len(self.CLASS_NAMES),
                     }
+
+                # Track version
+                if model_name not in self.model_versions:
+                    _, ver = ModelVersion.parse_filename(model_name)
+                    self.model_versions[model_name] = ModelVersion(
+                        name=model_name, version=ver
+                    )
+                self.model_versions[model_name].loaded_at = datetime.now(timezone.utc)
 
                 if TORCH_AVAILABLE and isinstance(model, nn.Module):
                     num_params = sum(p.numel() for p in model.parameters())
@@ -166,11 +216,11 @@ class ModelManager(LoggerMixin):
 
         path = Path(path)
 
-        # Validate path within models
+        # Validate path
         try:
-            resolved_path = path.resolve()
-            models_dir_resolved = self.models_dir.resolve()
-            if not str(resolved_path).startswith(str(models_dir_resolved)):
+            resolved_path = path.resolve(strict=True)
+            models_dir_resolved = self.models_dir.resolve(strict=True)
+            if not resolved_path.is_relative_to(models_dir_resolved):
                 raise ValueError(
                     f"Model path must be within models directory: {self.models_dir}"
                 )
@@ -178,11 +228,9 @@ class ModelManager(LoggerMixin):
             raise ValueError(f"Invalid model path: {e}")
 
         if path.suffix in [".pkl", ".joblib"]:
-            self.logger.warning(
-                f"Loading pickle file {path}. Ensure this file is from a trusted source."
-            )
+            self.logger.warning(f"Loading pickle file {path} with restricted unpickler.")
             with open(path, "rb") as f:
-                return pickle.load(f)
+                return _RestrictedUnpickler(f).load()
 
         elif path.suffix in [".pt", ".pth"]:
             if not TORCH_AVAILABLE:
@@ -229,15 +277,19 @@ class ModelManager(LoggerMixin):
         else:
             raise ValueError(f"Unknown model file extension: {path.suffix}")
 
-    def _evict_oldest_model(self) -> None:
-        if not self.model_access_times:
-            return
+    def _evict_oldest_model(self) -> bool:
+        # Skip pinned models
+        candidates = {
+            k: v for k, v in self.model_access_times.items()
+            if k != self.default_model and self._model_refs.get(k, 0) == 0
+        }
+        if not candidates:
+            return False
 
-        oldest_model = min(self.model_access_times, key=self.model_access_times.get)
-
-        if oldest_model != self.default_model:
-            self.unload_model(oldest_model)
-            self.logger.info(f"Evicted model {oldest_model} from memory")
+        oldest = min(candidates, key=candidates.get)
+        self.unload_model(oldest)
+        self.logger.info(f"Evicted model {oldest} from memory")
+        return True
 
     def unload_model(self, model_name: str) -> bool:
         with self._lock:
@@ -261,7 +313,7 @@ class ModelManager(LoggerMixin):
         if not model_name:
             raise ValueError("No model specified and no default model set")
 
-        # Hold lock while grabbing
+        # Pin model
         with self._lock:
             if model_name not in self.models:
                 if self.lazy_load:
@@ -272,6 +324,7 @@ class ModelManager(LoggerMixin):
                     raise ValueError(f"Model not loaded: {model_name}")
 
             model = self.models[model_name]
+            self._model_refs[model_name] += 1
             self.model_access_times[model_name] = datetime.now(timezone.utc)
 
         if features.ndim == 1:
@@ -279,16 +332,37 @@ class ModelManager(LoggerMixin):
 
         start_time = time.time()
 
-        if TORCH_AVAILABLE and isinstance(model, nn.Module):
-            result = self._predict_pytorch(model, features, return_probabilities)
-        else:
-            result = self._predict_sklearn(model, features, return_probabilities)
+        try:
+            if TORCH_AVAILABLE and isinstance(model, nn.Module):
+                result = self._predict_pytorch(model, features, return_probabilities)
+            else:
+                result = self._predict_sklearn(model, features, return_probabilities)
+        except Exception as e:
+            # Graceful degradation
+            fallback = self._get_fallback_model(model_name)
+            if fallback is None:
+                raise
+            self.logger.warning(
+                f"Model {model_name} failed ({e}), degrading to {fallback}"
+            )
+            fb_model = self.models[fallback]
+            if TORCH_AVAILABLE and isinstance(fb_model, nn.Module):
+                result = self._predict_pytorch(fb_model, features, return_probabilities)
+            else:
+                result = self._predict_sklearn(fb_model, features, return_probabilities)
+            result["degraded"] = True
+            result["original_model"] = model_name
+            model_name = fallback
+        finally:
+            with self._lock:
+                self._model_refs[model_name] -= 1
 
         inference_time_ms = (time.time() - start_time) * 1000
 
         self.inference_count += 1
         self.total_inference_time += inference_time_ms
 
+        result.setdefault("probabilities", None)
         result["model_used"] = model_name
         result["inference_time_ms"] = inference_time_ms
 
@@ -364,6 +438,7 @@ class ModelManager(LoggerMixin):
                 else:
                     raise ValueError(f"Model not loaded: {model_name}")
             model = self.models[model_name]
+            self._model_refs[model_name] += 1
             self.model_access_times[model_name] = datetime.now(timezone.utc)
 
         if features.ndim == 1:
@@ -371,51 +446,53 @@ class ModelManager(LoggerMixin):
 
         start_time = time.time()
 
-        if not (TORCH_AVAILABLE and isinstance(model, nn.Module)):
-            # Vectorized sklearn path
-            predictions = model.predict(features)
-            probas = (
-                model.predict_proba(features)
-                if return_probabilities and hasattr(model, "predict_proba")
-                else None
-            )
-
-            results = []
-            for i, pred in enumerate(predictions):
-                pred_int = int(pred)
-                result = {
-                    "prediction": pred_int,
-                    "class_name": self.CLASS_NAMES[pred_int],
-                    "model_used": model_name,
-                }
-                if probas is not None:
-                    result["probabilities"] = {
-                        name: float(p) for name, p in zip(self.CLASS_NAMES, probas[i])
-                    }
-                    result["confidence"] = float(max(probas[i]))
-                else:
-                    result["confidence"] = 1.0
-                results.append(result)
-        else:
-            # PyTorch per-sample fallback
-            results = []
-            for i in range(len(features)):
-                result = self._predict_pytorch(
-                    model, features[i : i + 1], return_probabilities
+        try:
+            if not (TORCH_AVAILABLE and isinstance(model, nn.Module)):
+                predictions = model.predict(features)
+                probas = (
+                    model.predict_proba(features)
+                    if return_probabilities and hasattr(model, "predict_proba")
+                    else None
                 )
-                result["model_used"] = model_name
-                results.append(result)
 
-        inference_time_ms = (time.time() - start_time) * 1000
-        per_sample_ms = inference_time_ms / len(features)
+                results = []
+                for i, pred in enumerate(predictions):
+                    pred_int = int(pred)
+                    result = {
+                        "prediction": pred_int,
+                        "class_name": self.CLASS_NAMES[pred_int],
+                        "model_used": model_name,
+                    }
+                    if probas is not None:
+                        result["probabilities"] = {
+                            name: float(p) for name, p in zip(self.CLASS_NAMES, probas[i])
+                        }
+                        result["confidence"] = float(max(probas[i]))
+                    else:
+                        result["confidence"] = 1.0
+                    results.append(result)
+            else:
+                results = []
+                for i in range(len(features)):
+                    result = self._predict_pytorch(
+                        model, features[i : i + 1], return_probabilities
+                    )
+                    result["model_used"] = model_name
+                    results.append(result)
 
-        for r in results:
-            r["inference_time_ms"] = per_sample_ms
+            inference_time_ms = (time.time() - start_time) * 1000
+            per_sample_ms = inference_time_ms / len(features)
 
-        self.inference_count += len(features)
-        self.total_inference_time += inference_time_ms
+            for r in results:
+                r["inference_time_ms"] = per_sample_ms
 
-        return results
+            self.inference_count += len(features)
+            self.total_inference_time += inference_time_ms
+
+            return results
+        finally:
+            with self._lock:
+                self._model_refs[model_name] -= 1
 
     def get_model_info(self, model_name: str) -> Optional[Dict]:
         info = self.model_info.get(model_name)
@@ -446,7 +523,7 @@ class ModelManager(LoggerMixin):
         avg_time = (
             self.total_inference_time / self.inference_count
             if self.inference_count > 0
-            else 0
+            else None
         )
         return {
             "total_inferences": self.inference_count,
@@ -508,3 +585,79 @@ class ModelManager(LoggerMixin):
             self.default_model = model_name
             return True
         return False
+
+    def _get_fallback_model(self, failed_model: str) -> Optional[str]:
+        for name in self.models:
+            if name != failed_model:
+                return name
+        return None
+
+    def predict_with_uncertainty(
+        self,
+        features: np.ndarray,
+        model_names: Optional[List[str]] = None,
+        return_probabilities: bool = True,
+    ) -> Dict[str, Any]:
+        if model_names is None:
+            model_names = list(self.models.keys())
+
+        if len(model_names) < 2:
+            raise ValueError("Need at least 2 loaded models for uncertainty")
+
+        results = []
+        for name in model_names:
+            results.append(self.predict(name, features.copy(), return_probabilities))
+
+        # Majority vote
+        votes = [r["prediction"] for r in results]
+        majority = max(set(votes), key=votes.count)
+        agreement = votes.count(majority) / len(votes)
+
+        confidences = [r["confidence"] for r in results]
+
+        # Per-class intervals
+        class_intervals = {}
+        all_probs = [r["probabilities"] for r in results if r.get("probabilities")]
+        if all_probs:
+            for cls in all_probs[0]:
+                vals = [p[cls] for p in all_probs]
+                mean = float(np.mean(vals))
+                std = float(np.std(vals))
+                class_intervals[cls] = {
+                    "mean": mean,
+                    "std": std,
+                    "ci_lower": max(0.0, mean - 1.96 * std),
+                    "ci_upper": min(1.0, mean + 1.96 * std),
+                }
+
+        return {
+            "prediction": majority,
+            "class_name": self.CLASS_NAMES[majority],
+            "confidence": float(np.mean(confidences)),
+            "probabilities": (
+                {cls: ci["mean"] for cls, ci in class_intervals.items()}
+                if class_intervals
+                else None
+            ),
+            "uncertainty": {
+                "confidence_std": float(np.std(confidences)),
+                "model_agreement": agreement,
+                "num_models": len(model_names),
+                "class_intervals": class_intervals or None,
+            },
+            "models_used": model_names,
+            "inference_time_ms": sum(r["inference_time_ms"] for r in results),
+        }
+
+    def verify_model(self, model_name: str) -> Dict[str, Any]:
+        if model_name not in self.models:
+            return {"status": "not_loaded", "model": model_name}
+
+        try:
+            names = self.get_feature_names(model_name)
+            dim = len(names) if names else 20
+            dummy = np.zeros(dim)
+            self.predict(model_name, dummy)
+            return {"status": "healthy", "model": model_name}
+        except Exception as e:
+            return {"status": "unhealthy", "model": model_name, "error": str(e)}
