@@ -8,12 +8,27 @@ import pandas as pd
 
 from ...logging_config import LoggerMixin
 
-_SAFE_MODULES = frozenset({
-    "sklearn", "numpy", "scipy", "xgboost", "lightgbm",
-    "catboost", "collections", "builtins", "copyreg",
-    "_pickle", "operator", "types", "functools", "copy",
-    "joblib", "numbers", "io",
-})
+_SAFE_MODULES = frozenset(
+    {
+        "sklearn",
+        "numpy",
+        "scipy",
+        "xgboost",
+        "lightgbm",
+        "catboost",
+        "collections",
+        "builtins",
+        "copyreg",
+        "_pickle",
+        "operator",
+        "types",
+        "functools",
+        "copy",
+        "joblib",
+        "numbers",
+        "io",
+    }
+)
 
 
 class _RestrictedUnpickler(pickle.Unpickler):

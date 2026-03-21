@@ -51,7 +51,9 @@ class EarlyStopping:
             self._save_checkpoint(model)
         elif score < self.best_score + self.min_delta:
             self.counter += 1
-            logger.debug(f"EarlyStopping: no improvement ({self.counter}/{self.patience})")
+            logger.debug(
+                f"EarlyStopping: no improvement ({self.counter}/{self.patience})"
+            )
             if self.counter >= self.patience:
                 self.early_stop = True
                 logger.info(

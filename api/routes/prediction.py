@@ -5,6 +5,7 @@ from typing import Optional
 import numpy as np
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 
+from ..settings import settings as api_settings
 from ..schemas import (
     PredictionRequest,
     PredictionResponse,
@@ -132,8 +133,6 @@ async def predict_batch(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-from ..settings import settings as api_settings
-
 MAX_CSV_SIZE = api_settings.csv_max_size
 MAX_CSV_ROWS = api_settings.csv_max_rows
 
@@ -206,7 +205,9 @@ async def predict_from_csv(
         if target:
             errors = feature_store.validate(target, features)
             if errors:
-                raise HTTPException(status_code=400, detail=f"Feature validation: {'; '.join(errors)}")
+                raise HTTPException(
+                    status_code=400, detail=f"Feature validation: {'; '.join(errors)}"
+                )
 
         start_time = time.time()
         results = model_manager.predict_batch(

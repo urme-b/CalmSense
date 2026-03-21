@@ -57,7 +57,9 @@ async def lifespan(app: FastAPI):
     if settings.default_model:
         success, load_time = app_state.model_manager.load_model(settings.default_model)
         if success:
-            logger.info(f"Loaded default model: {settings.default_model} in {load_time:.2f}ms")
+            logger.info(
+                f"Loaded default model: {settings.default_model} in {load_time:.2f}ms"
+            )
         else:
             logger.warning(f"Failed to load default model: {settings.default_model}")
 
@@ -96,7 +98,9 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         self._hits[key] = [t for t in hits if t > cutoff]
 
         if len(self._hits[key]) >= self.requests_per_minute:
-            return _error_response(429, "Too many requests", f"Retry after {self.window_seconds}s")
+            return _error_response(
+                429, "Too many requests", f"Retry after {self.window_seconds}s"
+            )
 
         self._hits[key].append(now)
         return await call_next(request)
@@ -223,9 +227,7 @@ def create_app(
         if req.api_key != settings.api_key:
             raise HTTPException(status_code=401, detail="Invalid API key")
         token = create_token(req.user_id)
-        return TokenResponse(
-            access_token=token, expires_in=settings.jwt_expire_seconds
-        )
+        return TokenResponse(access_token=token, expires_in=settings.jwt_expire_seconds)
 
     @application.get("/", tags=["Root"])
     async def root():

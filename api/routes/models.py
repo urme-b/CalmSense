@@ -1,6 +1,6 @@
 import re
 
-from fastapi import APIRouter, Depends, HTTPException, Path
+from fastapi import APIRouter, Depends, HTTPException
 
 from ..schemas import (
     ModelInfo,
@@ -212,7 +212,8 @@ async def set_default_model(
     description="Get the expected feature names for a model.",
 )
 async def get_feature_names(
-    model_name: str, model_manager: ModelManager = Depends(get_model_manager),
+    model_name: str,
+    model_manager: ModelManager = Depends(get_model_manager),
 ):
     _validate_model_name(model_name)
     feature_names = model_manager.get_feature_names(model_name)

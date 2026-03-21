@@ -1,4 +1,3 @@
-import io
 import re
 import time
 import json
@@ -22,12 +21,27 @@ except ImportError:
 
 from src.logging_config import LoggerMixin
 
-_SAFE_PICKLE_MODULES = frozenset({
-    "sklearn", "numpy", "scipy", "xgboost", "lightgbm",
-    "catboost", "collections", "builtins", "copyreg",
-    "_pickle", "operator", "types", "functools", "copy",
-    "joblib", "numbers", "io",
-})
+_SAFE_PICKLE_MODULES = frozenset(
+    {
+        "sklearn",
+        "numpy",
+        "scipy",
+        "xgboost",
+        "lightgbm",
+        "catboost",
+        "collections",
+        "builtins",
+        "copyreg",
+        "_pickle",
+        "operator",
+        "types",
+        "functools",
+        "copy",
+        "joblib",
+        "numbers",
+        "io",
+    }
+)
 
 
 class _RestrictedUnpickler(pickle.Unpickler):
@@ -228,7 +242,9 @@ class ModelManager(LoggerMixin):
             raise ValueError(f"Invalid model path: {e}")
 
         if path.suffix in [".pkl", ".joblib"]:
-            self.logger.warning(f"Loading pickle file {path} with restricted unpickler.")
+            self.logger.warning(
+                f"Loading pickle file {path} with restricted unpickler."
+            )
             with open(path, "rb") as f:
                 return _RestrictedUnpickler(f).load()
 
@@ -280,7 +296,8 @@ class ModelManager(LoggerMixin):
     def _evict_oldest_model(self) -> bool:
         # Skip pinned models
         candidates = {
-            k: v for k, v in self.model_access_times.items()
+            k: v
+            for k, v in self.model_access_times.items()
             if k != self.default_model and self._model_refs.get(k, 0) == 0
         }
         if not candidates:
@@ -465,7 +482,8 @@ class ModelManager(LoggerMixin):
                     }
                     if probas is not None:
                         result["probabilities"] = {
-                            name: float(p) for name, p in zip(self.CLASS_NAMES, probas[i])
+                            name: float(p)
+                            for name, p in zip(self.CLASS_NAMES, probas[i])
                         }
                         result["confidence"] = float(max(probas[i]))
                     else:
