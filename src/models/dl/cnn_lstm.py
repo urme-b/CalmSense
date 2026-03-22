@@ -21,8 +21,9 @@ class TemporalAttention(nn.Module):
         )
 
         # Xavier-initialized query
-        self.query = nn.Parameter(torch.empty(attention_heads, self.head_dim))
-        nn.init.xavier_uniform_(self.query.unsqueeze(0)).squeeze_(0)
+        query_init = torch.empty(1, attention_heads, self.head_dim)
+        nn.init.xavier_uniform_(query_init)
+        self.query = nn.Parameter(query_init.squeeze(0))
 
         # Key and value projections
         self.key_proj = nn.Linear(hidden_dim, hidden_dim)
