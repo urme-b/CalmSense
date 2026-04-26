@@ -214,7 +214,7 @@ const About: React.FC = () => {
       {/* Links */}
       <div className="flex flex-wrap justify-center gap-4">
         <a
-          href="https://github.com/calmsense/calmsense"
+          href="https://github.com/urme-b/CalmSense"
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center space-x-2 px-4 py-2 bg-gray-900 dark:bg-gray-700 text-white rounded-lg hover:bg-gray-800 dark:hover:bg-gray-600 transition-colors"
@@ -224,11 +224,14 @@ const About: React.FC = () => {
           <ExternalLink className="w-4 h-4" />
         </a>
         <a
-          href="/docs"
+          href="https://github.com/urme-b/CalmSense/blob/main/api/main.py"
+          target="_blank"
+          rel="noopener noreferrer"
           className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
         >
           <BookOpen className="w-5 h-5" />
           <span>API Documentation</span>
+          <ExternalLink className="w-4 h-4" />
         </a>
       </div>
 
