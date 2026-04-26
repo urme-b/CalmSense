@@ -1,13 +1,13 @@
 {
   "files": {
     "main.css": "/CalmSense/static/css/main.e37dbc67.css",
-    "main.js": "/CalmSense/static/js/main.6ef2e8f5.js",
+    "main.js": "/CalmSense/static/js/main.d16f89d6.js",
     "index.html": "/CalmSense/index.html",
     "main.e37dbc67.css.map": "/CalmSense/static/css/main.e37dbc67.css.map",
-    "main.6ef2e8f5.js.map": "/CalmSense/static/js/main.6ef2e8f5.js.map"
+    "main.d16f89d6.js.map": "/CalmSense/static/js/main.d16f89d6.js.map"
   },
   "entrypoints": [
     "static/css/main.e37dbc67.css",
-    "static/js/main.6ef2e8f5.js"
+    "static/js/main.d16f89d6.js"
   ]
 }
