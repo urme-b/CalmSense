@@ -1,5 +1,7 @@
 # CalmSense
 
+**[Live Demo →](https://urme-b.github.io/CalmSense/)**
+
 Multimodal stress detection system that analyzes wearable physiological signals — ECG, electrodermal activity, skin temperature, and accelerometer data — to classify emotional states. Built with classical ML (XGBoost, LightGBM, CatBoost) and deep learning (1D-CNN, BiLSTM, Transformer with cross-modal attention), featuring SHAP/LIME explainability and a FastAPI prediction service.
 
 ## Visualizations
