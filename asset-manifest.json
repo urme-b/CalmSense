@@ -1,0 +1,13 @@
+{
+  "files": {
+    "main.css": "/CalmSense/static/css/main.339ebdbd.css",
+    "main.js": "/CalmSense/static/js/main.3136a9de.js",
+    "index.html": "/CalmSense/index.html",
+    "main.339ebdbd.css.map": "/CalmSense/static/css/main.339ebdbd.css.map",
+    "main.3136a9de.js.map": "/CalmSense/static/js/main.3136a9de.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.339ebdbd.css",
+    "static/js/main.3136a9de.js"
+  ]
+}
