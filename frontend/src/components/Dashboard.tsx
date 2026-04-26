@@ -255,7 +255,14 @@ const Dashboard: React.FC = () => {
     { id: '5', timestamp: new Date(Date.now() - 240000).toISOString(), prediction: 'Baseline', confidence: 95.2, model: 'lightgbm' },
   ];
 
+  const demoMode = !process.env.REACT_APP_API_URL;
+
   useEffect(() => {
+    if (demoMode) {
+      setLoading(false);
+      return;
+    }
+
     const fetchData = async () => {
       try {
         const [healthData, modelsData] = await Promise.all([
@@ -277,7 +284,7 @@ const Dashboard: React.FC = () => {
     fetchData();
     const interval = setInterval(fetchData, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [demoMode]);
 
   if (loading) {
     return (

@@ -144,8 +144,8 @@ const Header: React.FC<{ onMenuClick: () => void }> = ({ onMenuClick }) => {
 
         <div className="flex items-center space-x-4">
           <div className="hidden sm:flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
-            <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-            <span>API Connected</span>
+            <span className={`w-2 h-2 ${process.env.REACT_APP_API_URL ? 'bg-green-500' : 'bg-amber-500'} rounded-full animate-pulse`}></span>
+            <span>{process.env.REACT_APP_API_URL ? 'API Connected' : 'Demo Mode'}</span>
           </div>
         </div>
       </div>
