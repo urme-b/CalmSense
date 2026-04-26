@@ -4,6 +4,25 @@
 
 Multimodal stress detection system that analyzes wearable physiological signals — ECG, electrodermal activity, skin temperature, and accelerometer data — to classify emotional states. Built with classical ML (XGBoost, LightGBM, CatBoost) and deep learning (1D-CNN, BiLSTM, Transformer with cross-modal attention), featuring SHAP/LIME explainability and a FastAPI prediction service.
 
+## Live Demo Screenshots
+
+### Dashboard
+![Dashboard](assets/dashboard.png)
+
+### Signal Explorer
+![Signal Explorer](assets/signal-explorer.png)
+
+### Stress Prediction
+![Prediction](assets/prediction.png)
+
+### Explainability (SHAP)
+![Explainability](assets/explainability-shap.png)
+
+### Model Comparison
+![Model Comparison Table](assets/model-comparison-table.png)
+
+![Model Comparison Charts](assets/model-comparison-charts.png)
+
 ## Visualizations
 
 ![Signal Plot](assets/signal_plot.png)
