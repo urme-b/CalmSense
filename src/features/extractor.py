@@ -61,7 +61,7 @@ class FeatureExtractor(LoggerMixin):
 
         psd = np.maximum(psd, 0)
 
-        features["total_power"] = float(np.trapz(psd, freqs))
+        features["total_power"] = float(np.trapezoid(psd, freqs))
 
         psd_sum = np.sum(psd) + FEATURE_PARAMS.EPSILON
         features["spectral_mean"] = float(np.sum(freqs * psd) / psd_sum)
@@ -89,13 +89,13 @@ class FeatureExtractor(LoggerMixin):
         )
 
         features["vlf_power"] = float(
-            np.trapz(psd[vlf_mask], freqs[vlf_mask]) if np.any(vlf_mask) else 0
+            np.trapezoid(psd[vlf_mask], freqs[vlf_mask]) if np.any(vlf_mask) else 0
         )
         features["lf_power"] = float(
-            np.trapz(psd[lf_mask], freqs[lf_mask]) if np.any(lf_mask) else 0
+            np.trapezoid(psd[lf_mask], freqs[lf_mask]) if np.any(lf_mask) else 0
         )
         features["hf_power"] = float(
-            np.trapz(psd[hf_mask], freqs[hf_mask]) if np.any(hf_mask) else 0
+            np.trapezoid(psd[hf_mask], freqs[hf_mask]) if np.any(hf_mask) else 0
         )
 
         # LF/HF ratio (autonomic balance)
