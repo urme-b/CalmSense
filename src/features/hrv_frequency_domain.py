@@ -4,7 +4,6 @@ import numpy as np
 from scipy import signal as scipy_signal
 from scipy.interpolate import interp1d
 
-from ..config import FEATURE_PARAMS
 from ..logging_config import LoggerMixin
 
 

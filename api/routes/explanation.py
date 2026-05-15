@@ -210,7 +210,9 @@ async def _get_lime_explanation(
                 training_data=training_data,
             )
 
-            explanation = explainer.explain_instance(features, num_features=num_features)
+            explanation = explainer.explain_instance(
+                features, num_features=num_features
+            )
 
             importances = [
                 FeatureImportance(

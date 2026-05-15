@@ -101,7 +101,9 @@ class TimeSeriesData(BaseModel):
             if len(channel) == 0:
                 raise ValueError(f"Channel {ch_idx} is empty")
             if len(channel) > MAX_FEATURE_VALUES:
-                raise ValueError(f"Channel {ch_idx} exceeds {MAX_FEATURE_VALUES} samples")
+                raise ValueError(
+                    f"Channel {ch_idx} exceeds {MAX_FEATURE_VALUES} samples"
+                )
             for i, val in enumerate(channel):
                 if math.isnan(val) or math.isinf(val):
                     raise ValueError(f"Channel {ch_idx}, index {i}: NaN or Inf")
@@ -242,7 +244,9 @@ class ExplanationResponse(BaseModel):
 
 
 class TokenRequest(BaseModel):
-    user_id: str = Field(..., description="User identifier", min_length=1, max_length=128)
+    user_id: str = Field(
+        ..., description="User identifier", min_length=1, max_length=128
+    )
     api_key: str = Field(..., description="API key for authentication")
 
 
