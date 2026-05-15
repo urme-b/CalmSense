@@ -1,0 +1,73 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv
+venv
+env
+*.egg-info
+.eggs
+dist
+build
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# Data (too large for container)
+data/raw/
+data/external/
+*.pkl.gz
+
+# Node
+node_modules
+frontend/node_modules
+npm-debug.log
+
+# Testing
+.pytest_cache
+.coverage
+htmlcov
+.tox
+
+# Documentation
+docs/_build
+*.md
+!README.md
+
+# Notebooks checkpoints
+.ipynb_checkpoints
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Large model files (keep only trained models)
+models/checkpoints/
+*.onnx
+*.h5
+
+# Secrets
+.env
+.env.*
+*.pem
+*.key
+credentials.json

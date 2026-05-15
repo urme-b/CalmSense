@@ -1,0 +1,126 @@
+# CalmSense Default Configuration
+# Uses Hydra for configuration
+
+# Data settings
+data:
+  path: "data/raw/WESAD"
+  subjects: ["S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "S10", "S11", "S13", "S14", "S15", "S16", "S17"]
+  signals:
+    - ECG
+    - EDA
+    - EMG
+    - Temp
+    - Resp
+    - ACC
+  classification: "binary"  # "binary" (baseline vs stress) or "multiclass" (3-class)
+
+# Preprocessing settings
+preprocessing:
+  chest_fs: 700  # Hz
+  wrist_eda_fs: 4  # Hz
+  wrist_bvp_fs: 64  # Hz
+  ecg:
+    bandpass: [0.5, 40.0]  # Hz
+    notch: 50.0  # Hz
+  eda:
+    lowpass: 5.0  # Hz
+  emg:
+    bandpass: [20.0, 450.0]  # Hz
+  window_size: 60  # seconds
+  overlap: 0.5  # 50% overlap
+
+# Feature extraction settings
+features:
+  time_domain: true
+  frequency_domain: true
+  nonlinear: true
+  hrv:
+    enabled: true
+    metrics: ["SDNN", "RMSSD", "pNN50", "LF", "HF", "LF_HF"]
+  eda:
+    enabled: true
+    metrics: ["SCR_count", "SCR_amplitude", "SCL_mean"]
+
+# Model settings
+model:
+  type: "xgboost"  # "xgboost", "lightgbm", "catboost", "ensemble", "cnn", "lstm"
+
+  xgboost:
+    n_estimators: 500
+    max_depth: 6
+    learning_rate: 0.05
+    subsample: 0.8
+    colsample_bytree: 0.8
+
+  lightgbm:
+    n_estimators: 500
+    max_depth: -1
+    num_leaves: 31
+    learning_rate: 0.05
+
+  catboost:
+    iterations: 500
+    depth: 6
+    learning_rate: 0.05
+
+  ensemble:
+    models: ["xgboost", "lightgbm", "catboost"]
+    method: "voting"  # "voting" or "stacking"
+
+  cnn:
+    filters: [32, 64, 128]
+    kernel_sizes: [7, 5, 3]
+    dropout: 0.5
+
+  lstm:
+    hidden_size: 128
+    num_layers: 2
+    bidirectional: true
+    dropout: 0.5
+
+# Training settings
+training:
+  validation: "loso"  # Leave-One-Subject-Out
+  batch_size: 32
+  epochs: 100
+  early_stopping:
+    patience: 10
+    min_delta: 0.001
+  class_weight: "balanced"
+
+# Hyperparameter optimization
+optimization:
+  enabled: true
+  framework: "optuna"
+  n_trials: 100
+  metric: "accuracy"
+  sampler: "TPE"
+
+# Explainability settings
+explainability:
+  shap:
+    enabled: true
+    n_samples: 100
+  lime:
+    enabled: true
+    n_features: 20
+  feature_importance:
+    enabled: true
+    method: "permutation"
+
+# Logging settings
+logging:
+  level: "INFO"
+  mlflow:
+    enabled: true
+    tracking_uri: "mlruns"
+    experiment_name: "calmsense"
+  wandb:
+    enabled: false
+    project: "calmsense"
+
+# Output settings
+output:
+  models_dir: "outputs/models"
+  figures_dir: "outputs/figures"
+  reports_dir: "outputs/reports"
