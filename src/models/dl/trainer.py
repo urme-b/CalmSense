@@ -39,6 +39,10 @@ class EarlyStopping:
         self.early_stop = False
 
     def __call__(self, score: float, model: nn.Module) -> bool:
+        import logging
+
+        logger = logging.getLogger(__name__)
+
         if self.mode == "min":
             score = -score
 
@@ -47,8 +51,12 @@ class EarlyStopping:
             self._save_checkpoint(model)
         elif score < self.best_score + self.min_delta:
             self.counter += 1
+            logger.debug(f"EarlyStopping: no improvement ({self.counter}/{self.patience})")
             if self.counter >= self.patience:
                 self.early_stop = True
+                logger.info(
+                    f"EarlyStopping triggered after {self.patience} epochs without improvement"
+                )
         else:
             self.best_score = score
             self._save_checkpoint(model)

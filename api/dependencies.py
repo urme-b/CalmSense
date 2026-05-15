@@ -3,11 +3,13 @@ from threading import Lock
 from typing import Optional
 
 from .model_manager import ModelManager
+from .feature_schema import FeatureSchemaStore
 
 
 class AppState:
     def __init__(self):
         self.model_manager: Optional[ModelManager] = None
+        self.feature_store: FeatureSchemaStore = FeatureSchemaStore()
         self.start_time: datetime = datetime.now(timezone.utc)
         self._request_count: int = 0
         self._lock: Lock = Lock()
@@ -29,3 +31,7 @@ def get_model_manager() -> ModelManager:
     if app_state.model_manager is None:
         raise RuntimeError("Model manager not initialized")
     return app_state.model_manager
+
+
+def get_feature_store() -> FeatureSchemaStore:
+    return app_state.feature_store

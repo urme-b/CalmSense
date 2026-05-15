@@ -20,8 +20,9 @@ class TemporalAttention(nn.Module):
             "hidden_dim must be divisible by attention_heads"
         )
 
-        # Learnable query vector(s)
-        self.query = nn.Parameter(torch.randn(attention_heads, self.head_dim))
+        # Xavier-initialized query
+        self.query = nn.Parameter(torch.empty(attention_heads, self.head_dim))
+        nn.init.xavier_uniform_(self.query.unsqueeze(0)).squeeze_(0)
 
         # Key and value projections
         self.key_proj = nn.Linear(hidden_dim, hidden_dim)

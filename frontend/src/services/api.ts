@@ -25,11 +25,26 @@ const apiClient: AxiosInstance = axios.create({
   },
 });
 
+// Token helpers
+const getToken = (): string | null => {
+  const raw = sessionStorage.getItem('authToken');
+  if (!raw) return null;
+  try {
+    const payload = JSON.parse(atob(raw.split('.')[1]));
+    if (payload.exp && payload.exp * 1000 < Date.now()) {
+      sessionStorage.removeItem('authToken');
+      return null;
+    }
+    return raw;
+  } catch {
+    return raw;
+  }
+};
+
 // Request interceptor
 apiClient.interceptors.request.use(
   (config) => {
-    // Add auth token
-    const token = localStorage.getItem('authToken');
+    const token = getToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -43,8 +58,8 @@ apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Handle unauthorized
-      console.error('Unauthorized request');
+      sessionStorage.removeItem('authToken');
+      console.error('Unauthorized — token cleared');
     }
     return Promise.reject(error);
   }
@@ -276,6 +291,7 @@ export class WebSocketClient {
       this.ws.close();
       this.ws = null;
     }
+    this.messageHandlers.clear();
   }
 
   get isConnected(): boolean {

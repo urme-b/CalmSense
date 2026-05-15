@@ -20,6 +20,15 @@ class FeatureExtractor(LoggerMixin):
         if len(data) == 0:
             return features
 
+        # Strip NaN
+        nan_mask = np.isfinite(data)
+        if not np.all(nan_mask):
+            nan_ratio = 1.0 - np.mean(nan_mask)
+            self.logger.debug(f"Input has {nan_ratio:.1%} NaN/Inf, filtering")
+            data = data[nan_mask]
+            if len(data) == 0:
+                return features
+
         features["mean"] = float(np.mean(data))
         features["std"] = float(np.std(data))
         features["var"] = float(np.var(data))

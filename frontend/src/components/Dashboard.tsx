@@ -244,6 +244,7 @@ const Dashboard: React.FC = () => {
   const [health, setHealth] = useState<HealthResponse | null>(null);
   const [models, setModels] = useState<ModelListResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [apiError, setApiError] = useState<string | null>(null);
 
   // Mock recent predictions
   const recentPredictions: RecentPrediction[] = [
@@ -258,20 +259,23 @@ const Dashboard: React.FC = () => {
     const fetchData = async () => {
       try {
         const [healthData, modelsData] = await Promise.all([
-          getHealth().catch(() => null),
-          getModels().catch(() => null),
+          getHealth(),
+          getModels(),
         ]);
         setHealth(healthData);
         setModels(modelsData);
-      } catch (error) {
-        console.error('Failed to fetch dashboard data:', error);
+        setApiError(null);
+      } catch (error: any) {
+        const msg = error?.message || 'Failed to connect to API';
+        setApiError(msg);
+        console.error('Dashboard fetch failed:', msg);
       } finally {
         setLoading(false);
       }
     };
 
     fetchData();
-    const interval = setInterval(fetchData, 30000); // Refresh every 30s
+    const interval = setInterval(fetchData, 30000);
     return () => clearInterval(interval);
   }, []);
 
@@ -285,6 +289,18 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="space-y-6 animate-fade-in">
+      {/* API error banner */}
+      {apiError && (
+        <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg p-4">
+          <p className="text-red-800 dark:text-red-200 text-sm font-medium">
+            API Connection Error: {apiError}
+          </p>
+          <p className="text-red-600 dark:text-red-400 text-xs mt-1">
+            Showing cached data. Retrying every 30s...
+          </p>
+        </div>
+      )}
+
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Dashboard</h1>

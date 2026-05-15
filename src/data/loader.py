@@ -108,14 +108,21 @@ class WESADLoader(LoggerMixin):
         self.logger.info(f"Loading all {len(self.subjects)} subjects")
 
         all_data = {}
+        failed = {}
         for subj_id in self.subjects:
             try:
                 all_data[subj_id] = self.load_subject(subj_id, signals=signals)
+            except FileNotFoundError as e:
+                failed[subj_id] = f"missing: {e}"
+                self.logger.warning(f"Missing {subj_id}: {e}")
             except Exception as e:
-                self.logger.warning(f"Failed to load {subj_id}: {e}")
-                continue
+                failed[subj_id] = f"error: {e}"
+                self.logger.error(f"Failed to load {subj_id}: {e}")
 
-        self.logger.info(f"Successfully loaded {len(all_data)} subjects")
+        self.logger.info(
+            f"Loaded {len(all_data)}/{len(self.subjects)} subjects"
+            + (f", {len(failed)} failed: {list(failed.keys())}" if failed else "")
+        )
         return all_data
 
     def get_labels_binary(self, labels: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:

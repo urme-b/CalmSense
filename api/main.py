@@ -1,4 +1,3 @@
-import os
 import time
 import logging
 from collections import defaultdict
@@ -6,7 +5,7 @@ from datetime import datetime, timezone
 from typing import Optional
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -21,35 +20,46 @@ except ImportError:
 from .model_manager import ModelManager
 from .dependencies import app_state, get_model_manager
 from .routes import prediction, models, explanation, websocket
+from .settings import settings
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-DEFAULT_CORS_ORIGINS = [
+DEFAULT_CORS_ORIGINS = (
     "http://localhost:3000",
     "http://localhost:8000",
     "http://127.0.0.1:3000",
     "http://127.0.0.1:8000",
-]
+)
+
+
+def _error_response(status: int, error: str, detail: str) -> JSONResponse:
+    return JSONResponse(
+        status_code=status,
+        content={
+            "error": error,
+            "detail": detail,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        },
+    )
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Starting CalmSense API...")
 
-    models_dir = os.environ.get("MODELS_DIR", "./models")
-    default_model = os.environ.get("DEFAULT_MODEL", None)
-
     app_state.model_manager = ModelManager(
-        models_dir=models_dir, default_model=default_model, lazy_load=True
+        models_dir=settings.models_dir,
+        default_model=settings.default_model or None,
+        lazy_load=True,
     )
 
-    if default_model:
-        success, load_time = app_state.model_manager.load_model(default_model)
+    if settings.default_model:
+        success, load_time = app_state.model_manager.load_model(settings.default_model)
         if success:
-            logger.info(f"Loaded default model: {default_model} in {load_time:.2f}ms")
+            logger.info(f"Loaded default model: {settings.default_model} in {load_time:.2f}ms")
         else:
-            logger.warning(f"Failed to load default model: {default_model}")
+            logger.warning(f"Failed to load default model: {settings.default_model}")
 
     logger.info("CalmSense API started successfully")
     yield
@@ -63,24 +73,32 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         self.window_seconds = 60
         self._hits: dict = defaultdict(list)
 
+    def _get_client_key(self, request: Request) -> str:
+        # Per-user key
+        auth = request.headers.get("Authorization", "")
+        if auth.startswith("Bearer "):
+            try:
+                from .auth import decode_token
+
+                payload = decode_token(auth.split(" ", 1)[1])
+                return f"user:{payload.user_id}"
+            except Exception:
+                pass
+        ip = request.client.host if request.client else "unknown"
+        return f"ip:{ip}"
+
     async def dispatch(self, request: Request, call_next):
-        client_ip = request.client.host if request.client else "unknown"
+        key = self._get_client_key(request)
         now = time.time()
         cutoff = now - self.window_seconds
 
-        hits = self._hits[client_ip]
-        self._hits[client_ip] = [t for t in hits if t > cutoff]
+        hits = self._hits[key]
+        self._hits[key] = [t for t in hits if t > cutoff]
 
-        if len(self._hits[client_ip]) >= self.requests_per_minute:
-            return JSONResponse(
-                status_code=429,
-                content={
-                    "error": "Too many requests",
-                    "retry_after_seconds": self.window_seconds,
-                },
-            )
+        if len(self._hits[key]) >= self.requests_per_minute:
+            return _error_response(429, "Too many requests", f"Retry after {self.window_seconds}s")
 
-        self._hits[client_ip].append(now)
+        self._hits[key].append(now)
         return await call_next(request)
 
 
@@ -93,6 +111,25 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         response.headers["Permissions-Policy"] = (
             "geolocation=(), camera=(), microphone=()"
+        )
+        return response
+
+
+class AuditLogMiddleware(BaseHTTPMiddleware):
+    _MASKED = frozenset({"authorization", "cookie", "x-api-key"})
+
+    async def dispatch(self, request: Request, call_next):
+        headers = {
+            k: "***" if k.lower() in self._MASKED else v
+            for k, v in request.headers.items()
+        }
+        logger.info(
+            f"REQ {request.method} {request.url.path}",
+            extra={"headers": headers, "query": str(request.query_params)},
+        )
+        response = await call_next(request)
+        logger.info(
+            f"RES {request.method} {request.url.path} status={response.status_code}"
         )
         return response
 
@@ -136,9 +173,8 @@ def create_app(
     if cors_origins:
         origins = cors_origins
     else:
-        env_origins = os.environ.get("CORS_ORIGINS")
-        if env_origins:
-            origins = [o.strip() for o in env_origins.split(",")]
+        if settings.cors_origins:
+            origins = [o.strip() for o in settings.cors_origins.split(",")]
         else:
             origins = DEFAULT_CORS_ORIGINS
             logger.warning(
@@ -154,10 +190,11 @@ def create_app(
         allow_headers=["Content-Type", "Authorization", "X-Request-ID"],
     )
 
+    application.add_middleware(AuditLogMiddleware)
     application.add_middleware(SecurityHeadersMiddleware)
-
-    rate_limit = int(os.environ.get("RATE_LIMIT_PER_MINUTE", "120"))
-    application.add_middleware(RateLimitMiddleware, requests_per_minute=rate_limit)
+    application.add_middleware(
+        RateLimitMiddleware, requests_per_minute=settings.rate_limit_per_minute
+    )
 
     @application.middleware("http")
     async def add_timing_header(request: Request, call_next):
@@ -176,12 +213,27 @@ def create_app(
     )
     application.include_router(websocket.router, prefix="/ws", tags=["WebSocket"])
 
+    @application.post("/auth/token", tags=["Auth"])
+    async def create_auth_token(request: Request):
+        from .auth import create_token
+        from .schemas import TokenRequest, TokenResponse
+
+        body = await request.json()
+        req = TokenRequest(**body)
+        if req.api_key != settings.api_key:
+            raise HTTPException(status_code=401, detail="Invalid API key")
+        token = create_token(req.user_id)
+        return TokenResponse(
+            access_token=token, expires_in=settings.jwt_expire_seconds
+        )
+
     @application.get("/", tags=["Root"])
     async def root():
         return {
             "name": title,
             "version": version,
             "status": "running",
+            "auth_enabled": settings.auth_enabled,
             "docs": "/docs",
             "health": "/health",
         }
@@ -223,12 +275,19 @@ def create_app(
             app_state.request_count / uptime_minutes if uptime_minutes > 0 else 0.0
         )
 
+        # Verify models
+        model_health = {}
+        if app_state.model_manager:
+            for name in list(app_state.model_manager.models.keys()):
+                model_health[name] = app_state.model_manager.verify_model(name)
+
         return {
             "status": "healthy",
             "version": version,
             "models_loaded": (
                 len(app_state.model_manager.models) if app_state.model_manager else 0
             ),
+            "model_health": model_health,
             "gpu_available": TORCH_AVAILABLE and torch.cuda.is_available(),
             "uptime_seconds": uptime,
             "memory_usage_mb": memory_mb,
@@ -239,33 +298,21 @@ def create_app(
             "timestamp": datetime.now(timezone.utc).isoformat(),
         }
 
+    # Error handlers
+    @application.exception_handler(HTTPException)
+    async def http_exception_handler(request: Request, exc: HTTPException):
+        return _error_response(exc.status_code, str(exc.detail), str(exc.detail))
+
     @application.exception_handler(ValueError)
     async def value_error_handler(request: Request, exc: ValueError):
         logger.warning(f"ValueError on {request.url.path}: {exc}")
-        return JSONResponse(
-            status_code=400,
-            content={
-                "error": "Bad Request",
-                "detail": str(exc),
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-            },
-        )
+        return _error_response(400, "Bad Request", str(exc))
 
     @application.exception_handler(Exception)
     async def general_exception_handler(request: Request, exc: Exception):
         logger.error(f"Unhandled exception on {request.url.path}: {exc}", exc_info=True)
-
-        is_debug = os.environ.get("DEBUG", "false").lower() == "true"
-        detail = str(exc) if is_debug else "An unexpected error occurred"
-
-        return JSONResponse(
-            status_code=500,
-            content={
-                "error": "Internal Server Error",
-                "detail": detail,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-            },
-        )
+        detail = str(exc) if settings.debug else "An unexpected error occurred"
+        return _error_response(500, "Internal Server Error", detail)
 
     return application
 

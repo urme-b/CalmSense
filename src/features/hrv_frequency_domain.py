@@ -175,7 +175,7 @@ class HRVFrequencyDomainExtractor(LoggerMixin):
     def compute_lf_hf_ratio(self, lf_power: float, hf_power: float) -> float:
         if not np.isfinite(lf_power) or not np.isfinite(hf_power):
             return np.nan
-        if hf_power < FEATURE_PARAMS.EPSILON:
+        if hf_power < 1e-6:
             return np.nan
         return float(lf_power / hf_power)
 
@@ -183,7 +183,7 @@ class HRVFrequencyDomainExtractor(LoggerMixin):
         if not np.isfinite(lf_power) or not np.isfinite(hf_power):
             return np.nan
         total = lf_power + hf_power
-        if total < FEATURE_PARAMS.EPSILON:
+        if total < 1e-6:
             return np.nan
         return float(100.0 * lf_power / total)
 
@@ -191,7 +191,7 @@ class HRVFrequencyDomainExtractor(LoggerMixin):
         if not np.isfinite(lf_power) or not np.isfinite(hf_power):
             return np.nan
         total = lf_power + hf_power
-        if total < FEATURE_PARAMS.EPSILON:
+        if total < 1e-6:
             return np.nan
         return float(100.0 * hf_power / total)
 

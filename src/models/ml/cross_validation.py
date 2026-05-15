@@ -2,6 +2,7 @@ from typing import Any, Dict, Generator, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
+from sklearn.preprocessing import StandardScaler
 
 from ...logging_config import LoggerMixin
 from .base_model import BaseMLModel
@@ -32,12 +33,14 @@ class CrossValidator(LoggerMixin):
         self, X: np.ndarray, y: np.ndarray, n_splits: Optional[int] = None
     ) -> Generator[Tuple[np.ndarray, np.ndarray], None, None]:
 
-        from sklearn.model_selection import KFold
+        from sklearn.model_selection import StratifiedKFold
 
         n_splits = n_splits or self.n_splits
-        kf = KFold(n_splits=n_splits, shuffle=True, random_state=self.random_state)
+        skf = StratifiedKFold(
+            n_splits=n_splits, shuffle=True, random_state=self.random_state
+        )
 
-        for train_idx, test_idx in kf.split(X, y):
+        for train_idx, test_idx in skf.split(X, y):
             yield train_idx, test_idx
 
     def get_stratified_splits(
@@ -111,7 +114,11 @@ class CrossValidator(LoggerMixin):
             X_train, X_test = X[train_idx], X[test_idx]
             y_train, y_test = y[train_idx], y[test_idx]
 
-            # Clone and fit model
+            # Per-fold scaling
+            scaler = StandardScaler()
+            X_train = scaler.fit_transform(X_train)
+            X_test = scaler.transform(X_test)
+
             model_clone = model.__class__(**model.get_params())
             model_clone.fit(X_train, y_train)
 
@@ -329,6 +336,12 @@ class CrossValidator(LoggerMixin):
             X_train, X_test = X[train_idx], X[test_idx]
             y_train, y_test = y[train_idx], y[test_idx]
             test_subject = np.unique(groups[test_idx])[0]
+
+            from sklearn.preprocessing import StandardScaler
+
+            scaler = StandardScaler()
+            X_train = scaler.fit_transform(X_train)
+            X_test = scaler.transform(X_test)
 
             model_clone = model.__class__(**model.get_params())
             model_clone.fit(X_train, y_train)

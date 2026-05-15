@@ -21,6 +21,7 @@ import PredictionPanel from './components/PredictionPanel';
 import ExplainabilityDashboard from './components/ExplainabilityDashboard';
 import ModelComparison from './components/ModelComparison';
 import About from './components/About';
+import ErrorBoundary from './components/ErrorBoundary';
 
 // Navigation items
 const navItems = [
@@ -189,12 +190,12 @@ const App: React.FC = () => {
 
             <main className="flex-1 overflow-y-auto p-4 lg:p-6">
               <Routes>
-                <Route path="/" element={<Dashboard />} />
-                <Route path="/signals" element={<SignalExplorer />} />
-                <Route path="/predict" element={<PredictionPanel />} />
-                <Route path="/explain" element={<ExplainabilityDashboard />} />
-                <Route path="/models" element={<ModelComparison />} />
-                <Route path="/about" element={<About />} />
+                <Route path="/" element={<ErrorBoundary><Dashboard /></ErrorBoundary>} />
+                <Route path="/signals" element={<ErrorBoundary><SignalExplorer /></ErrorBoundary>} />
+                <Route path="/predict" element={<ErrorBoundary><PredictionPanel /></ErrorBoundary>} />
+                <Route path="/explain" element={<ErrorBoundary><ExplainabilityDashboard /></ErrorBoundary>} />
+                <Route path="/models" element={<ErrorBoundary><ModelComparison /></ErrorBoundary>} />
+                <Route path="/about" element={<ErrorBoundary><About /></ErrorBoundary>} />
               </Routes>
             </main>
 

@@ -8,6 +8,20 @@ import pandas as pd
 
 from ...logging_config import LoggerMixin
 
+_SAFE_MODULES = frozenset({
+    "sklearn", "numpy", "scipy", "xgboost", "lightgbm",
+    "catboost", "collections", "builtins", "copyreg",
+    "_pickle", "operator", "types", "functools", "copy",
+    "joblib", "numbers", "io",
+})
+
+
+class _RestrictedUnpickler(pickle.Unpickler):
+    def find_class(self, module: str, name: str) -> type:
+        if module.split(".")[0] not in _SAFE_MODULES:
+            raise pickle.UnpicklingError(f"Forbidden: {module}.{name}")
+        return super().find_class(module, name)
+
 
 class BaseMLModel(ABC, LoggerMixin):
     def __init__(self, model_name: str, random_state: int = 42, **kwargs):
@@ -130,7 +144,7 @@ class BaseMLModel(ABC, LoggerMixin):
         path = Path(path)
 
         with open(path, "rb") as f:
-            model_state = pickle.load(f)
+            model_state = _RestrictedUnpickler(f).load()
 
         # Create instance without calling
         instance = cls.__new__(cls)

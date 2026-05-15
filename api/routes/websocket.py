@@ -2,19 +2,22 @@ import asyncio
 from datetime import datetime, timezone
 from typing import Dict, Optional, Set
 import logging
-import os
 
 import numpy as np
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from ..dependencies import app_state
 from ..model_manager import ModelManager
+from ..settings import settings
+from ..auth import decode_token
+
+WS_RECEIVE_TIMEOUT = 60.0
 
 logger = logging.getLogger(__name__)
 
-MAX_CLIENTS = int(os.environ.get("WS_MAX_CLIENTS", "100"))
-MAX_BUFFER_SIZE = int(os.environ.get("WS_MAX_BUFFER_SIZE", "10000"))
-MAX_BATCH_SAMPLES = int(os.environ.get("WS_MAX_BATCH_SAMPLES", "1000"))
+MAX_CLIENTS = settings.ws_max_clients
+MAX_BUFFER_SIZE = settings.ws_max_buffer_size
+MAX_BATCH_SAMPLES = settings.ws_max_batch_samples
 
 
 router = APIRouter()
@@ -99,7 +102,20 @@ manager = ConnectionManager()
 
 
 @router.websocket("/predict")
-async def websocket_predict(websocket: WebSocket, client_id: Optional[str] = None):
+async def websocket_predict(
+    websocket: WebSocket, client_id: Optional[str] = None, token: Optional[str] = None
+):
+    # Auth check
+    if settings.auth_enabled:
+        if not token:
+            await websocket.close(code=4001, reason="Authentication required")
+            return
+        try:
+            decode_token(token)
+        except Exception:
+            await websocket.close(code=4001, reason="Invalid token")
+            return
+
     if not client_id:
         client_id = f"client_{datetime.now(timezone.utc).timestamp()}"
 
@@ -133,7 +149,20 @@ async def websocket_predict(websocket: WebSocket, client_id: Optional[str] = Non
         )
 
         while True:
-            data = await websocket.receive_json()
+            try:
+                data = await asyncio.wait_for(
+                    websocket.receive_json(), timeout=WS_RECEIVE_TIMEOUT
+                )
+            except asyncio.TimeoutError:
+                await websocket.send_json(
+                    {
+                        "type": "ping",
+                        "data": {},
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                    }
+                )
+                continue
+
             message_type = data.get("type", "predict")
 
             if message_type == "predict":
@@ -196,8 +225,8 @@ async def websocket_predict(websocket: WebSocket, client_id: Optional[str] = Non
                     "timestamp": datetime.now(timezone.utc).isoformat(),
                 }
             )
-        except Exception:
-            pass
+        except Exception as send_err:
+            logger.error(f"Failed to notify {client_id}: {send_err}")
         await manager.disconnect(client_id)
 
 
@@ -336,7 +365,18 @@ async def websocket_stream(
     websocket: WebSocket,
     client_id: Optional[str] = None,
     subject_id: Optional[str] = None,
+    token: Optional[str] = None,
 ):
+    if settings.auth_enabled:
+        if not token:
+            await websocket.close(code=4001, reason="Authentication required")
+            return
+        try:
+            decode_token(token)
+        except Exception:
+            await websocket.close(code=4001, reason="Invalid token")
+            return
+
     if not client_id:
         client_id = f"stream_{datetime.now(timezone.utc).timestamp()}"
 
@@ -363,10 +403,23 @@ async def websocket_stream(
         )
 
         signal_buffer = {"ecg": [], "eda": [], "emg": [], "resp": [], "temp": []}
-        window_size = 700
+        window_size = settings.ws_window_size
 
         while True:
-            data = await websocket.receive_json()
+            try:
+                data = await asyncio.wait_for(
+                    websocket.receive_json(), timeout=WS_RECEIVE_TIMEOUT
+                )
+            except asyncio.TimeoutError:
+                await websocket.send_json(
+                    {
+                        "type": "ping",
+                        "data": {},
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                    }
+                )
+                continue
+
             message_type = data.get("type", "signal")
 
             if message_type == "signal":
@@ -424,7 +477,7 @@ async def websocket_stream(
                             }
                         )
 
-                    # Slide window by half
+                    # Slide window
                     for signal_type in signal_buffer:
                         if len(signal_buffer[signal_type]) > window_size:
                             signal_buffer[signal_type] = signal_buffer[signal_type][

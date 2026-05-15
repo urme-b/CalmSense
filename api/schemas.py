@@ -87,10 +87,25 @@ class FeatureVector(BaseModel):
 
 class TimeSeriesData(BaseModel):
     signal: List[List[float]] = Field(
-        ..., description="Signal data [channels, timesteps]"
+        ..., description="Signal data [channels, timesteps]", max_length=50
     )
     sampling_rate: Optional[float] = Field(None, description="Sampling rate in Hz")
     channel_names: Optional[List[str]] = Field(None, description="Channel names")
+
+    @field_validator("signal")
+    @classmethod
+    def validate_signal(cls, v):
+        if len(v) == 0:
+            raise ValueError("Signal cannot be empty")
+        for ch_idx, channel in enumerate(v):
+            if len(channel) == 0:
+                raise ValueError(f"Channel {ch_idx} is empty")
+            if len(channel) > MAX_FEATURE_VALUES:
+                raise ValueError(f"Channel {ch_idx} exceeds {MAX_FEATURE_VALUES} samples")
+            for i, val in enumerate(channel):
+                if math.isnan(val) or math.isinf(val):
+                    raise ValueError(f"Channel {ch_idx}, index {i}: NaN or Inf")
+        return v
 
 
 class PredictionRequest(BaseModel):
@@ -123,6 +138,15 @@ class PredictionRequest(BaseModel):
     }
 
 
+class UncertaintyInfo(BaseModel):
+    confidence_std: float = Field(..., description="Confidence std across models")
+    model_agreement: float = Field(..., description="Fraction of models agreeing")
+    num_models: int = Field(..., description="Models in ensemble")
+    class_intervals: Optional[Dict[str, Dict[str, float]]] = Field(
+        None, description="Per-class confidence intervals"
+    )
+
+
 class PredictionResponse(BaseModel):
     prediction: int = Field(..., description="Predicted class index")
     class_name: str = Field(..., description="Predicted class name")
@@ -135,6 +159,10 @@ class PredictionResponse(BaseModel):
     explanation: Optional[Dict[str, Any]] = Field(
         None, description="Basic feature importance"
     )
+    uncertainty: Optional[UncertaintyInfo] = Field(
+        None, description="Ensemble uncertainty"
+    )
+    degraded: Optional[bool] = Field(None, description="True if fallback model used")
     timestamp: datetime = Field(default_factory=utc_now)
 
 
@@ -168,7 +196,7 @@ class ExplanationRequest(BaseModel):
         ExplanationType.SHAP, description="Type of explanation"
     )
     model_name: Optional[str] = Field(None, description="Model to explain")
-    num_features: int = Field(10, description="Number of top features")
+    num_features: int = Field(10, description="Number of top features", ge=1, le=500)
     include_visualization: bool = Field(
         False, description="Include base64 encoded plots"
     )
@@ -213,6 +241,17 @@ class ExplanationResponse(BaseModel):
     computation_time_ms: float
 
 
+class TokenRequest(BaseModel):
+    user_id: str = Field(..., description="User identifier", min_length=1, max_length=128)
+    api_key: str = Field(..., description="API key for authentication")
+
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    expires_in: int
+
+
 class ModelInfo(BaseModel):
     name: str = Field(..., description="Model identifier")
     model_type: str = Field(..., description="Model architecture type")
@@ -223,6 +262,8 @@ class ModelInfo(BaseModel):
     is_loaded: bool = Field(..., description="Whether model is in memory")
     load_time_ms: Optional[float] = Field(None, description="Time to load model")
     last_used: Optional[datetime] = Field(None, description="Last inference time")
+    schema_hash: Optional[str] = Field(None, description="Feature schema hash")
+    loaded_at: Optional[datetime] = Field(None, description="When version was loaded")
     metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
 
 

@@ -12,10 +12,13 @@ from ..schemas import (
     BatchPredictionResponse,
     FeatureVector,
     TimeSeriesData,
+    UncertaintyInfo,
     ErrorResponse,
 )
-from ..dependencies import get_model_manager
+from ..dependencies import get_model_manager, get_feature_store
 from ..model_manager import ModelManager
+from ..feature_schema import FeatureSchemaStore
+from ..auth import require_auth, TokenPayload
 
 
 router = APIRouter()
@@ -29,7 +32,9 @@ router = APIRouter()
     description="Predict stress level from physiological features or time series data.",
 )
 async def predict(
-    request: PredictionRequest, model_manager: ModelManager = Depends(get_model_manager)
+    request: PredictionRequest,
+    user: TokenPayload = Depends(require_auth),
+    model_manager: ModelManager = Depends(get_model_manager),
 ):
     try:
         if isinstance(request.features, FeatureVector):
@@ -86,6 +91,7 @@ async def predict(
 )
 async def predict_batch(
     request: BatchPredictionRequest,
+    user: TokenPayload = Depends(require_auth),
     model_manager: ModelManager = Depends(get_model_manager),
 ):
     try:
@@ -126,8 +132,10 @@ async def predict_batch(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-MAX_CSV_SIZE = 10 * 1024 * 1024  # 10MB
-MAX_CSV_ROWS = 10000
+from ..settings import settings as api_settings
+
+MAX_CSV_SIZE = api_settings.csv_max_size
+MAX_CSV_ROWS = api_settings.csv_max_rows
 
 
 @router.post(
@@ -139,7 +147,9 @@ MAX_CSV_ROWS = 10000
 async def predict_from_csv(
     file: UploadFile = File(...),
     model_name: Optional[str] = None,
+    user: TokenPayload = Depends(require_auth),
     model_manager: ModelManager = Depends(get_model_manager),
+    feature_store: FeatureSchemaStore = Depends(get_feature_store),
 ):
     try:
         import pandas as pd
@@ -155,12 +165,18 @@ async def predict_from_csv(
                 detail=f"Invalid file type: {file.content_type}. Expected CSV.",
             )
 
-        content = await file.read()
-        if len(content) > MAX_CSV_SIZE:
-            raise HTTPException(
-                status_code=400,
-                detail=f"File too large. Maximum size is {MAX_CSV_SIZE // (1024 * 1024)}MB",
-            )
+        # Chunked read
+        chunks = []
+        total_size = 0
+        while chunk := await file.read(64 * 1024):
+            total_size += len(chunk)
+            if total_size > MAX_CSV_SIZE:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"File too large. Maximum size is {MAX_CSV_SIZE // (1024 * 1024)}MB",
+                )
+            chunks.append(chunk)
+        content = b"".join(chunks)
 
         try:
             df = pd.read_csv(io.StringIO(content.decode("utf-8")))
@@ -176,6 +192,21 @@ async def predict_from_csv(
             )
 
         features = df.values.astype(np.float64)
+
+        # Validate feature dimensions
+        expected = model_manager.get_feature_names(model_name)
+        if expected and features.shape[1] != len(expected):
+            raise HTTPException(
+                status_code=400,
+                detail=f"Feature mismatch: CSV has {features.shape[1]} columns, model expects {len(expected)}",
+            )
+
+        # Validate feature ranges
+        target = model_name or model_manager.default_model
+        if target:
+            errors = feature_store.validate(target, features)
+            if errors:
+                raise HTTPException(status_code=400, detail=f"Feature validation: {'; '.join(errors)}")
 
         start_time = time.time()
         results = model_manager.predict_batch(
@@ -206,6 +237,46 @@ async def predict_from_csv(
             model_used=predictions[0].model_used if predictions else "",
         )
 
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post(
+    "/predict/ensemble",
+    response_model=PredictionResponse,
+    responses={400: {"model": ErrorResponse}, 500: {"model": ErrorResponse}},
+    summary="Ensemble prediction with uncertainty",
+)
+async def predict_ensemble(
+    request: PredictionRequest,
+    user: TokenPayload = Depends(require_auth),
+    model_manager: ModelManager = Depends(get_model_manager),
+):
+    try:
+        if isinstance(request.features, FeatureVector):
+            features = np.array(request.features.values)
+        elif isinstance(request.features, TimeSeriesData):
+            features = np.array(request.features.signal)
+        else:
+            raise ValueError("Invalid feature format")
+
+        result = model_manager.predict_with_uncertainty(
+            features=features, return_probabilities=request.return_probabilities
+        )
+
+        return PredictionResponse(
+            prediction=result["prediction"],
+            class_name=result["class_name"],
+            probabilities=result.get("probabilities"),
+            confidence=result["confidence"],
+            model_used=", ".join(result["models_used"]),
+            inference_time_ms=result["inference_time_ms"],
+            uncertainty=UncertaintyInfo(**result["uncertainty"]),
+            timestamp=datetime.now(timezone.utc),
+        )
+
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
