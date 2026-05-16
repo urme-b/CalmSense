@@ -11,6 +11,8 @@
     "@types/node": "^16.18.0",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
+    "ajv": "^8.0.0",
+    "ajv-keywords": "^5.0.0",
     "axios": "^1.6.0",
     "lucide-react": "^0.294.0",
     "plotly.js": "^2.27.0",
