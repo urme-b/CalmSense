@@ -23,7 +23,7 @@ const About: React.FC = () => {
           Multimodal Stress Detection from Physiological Signals
         </p>
         <p className="mt-2 text-gray-500 dark:text-gray-500">
-          Version 1.0.0 | PhD Research Project
+          Version 1.0.0
         </p>
       </div>
 
