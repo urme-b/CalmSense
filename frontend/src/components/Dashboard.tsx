@@ -240,10 +240,12 @@ const SystemStatus: React.FC<{ health: HealthResponse | null }> = ({ health }) =
 };
 
 // Main Dashboard Component
+const DEMO_MODE = !process.env.REACT_APP_API_URL;
+
 const Dashboard: React.FC = () => {
   const [health, setHealth] = useState<HealthResponse | null>(null);
   const [models, setModels] = useState<ModelListResponse | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!DEMO_MODE);
   const [apiError, setApiError] = useState<string | null>(null);
 
   // Mock recent predictions
@@ -255,13 +257,8 @@ const Dashboard: React.FC = () => {
     { id: '5', timestamp: new Date(Date.now() - 240000).toISOString(), prediction: 'Baseline', confidence: 95.2, model: 'lightgbm' },
   ];
 
-  const demoMode = !process.env.REACT_APP_API_URL;
-
   useEffect(() => {
-    if (demoMode) {
-      setLoading(false);
-      return;
-    }
+    if (DEMO_MODE) return;
 
     const fetchData = async () => {
       try {
@@ -284,7 +281,7 @@ const Dashboard: React.FC = () => {
     fetchData();
     const interval = setInterval(fetchData, 30000);
     return () => clearInterval(interval);
-  }, [demoMode]);
+  }, []);
 
   if (loading) {
     return (
