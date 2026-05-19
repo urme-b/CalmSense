@@ -23,12 +23,6 @@ Multimodal stress detection system that analyzes wearable physiological signals 
 
 ![Model Comparison Charts](assets/model-comparison-charts.png)
 
-## Visualizations
-
-![Signal Plot](assets/signal_plot.png)
-
-![Confusion Matrix](assets/confusion_matrix.png)
-
 ## Results
 
 | Model | Approach | Accuracy |
