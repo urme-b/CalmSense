@@ -101,5 +101,4 @@ Python · FastAPI · scikit-learn · XGBoost · LightGBM · CatBoost · PyTorch 
 ## Related repos
 
 - [Multimodal](https://github.com/urme-b/Multimodal) — Longitudinal neurophysiological analysis
-- [EEG](https://github.com/urme-b/EEG) — Stress classification from physiological data
 - [Sensor](https://github.com/urme-b/Sensor) — Biometric sensor comparison and reference
