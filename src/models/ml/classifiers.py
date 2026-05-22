@@ -1,6 +1,5 @@
 from typing import Any, Optional
 
-
 from .base_model import BaseMLModel
 
 
@@ -238,63 +237,6 @@ class LightGBMClassifier(BaseMLModel):
             )
 
 
-class CatBoostClassifier(BaseMLModel):
-    def __init__(
-        self,
-        iterations: int = 500,
-        depth: int = 6,
-        learning_rate: float = 0.1,
-        l2_leaf_reg: float = 3,
-        subsample: float = 0.8,
-        random_strength: float = 1,
-        bagging_temperature: float = 1,
-        auto_class_weights: Optional[str] = "Balanced",
-        random_state: int = 42,
-        verbose: bool = False,
-        **kwargs,
-    ):
-
-        super().__init__("CatBoost", random_state, **kwargs)
-        self.iterations = iterations
-        self.depth = depth
-        self.learning_rate = learning_rate
-        self.l2_leaf_reg = l2_leaf_reg
-        self.subsample = subsample
-        self.random_strength = random_strength
-        self.bagging_temperature = bagging_temperature
-        self.auto_class_weights = auto_class_weights
-        self.verbose = verbose
-
-    def _create_model(self) -> Any:
-
-        try:
-            import catboost as cb
-
-            return cb.CatBoostClassifier(
-                iterations=self.iterations,
-                depth=self.depth,
-                learning_rate=self.learning_rate,
-                l2_leaf_reg=self.l2_leaf_reg,
-                subsample=self.subsample,
-                random_strength=self.random_strength,
-                bagging_temperature=self.bagging_temperature,
-                auto_class_weights=self.auto_class_weights,
-                random_state=self.random_state,
-                verbose=self.verbose,
-                **self.kwargs,
-            )
-        except ImportError:
-            self.logger.warning("CatBoost not installed, falling back to RandomForest")
-            from sklearn.ensemble import RandomForestClassifier as SklearnRF
-
-            return SklearnRF(
-                n_estimators=self.iterations,
-                max_depth=self.depth,
-                random_state=self.random_state,
-                class_weight="balanced",
-            )
-
-
 # Factory function to get
 def get_classifier(name: str, **kwargs) -> BaseMLModel:
 
@@ -308,14 +250,10 @@ def get_classifier(name: str, **kwargs) -> BaseMLModel:
         "xgboost": XGBoostClassifier,
         "lgbm": LightGBMClassifier,
         "lightgbm": LightGBMClassifier,
-        "catboost": CatBoostClassifier,
-        "cb": CatBoostClassifier,
     }
 
     name_lower = name.lower()
     if name_lower not in classifiers:
-        raise ValueError(
-            f"Unknown classifier: {name}. Available: {list(classifiers.keys())}"
-        )
+        raise ValueError(f"Unknown classifier: {name}. Available: {list(classifiers.keys())}")
 
     return classifiers[name_lower](**kwargs)
