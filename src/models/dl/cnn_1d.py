@@ -1,323 +1,177 @@
-from typing import Any, Dict, List, Optional
+"""Residual 1D-CNN for raw multichannel windows."""
 
+from typing import Optional
+
+import numpy as np
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
+from sklearn.model_selection import train_test_split
+from sklearn.utils.class_weight import compute_class_weight
 
-from .base_dl_model import BaseDLModel
+from ...logging_config import LoggerMixin
 
 
-class ConvBlock1D(nn.Module):
-    def __init__(
-        self,
-        in_channels: int,
-        out_channels: int,
-        kernel_size: int,
-        stride: int = 1,
-        padding: Optional[int] = None,
-        use_pool: bool = True,
-        pool_size: int = 2,
-        use_residual: bool = False,
-        dropout: float = 0.0,
-    ):
-
+class _ResidualBlock(nn.Module):
+    def __init__(self, in_ch: int, out_ch: int, kernel: int = 7, dropout: float = 0.2):
         super().__init__()
-
-        if padding is None:
-            padding = kernel_size // 2
-
-        self.use_pool = use_pool
-        self.use_residual = use_residual
-
-        self.conv = nn.Conv1d(
-            in_channels,
-            out_channels,
-            kernel_size=kernel_size,
-            stride=stride,
-            padding=padding,
-            bias=False,
+        pad = kernel // 2
+        self.conv1 = nn.Conv1d(in_ch, out_ch, kernel, padding=pad, bias=False)
+        self.bn1 = nn.BatchNorm1d(out_ch)
+        self.conv2 = nn.Conv1d(out_ch, out_ch, kernel, padding=pad, bias=False)
+        self.bn2 = nn.BatchNorm1d(out_ch)
+        self.act = nn.ReLU()
+        self.drop = nn.Dropout(dropout)
+        self.pool = nn.MaxPool1d(2)
+        self.shortcut = (
+            nn.Conv1d(in_ch, out_ch, 1, bias=False) if in_ch != out_ch else nn.Identity()
         )
-        self.bn = nn.BatchNorm1d(out_channels)
-        self.relu = nn.ReLU(inplace=True)
-        self.dropout = nn.Dropout(dropout) if dropout > 0 else nn.Identity()
 
-        if use_pool:
-            self.pool = nn.MaxPool1d(pool_size)
+    def forward(self, x):
+        residual = self.shortcut(x)
+        out = self.act(self.bn1(self.conv1(x)))
+        out = self.bn2(self.conv2(out))
+        out = self.act(out + residual)
+        return self.pool(self.drop(out))
 
-        # Residual projection if dimensions
-        if use_residual:
-            if in_channels != out_channels or stride != 1:
-                self.residual = nn.Sequential(
-                    nn.Conv1d(
-                        in_channels,
-                        out_channels,
-                        kernel_size=1,
-                        stride=stride,
-                        bias=False,
-                    ),
-                    nn.BatchNorm1d(out_channels),
-                )
+
+class _Net(nn.Module):
+    def __init__(self, in_ch: int, n_classes: int, widths=(32, 64, 128)):
+        super().__init__()
+        # Strided stem downsamples long windows
+        self.stem = nn.Sequential(
+            nn.Conv1d(in_ch, widths[0], kernel_size=7, stride=4, padding=3, bias=False),
+            nn.BatchNorm1d(widths[0]),
+            nn.ReLU(),
+            nn.MaxPool1d(2),
+        )
+        blocks = []
+        prev = widths[0]
+        for w in widths:
+            blocks.append(_ResidualBlock(prev, w))
+            prev = w
+        self.features = nn.Sequential(*blocks)
+        self.head = nn.Sequential(
+            nn.AdaptiveAvgPool1d(1),
+            nn.Flatten(),
+            nn.Dropout(0.3),
+            nn.Linear(prev, n_classes),
+        )
+
+    def forward(self, x):
+        return self.head(self.features(self.stem(x)))
+
+
+class CNN1DClassifier(LoggerMixin):
+    """Sklearn-style residual 1D-CNN trained on raw windows."""
+
+    def __init__(
+        self,
+        in_channels: int = 5,
+        max_epochs: int = 30,
+        batch_size: int = 64,
+        lr: float = 1e-3,
+        weight_decay: float = 1e-2,
+        patience: int = 8,
+        val_fraction: float = 0.15,
+        random_state: int = 42,
+        device: Optional[str] = None,
+    ):
+        self.in_channels = in_channels
+        self.max_epochs = max_epochs
+        self.batch_size = batch_size
+        self.lr = lr
+        self.weight_decay = weight_decay
+        self.patience = patience
+        self.val_fraction = val_fraction
+        self.random_state = random_state
+        self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
+
+        self.model = None
+        self.classes_ = None
+        self._mean = None
+        self._std = None
+
+    def _standardize(self, x: np.ndarray) -> np.ndarray:
+        return (x - self._mean) / self._std
+
+    def fit(self, X: np.ndarray, y: np.ndarray) -> "CNN1DClassifier":
+        torch.manual_seed(self.random_state)
+        np.random.seed(self.random_state)
+
+        X = np.asarray(X, dtype=np.float32)
+        y = np.asarray(y)
+        self.classes_ = np.unique(y)
+        y_idx = np.searchsorted(self.classes_, y)
+
+        # Per-channel train stats
+        self._mean = X.mean(axis=(0, 2), keepdims=True)
+        self._std = X.std(axis=(0, 2), keepdims=True) + 1e-8
+        X = self._standardize(X)
+
+        x_tr, x_val, y_tr, y_val = train_test_split(
+            X,
+            y_idx,
+            test_size=self.val_fraction,
+            stratify=y_idx,
+            random_state=self.random_state,
+        )
+
+        weights = compute_class_weight("balanced", classes=np.unique(y_idx), y=y_idx)
+        criterion = nn.CrossEntropyLoss(
+            weight=torch.tensor(weights, dtype=torch.float32, device=self.device)
+        )
+
+        self.model = _Net(self.in_channels, len(self.classes_)).to(self.device)
+        optimizer = torch.optim.AdamW(
+            self.model.parameters(), lr=self.lr, weight_decay=self.weight_decay
+        )
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, self.max_epochs)
+
+        tr = torch.utils.data.TensorDataset(torch.from_numpy(x_tr), torch.from_numpy(y_tr).long())
+        loader = torch.utils.data.DataLoader(tr, batch_size=self.batch_size, shuffle=True)
+        x_val_t = torch.from_numpy(x_val).to(self.device)
+        y_val_t = torch.from_numpy(y_val).long().to(self.device)
+
+        best_loss = np.inf
+        best_state = None
+        stale = 0
+
+        for _ in range(self.max_epochs):
+            self.model.train()
+            for xb, yb in loader:
+                xb, yb = xb.to(self.device), yb.to(self.device)
+                optimizer.zero_grad()
+                loss = criterion(self.model(xb), yb)
+                loss.backward()
+                optimizer.step()
+            scheduler.step()
+
+            # Early stopping
+            self.model.eval()
+            with torch.no_grad():
+                val_loss = criterion(self.model(x_val_t), y_val_t).item()
+            if val_loss < best_loss - 1e-4:
+                best_loss = val_loss
+                best_state = {k: v.cpu().clone() for k, v in self.model.state_dict().items()}
+                stale = 0
             else:
-                self.residual = nn.Identity()
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-
-        identity = x
-
-        out = self.conv(x)
-        out = self.bn(out)
-
-        if self.use_residual:
-            identity = self.residual(identity)
-            # Handle pooling for residual
-            if self.use_pool:
-                ks = (
-                    self.pool.kernel_size
-                    if isinstance(self.pool.kernel_size, int)
-                    else self.pool.kernel_size[0]
-                )
-                identity = F.max_pool1d(identity, kernel_size=ks)
-
-        out = self.relu(out)
-        out = self.dropout(out)
-
-        if self.use_pool:
-            out = self.pool(out)
-
-        if self.use_residual:
-            out = out + identity
-
-        return out
-
-
-class GlobalAveragePooling1D(nn.Module):
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-
-        return x.mean(dim=-1)
-
-
-class CNN1D(BaseDLModel):
-    def __init__(
-        self,
-        input_dim: int,
-        num_classes: int,
-        sequence_length: int = 700,
-        base_filters: int = 64,
-        num_conv_layers: int = 3,
-        kernel_sizes: Optional[List[int]] = None,
-        use_residual: bool = False,
-        dropout: float = 0.5,
-        fc_hidden_dim: int = 128,
-        device: str = "auto",
-    ):
-
-        super().__init__(input_dim, num_classes, device)
-
-        self.sequence_length = sequence_length
-        self.base_filters = base_filters
-        self.num_conv_layers = num_conv_layers
-        self.use_residual = use_residual
-        self.dropout_rate = dropout
-        self.fc_hidden_dim = fc_hidden_dim
-
-        # Default kernel sizes
-        if kernel_sizes is None:
-            kernel_sizes = [7, 5, 3] + [3] * (num_conv_layers - 3)
-        self.kernel_sizes = kernel_sizes[:num_conv_layers]
-
-        # Build convolutional layers
-        self.conv_layers = self._build_conv_layers()
-
-        # Global average pooling
-        self.global_pool = GlobalAveragePooling1D()
-
-        # Compute final channels
-        final_channels = base_filters * (2 ** (num_conv_layers - 1))
-
-        # Classification head
-        self.classifier = nn.Sequential(
-            nn.Linear(final_channels, fc_hidden_dim),
-            nn.ReLU(inplace=True),
-            nn.Dropout(dropout),
-            nn.Linear(fc_hidden_dim, num_classes),
-        )
-
-        # Initialize weights
-        self.initialize_weights("kaiming")
-
-        # Move to device
-        self.to(self._device)
-
-    def _build_conv_layers(self) -> nn.ModuleList:
-
-        layers = nn.ModuleList()
-
-        in_channels = self.input_dim
-        out_channels = self.base_filters
-
-        for i in range(self.num_conv_layers):
-            kernel_size = self.kernel_sizes[i] if i < len(self.kernel_sizes) else 3
-
-            # Don't pool on last
-            use_pool = i < self.num_conv_layers - 1
-
-            block = ConvBlock1D(
-                in_channels=in_channels,
-                out_channels=out_channels,
-                kernel_size=kernel_size,
-                use_pool=use_pool,
-                use_residual=self.use_residual,
-                dropout=self.dropout_rate * 0.5 if i < self.num_conv_layers - 1 else 0,
-            )
-            layers.append(block)
-
-            in_channels = out_channels
-            out_channels = min(out_channels * 2, 512)  # Cap at 512 channels
-
-        return layers
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-
-        # Convolutional feature extraction
-        for conv_layer in self.conv_layers:
-            x = conv_layer(x)
-
-        # Global average pooling
-        x = self.global_pool(x)
-
-        # Classification
-        logits = self.classifier(x)
-
-        return logits
-
-    def get_features(self, x: torch.Tensor) -> torch.Tensor:
-
-        for conv_layer in self.conv_layers:
-            x = conv_layer(x)
-
-        x = self.global_pool(x)
-
-        # Get features before final
-        for layer in self.classifier[:-1]:
-            x = layer(x)
-
-        return x
-
-    def _get_config(self) -> Dict[str, Any]:
-
-        return {
-            "sequence_length": self.sequence_length,
-            "base_filters": self.base_filters,
-            "num_conv_layers": self.num_conv_layers,
-            "kernel_sizes": self.kernel_sizes,
-            "use_residual": self.use_residual,
-            "dropout": self.dropout_rate,
-            "fc_hidden_dim": self.fc_hidden_dim,
-        }
-
-
-class CNN1DResidual(CNN1D):
-    def __init__(
-        self,
-        input_dim: int,
-        num_classes: int,
-        sequence_length: int = 700,
-        base_filters: int = 64,
-        num_conv_layers: int = 4,
-        dropout: float = 0.5,
-        device: str = "auto",
-    ):
-
-        super().__init__(
-            input_dim=input_dim,
-            num_classes=num_classes,
-            sequence_length=sequence_length,
-            base_filters=base_filters,
-            num_conv_layers=num_conv_layers,
-            use_residual=True,
-            dropout=dropout,
-            device=device,
-        )
-
-
-class MultiScaleCNN1D(BaseDLModel):
-    def __init__(
-        self,
-        input_dim: int,
-        num_classes: int,
-        sequence_length: int = 700,
-        branch_filters: int = 32,
-        branch_kernels: List[int] = None,
-        shared_filters: int = 128,
-        dropout: float = 0.5,
-        device: str = "auto",
-    ):
-
-        super().__init__(input_dim, num_classes, device)
-
-        if branch_kernels is None:
-            branch_kernels = [3, 7, 15, 31]
-
-        self.branch_kernels = branch_kernels
-        self.num_branches = len(branch_kernels)
-
-        # Parallel branches
-        self.branches = nn.ModuleList(
-            [
-                nn.Sequential(
-                    nn.Conv1d(input_dim, branch_filters, kernel_size=k, padding=k // 2),
-                    nn.BatchNorm1d(branch_filters),
-                    nn.ReLU(inplace=True),
-                    nn.MaxPool1d(2),
-                )
-                for k in branch_kernels
-            ]
-        )
-
-        # Shared layers after concatenation
-        concat_channels = branch_filters * self.num_branches
-        self.shared = nn.Sequential(
-            ConvBlock1D(concat_channels, shared_filters, kernel_size=5, use_pool=True),
-            ConvBlock1D(
-                shared_filters, shared_filters * 2, kernel_size=3, use_pool=False
-            ),
-        )
-
-        self.global_pool = GlobalAveragePooling1D()
-
-        self.classifier = nn.Sequential(
-            nn.Linear(shared_filters * 2, 128),
-            nn.ReLU(inplace=True),
-            nn.Dropout(dropout),
-            nn.Linear(128, num_classes),
-        )
-
-        self.initialize_weights("kaiming")
-        self.to(self._device)
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-
-        # Process each branch
-        branch_outputs = [branch(x) for branch in self.branches]
-
-        # Align sequence lengths (take
-        min_len = min(out.size(-1) for out in branch_outputs)
-        branch_outputs = [out[..., :min_len] for out in branch_outputs]
-
-        # Concatenate along channel dimension
-        x = torch.cat(branch_outputs, dim=1)
-
-        # Shared layers
-        x = self.shared(x)
-
-        # Pool and classify
-        x = self.global_pool(x)
-        logits = self.classifier(x)
-
-        return logits
-
-    def _get_config(self) -> Dict[str, Any]:
-
-        return {
-            "branch_kernels": self.branch_kernels,
-        }
+                stale += 1
+                if stale >= self.patience:
+                    break
+
+        if best_state is not None:
+            self.model.load_state_dict(best_state)
+        return self
+
+    def predict_proba(self, X: np.ndarray) -> np.ndarray:
+        X = self._standardize(np.asarray(X, dtype=np.float32))
+        self.model.eval()
+        probs = []
+        with torch.no_grad():
+            for i in range(0, len(X), self.batch_size):
+                xb = torch.from_numpy(X[i : i + self.batch_size]).to(self.device)
+                probs.append(torch.softmax(self.model(xb), dim=1).cpu().numpy())
+        return np.concatenate(probs, axis=0)
+
+    def predict(self, X: np.ndarray) -> np.ndarray:
+        return self.classes_[self.predict_proba(X).argmax(axis=1)]
