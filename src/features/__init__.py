@@ -1,13 +1,12 @@
+from .accelerometer_features import AccelerometerFeatureExtractor
+from .eda_features import EDAFeatureExtractor
 from .extractor import FeatureExtractor
-from .hrv_time_domain import HRVTimeDomainExtractor
+from .feature_pipeline import FeatureExtractionPipeline
 from .hrv_frequency_domain import HRVFrequencyDomainExtractor
 from .hrv_nonlinear import HRVNonlinearExtractor
-from .eda_features import EDAFeatureExtractor
-from .temperature_features import TemperatureFeatureExtractor
+from .hrv_time_domain import HRVTimeDomainExtractor
 from .respiration_features import RespirationFeatureExtractor
-from .accelerometer_features import AccelerometerFeatureExtractor
-from .image_encoder import SignalImageEncoder
-from .feature_pipeline import FeatureExtractionPipeline
+from .temperature_features import TemperatureFeatureExtractor
 
 __all__ = [
     "FeatureExtractor",
@@ -18,6 +17,5 @@ __all__ = [
     "TemperatureFeatureExtractor",
     "RespirationFeatureExtractor",
     "AccelerometerFeatureExtractor",
-    "SignalImageEncoder",
     "FeatureExtractionPipeline",
 ]
