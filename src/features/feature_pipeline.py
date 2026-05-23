@@ -7,14 +7,14 @@ import pandas as pd
 
 from ..config import FS
 from ..logging_config import LoggerMixin
-from ..utils import timer, ensure_directory
-from .hrv_time_domain import HRVTimeDomainExtractor
+from ..utils import ensure_directory, timer
+from .accelerometer_features import AccelerometerFeatureExtractor
+from .eda_features import EDAFeatureExtractor
 from .hrv_frequency_domain import HRVFrequencyDomainExtractor
 from .hrv_nonlinear import HRVNonlinearExtractor
-from .eda_features import EDAFeatureExtractor
-from .temperature_features import TemperatureFeatureExtractor
+from .hrv_time_domain import HRVTimeDomainExtractor
 from .respiration_features import RespirationFeatureExtractor
-from .accelerometer_features import AccelerometerFeatureExtractor
+from .temperature_features import TemperatureFeatureExtractor
 
 
 class FeatureExtractionPipeline(LoggerMixin):
@@ -73,9 +73,7 @@ class FeatureExtractionPipeline(LoggerMixin):
                 hrv_freq = self.extractors["hrv_frequency"].extract_all(rr)
                 features.update({f"HRV_{k}": v for k, v in hrv_freq.items()})
             else:
-                for k in (
-                    self.extractors["hrv_frequency"].get_feature_descriptions().keys()
-                ):
+                for k in self.extractors["hrv_frequency"].get_feature_descriptions().keys():
                     features[f"HRV_{k}"] = np.nan
 
         if self.feature_config.get("hrv_nonlinear", True):
@@ -84,9 +82,7 @@ class FeatureExtractionPipeline(LoggerMixin):
                 hrv_nl = self.extractors["hrv_nonlinear"].extract_all(rr)
                 features.update({f"HRV_{k}": v for k, v in hrv_nl.items()})
             else:
-                for k in (
-                    self.extractors["hrv_nonlinear"].get_feature_descriptions().keys()
-                ):
+                for k in self.extractors["hrv_nonlinear"].get_feature_descriptions().keys():
                     features[f"HRV_{k}"] = np.nan
 
         if self.feature_config.get("eda", True):
@@ -101,10 +97,15 @@ class FeatureExtractionPipeline(LoggerMixin):
                 eda_features = self.extractors["eda"].extract_all(
                     eda_decomposed, scr_peaks, raw_eda
                 )
-                features.update({f"EDA_{k}": v for k, v in eda_features.items()})
+                features.update(
+                    {
+                        f"EDA_{k}" if not k.startswith("EDA_") else k: v
+                        for k, v in eda_features.items()
+                    }
+                )
             else:
                 for k in self.extractors["eda"].get_feature_descriptions().keys():
-                    features[f"EDA_{k}"] = np.nan
+                    features[f"EDA_{k}" if not k.startswith("EDA_") else k] = np.nan
 
         if self.feature_config.get("temperature", True):
             temp = window_data.get("temperature")
@@ -117,9 +118,7 @@ class FeatureExtractionPipeline(LoggerMixin):
                     }
                 )
             else:
-                for k in (
-                    self.extractors["temperature"].get_feature_descriptions().keys()
-                ):
+                for k in self.extractors["temperature"].get_feature_descriptions().keys():
                     features[f"TEMP_{k}" if not k.startswith("TEMP_") else k] = np.nan
 
         if self.feature_config.get("respiration", True):
@@ -138,9 +137,7 @@ class FeatureExtractionPipeline(LoggerMixin):
                     }
                 )
             else:
-                for k in (
-                    self.extractors["respiration"].get_feature_descriptions().keys()
-                ):
+                for k in self.extractors["respiration"].get_feature_descriptions().keys():
                     features[f"RESP_{k}" if not k.startswith("RESP_") else k] = np.nan
 
         if self.feature_config.get("accelerometer", True):
@@ -148,9 +145,9 @@ class FeatureExtractionPipeline(LoggerMixin):
             if acc_data is not None:
                 if isinstance(acc_data, dict):
                     if "magnitude" in acc_data:
-                        acc_features = self.extractors[
-                            "accelerometer"
-                        ].extract_from_magnitude(acc_data["magnitude"])
+                        acc_features = self.extractors["accelerometer"].extract_from_magnitude(
+                            acc_data["magnitude"]
+                        )
                     else:
                         acc_features = self.extractors["accelerometer"].extract_all(
                             acc_data.get("x", np.array([])),
@@ -158,9 +155,7 @@ class FeatureExtractionPipeline(LoggerMixin):
                             acc_data.get("z", np.array([])),
                         )
                 else:
-                    acc_features = self.extractors[
-                        "accelerometer"
-                    ].extract_from_magnitude(acc_data)
+                    acc_features = self.extractors["accelerometer"].extract_from_magnitude(acc_data)
                 features.update(
                     {
                         f"ACC_{k}" if not k.startswith("ACC_") else k: v
@@ -168,9 +163,7 @@ class FeatureExtractionPipeline(LoggerMixin):
                     }
                 )
             else:
-                for k in (
-                    self.extractors["accelerometer"].get_feature_descriptions().keys()
-                ):
+                for k in self.extractors["accelerometer"].get_feature_descriptions().keys():
                     features[f"ACC_{k}" if not k.startswith("ACC_") else k] = np.nan
 
         return features
@@ -211,8 +204,7 @@ class FeatureExtractionPipeline(LoggerMixin):
         features_df = features_df[existing_meta + feature_cols]
 
         self.logger.info(
-            f"Feature extraction complete: {len(features_df)} windows, "
-            f"{len(feature_cols)} features"
+            f"Feature extraction complete: {len(features_df)} windows, {len(feature_cols)} features"
         )
 
         return features_df
@@ -247,15 +239,11 @@ class FeatureExtractionPipeline(LoggerMixin):
                 descriptions[f"HRV_{k}"] = v
 
         if self.feature_config.get("hrv_frequency", True):
-            for k, v in (
-                self.extractors["hrv_frequency"].get_feature_descriptions().items()
-            ):
+            for k, v in self.extractors["hrv_frequency"].get_feature_descriptions().items():
                 descriptions[f"HRV_{k}"] = v
 
         if self.feature_config.get("hrv_nonlinear", True):
-            for k, v in (
-                self.extractors["hrv_nonlinear"].get_feature_descriptions().items()
-            ):
+            for k, v in self.extractors["hrv_nonlinear"].get_feature_descriptions().items():
                 descriptions[f"HRV_{k}"] = v
 
         if self.feature_config.get("eda", True):
@@ -263,19 +251,13 @@ class FeatureExtractionPipeline(LoggerMixin):
                 descriptions[f"EDA_{k}"] = v
 
         if self.feature_config.get("temperature", True):
-            descriptions.update(
-                self.extractors["temperature"].get_feature_descriptions()
-            )
+            descriptions.update(self.extractors["temperature"].get_feature_descriptions())
 
         if self.feature_config.get("respiration", True):
-            descriptions.update(
-                self.extractors["respiration"].get_feature_descriptions()
-            )
+            descriptions.update(self.extractors["respiration"].get_feature_descriptions())
 
         if self.feature_config.get("accelerometer", True):
-            descriptions.update(
-                self.extractors["accelerometer"].get_feature_descriptions()
-            )
+            descriptions.update(self.extractors["accelerometer"].get_feature_descriptions())
 
         return descriptions
 
@@ -332,15 +314,9 @@ class FeatureExtractionPipeline(LoggerMixin):
             "Accelerometer": [],
         }
 
-        time_features = set(
-            self.extractors["hrv_time"].get_feature_descriptions().keys()
-        )
-        freq_features = set(
-            self.extractors["hrv_frequency"].get_feature_descriptions().keys()
-        )
-        nl_features = set(
-            self.extractors["hrv_nonlinear"].get_feature_descriptions().keys()
-        )
+        time_features = set(self.extractors["hrv_time"].get_feature_descriptions().keys())
+        freq_features = set(self.extractors["hrv_frequency"].get_feature_descriptions().keys())
+        nl_features = set(self.extractors["hrv_nonlinear"].get_feature_descriptions().keys())
 
         for feat in all_features:
             if feat.startswith("HRV_"):
