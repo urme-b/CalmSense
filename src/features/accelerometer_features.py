@@ -9,9 +9,7 @@ from ..logging_config import LoggerMixin
 class AccelerometerFeatureExtractor(LoggerMixin):
     def __init__(self, sampling_rate: float = 32.0):
         self.sampling_rate = sampling_rate
-        self.logger.debug(
-            f"AccelerometerFeatureExtractor initialized, fs={sampling_rate} Hz"
-        )
+        self.logger.debug(f"AccelerometerFeatureExtractor initialized, fs={sampling_rate} Hz")
 
     def _validate_signal(self, signal: np.ndarray) -> Optional[np.ndarray]:
         if signal is None:
@@ -49,9 +47,7 @@ class AccelerometerFeatureExtractor(LoggerMixin):
             }
 
         min_len = min(len(acc_x), len(acc_y), len(acc_z))
-        magnitude = self.compute_magnitude(
-            acc_x[:min_len], acc_y[:min_len], acc_z[:min_len]
-        )
+        magnitude = self.compute_magnitude(acc_x[:min_len], acc_y[:min_len], acc_z[:min_len])
         return self.extract_from_magnitude(magnitude)
 
     def extract_from_magnitude(self, magnitude: np.ndarray) -> Dict[str, float]:

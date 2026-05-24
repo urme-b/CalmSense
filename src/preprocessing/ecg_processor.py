@@ -4,7 +4,7 @@ import numpy as np
 from scipy import signal
 from scipy.interpolate import interp1d
 
-from ..config import FS, FILTER_PARAMS, FEATURE_PARAMS
+from ..config import FEATURE_PARAMS, FILTER_PARAMS, FS
 from ..logging_config import LoggerMixin
 
 
@@ -27,9 +27,7 @@ class ECGProcessor(LoggerMixin):
         high_norm = high / nyq
 
         if low_norm >= 1.0 or high_norm >= 1.0:
-            self.logger.warning(
-                f"Cutoff frequencies ({low}, {high}) exceed Nyquist ({nyq} Hz)"
-            )
+            self.logger.warning(f"Cutoff frequencies ({low}, {high}) exceed Nyquist ({nyq} Hz)")
             return ecg
 
         b, a = signal.butter(order, [low_norm, high_norm], btype="band")
@@ -38,9 +36,7 @@ class ECGProcessor(LoggerMixin):
         self.logger.debug(f"Applied bandpass filter: {low}-{high} Hz, order={order}")
         return filtered
 
-    def detect_r_peaks(
-        self, ecg: np.ndarray, method: str = "pantompkins"
-    ) -> np.ndarray:
+    def detect_r_peaks(self, ecg: np.ndarray, method: str = "pantompkins") -> np.ndarray:
         ecg = np.asarray(ecg).flatten()
         duration_sec = len(ecg) / self.sampling_rate
 
@@ -78,9 +74,7 @@ class ECGProcessor(LoggerMixin):
 
         # 150ms integration window
         window_size = int(0.150 * self.sampling_rate)
-        integrated = np.convolve(
-            squared, np.ones(window_size) / window_size, mode="same"
-        )
+        integrated = np.convolve(squared, np.ones(window_size) / window_size, mode="same")
 
         init_samples = int(2 * self.sampling_rate)
         threshold = 0.5 * np.max(integrated[: min(init_samples, len(integrated))])
@@ -92,16 +86,12 @@ class ECGProcessor(LoggerMixin):
         search_start = 0
 
         while search_start < len(integrated) - min_rr:
-            search_window = integrated[
-                search_start : search_start + int(self.sampling_rate)
-            ]
+            search_window = integrated[search_start : search_start + int(self.sampling_rate)]
 
             if len(search_window) == 0:
                 break
 
-            peaks, _ = signal.find_peaks(
-                search_window, height=threshold, distance=min_rr
-            )
+            peaks, _ = signal.find_peaks(search_window, height=threshold, distance=min_rr)
 
             if len(peaks) > 0:
                 peak_idx = search_start + peaks[0]
@@ -141,8 +131,7 @@ class ECGProcessor(LoggerMixin):
             rr_intervals = rr_samples.astype(float)
 
         self.logger.debug(
-            f"Extracted {len(rr_intervals)} RR intervals, "
-            f"mean={np.mean(rr_intervals):.1f} {unit}"
+            f"Extracted {len(rr_intervals)} RR intervals, mean={np.mean(rr_intervals):.1f} {unit}"
         )
         return rr_intervals
 
@@ -190,9 +179,7 @@ class ECGProcessor(LoggerMixin):
         valid_mask = np.asarray(valid_mask).flatten()
 
         if len(valid_mask) != len(rr):
-            raise ValueError(
-                f"Mask length {len(valid_mask)} doesn't match RR length {len(rr)}"
-            )
+            raise ValueError(f"Mask length {len(valid_mask)} doesn't match RR length {len(rr)}")
 
         if np.all(valid_mask):
             return rr

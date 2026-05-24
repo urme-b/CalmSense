@@ -2,7 +2,7 @@ from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 
-from ..config import FS, FEATURE_PARAMS
+from ..config import FEATURE_PARAMS, FS
 from ..logging_config import LoggerMixin
 
 
@@ -79,9 +79,7 @@ class SignalWindower(LoggerMixin):
                 labels, window_starts, window_ends, strategy=label_strategy
             )
 
-        self.logger.debug(
-            f"Created {n_windows} windows from signal of length {n_samples}"
-        )
+        self.logger.debug(f"Created {n_windows} windows from signal of length {n_samples}")
 
         return windows, window_labels
 
@@ -183,9 +181,7 @@ class SignalWindower(LoggerMixin):
         prominence = np.std(window) * 0.5
 
         try:
-            peaks, _ = scipy_signal.find_peaks(
-                window, distance=min_distance, prominence=prominence
-            )
+            peaks, _ = scipy_signal.find_peaks(window, distance=min_distance, prominence=prominence)
             results["r_peak_count"] = len(peaks)
         except Exception:
             results["r_peak_count"] = 0
@@ -193,8 +189,7 @@ class SignalWindower(LoggerMixin):
         if results["r_peak_count"] < min_r_peaks:
             results["is_valid"] = False
             self.logger.debug(
-                f"ECG window rejected: {results['r_peak_count']} R-peaks "
-                f"(minimum {min_r_peaks})"
+                f"ECG window rejected: {results['r_peak_count']} R-peaks (minimum {min_r_peaks})"
             )
 
         return results
@@ -260,8 +255,7 @@ class SignalWindower(LoggerMixin):
         n_valid = int(np.sum(valid_mask))
         if n_valid < n_windows:
             self.logger.info(
-                f"Filtering {n_windows - n_valid} invalid windows "
-                f"({n_valid}/{n_windows} kept)"
+                f"Filtering {n_windows - n_valid} invalid windows ({n_valid}/{n_windows} kept)"
             )
             for name in all_windows:
                 all_windows[name] = all_windows[name][valid_mask]
@@ -281,8 +275,7 @@ class SignalWindower(LoggerMixin):
         filtered_labels = labels[mask]
 
         self.logger.debug(
-            f"Filtered {len(labels)} windows to {len(filtered_labels)} "
-            f"with labels {valid_labels}"
+            f"Filtered {len(labels)} windows to {len(filtered_labels)} with labels {valid_labels}"
         )
 
         return filtered_windows, filtered_labels

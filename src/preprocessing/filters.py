@@ -4,7 +4,7 @@ import numpy as np
 from scipy import signal
 from scipy.ndimage import median_filter
 
-from ..config import FS, FILTER_PARAMS
+from ..config import FILTER_PARAMS, FS
 from ..logging_config import LoggerMixin
 
 
@@ -25,15 +25,11 @@ class SignalProcessor(LoggerMixin):
         if isinstance(cutoff, tuple):
             normalized_cutoff = (cutoff[0] / nyq, cutoff[1] / nyq)
             if normalized_cutoff[0] >= 1.0 or normalized_cutoff[1] >= 1.0:
-                raise ValueError(
-                    f"Cutoff frequencies {cutoff} exceed Nyquist frequency {nyq} Hz"
-                )
+                raise ValueError(f"Cutoff frequencies {cutoff} exceed Nyquist frequency {nyq} Hz")
         else:
             normalized_cutoff = cutoff / nyq
             if normalized_cutoff >= 1.0:
-                raise ValueError(
-                    f"Cutoff frequency {cutoff} exceeds Nyquist frequency {nyq} Hz"
-                )
+                raise ValueError(f"Cutoff frequency {cutoff} exceeds Nyquist frequency {nyq} Hz")
 
         if len(data) == 0:
             return data
@@ -51,9 +47,7 @@ class SignalProcessor(LoggerMixin):
         w0 = freq / nyq
 
         if w0 >= 1.0:
-            self.logger.warning(
-                f"Notch frequency {freq} Hz exceeds Nyquist, skipping filter"
-            )
+            self.logger.warning(f"Notch frequency {freq} Hz exceeds Nyquist, skipping filter")
             return data
 
         b, a = signal.iirnotch(w0, q)
@@ -152,9 +146,7 @@ class SignalProcessor(LoggerMixin):
         data = np.asarray(data).flatten()
 
         if window_size > len(data):
-            raise ValueError(
-                f"Window size {window_size} exceeds signal length {len(data)}"
-            )
+            raise ValueError(f"Window size {window_size} exceeds signal length {len(data)}")
 
         if not 0 <= overlap < 1:
             raise ValueError(f"Overlap must be in [0, 1), got {overlap}")
@@ -168,8 +160,7 @@ class SignalProcessor(LoggerMixin):
             segments[i] = data[start : start + window_size]
 
         self.logger.debug(
-            f"Created {n_windows} segments of size {window_size} "
-            f"with {overlap * 100:.0f}% overlap"
+            f"Created {n_windows} segments of size {window_size} with {overlap * 100:.0f}% overlap"
         )
 
         return segments

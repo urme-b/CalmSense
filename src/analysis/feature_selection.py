@@ -5,8 +5,8 @@ import pandas as pd
 from scipy import stats
 
 from ..logging_config import LoggerMixin
-from .hypothesis_testing import HypothesisTesting
 from .correlation_analysis import CorrelationAnalyzer
+from .hypothesis_testing import HypothesisTesting
 
 
 class StatisticalFeatureSelector(LoggerMixin):
@@ -43,11 +43,7 @@ class StatisticalFeatureSelector(LoggerMixin):
             return []
 
         # Filter by corrected p-value
-        p_col = (
-            "p_value_corrected"
-            if "p_value_corrected" in anova_results.columns
-            else "p_value"
-        )
+        p_col = "p_value_corrected" if "p_value_corrected" in anova_results.columns else "p_value"
         significant = anova_results[anova_results[p_col] < alpha]
 
         selected_features = significant["feature"].tolist()
@@ -87,9 +83,7 @@ class StatisticalFeatureSelector(LoggerMixin):
                     selected_features.append(feature)
 
             except Exception as e:
-                self.logger.warning(
-                    f"Effect size computation failed for {feature}: {e}"
-                )
+                self.logger.warning(f"Effect size computation failed for {feature}: {e}")
 
         self.logger.info(
             f"Effect size selection: {len(selected_features)}/{len(features)} features "
@@ -124,9 +118,7 @@ class StatisticalFeatureSelector(LoggerMixin):
                 for j in range(X.shape[1]):
                     X[nan_mask[:, j], j] = col_means[j]
 
-            mi_scores = mutual_info_classif(
-                X, y, n_neighbors=n_neighbors, random_state=42
-            )
+            mi_scores = mutual_info_classif(X, y, n_neighbors=n_neighbors, random_state=42)
 
             # Rank features
             mi_ranking = list(zip(feature_names, mi_scores))
@@ -206,17 +198,11 @@ class StatisticalFeatureSelector(LoggerMixin):
             if not anova_row.empty:
                 feature_data["anova_p"] = anova_row["p_value"].values[0]
                 if "p_value_corrected" in anova_row.columns:
-                    feature_data["anova_p_corrected"] = anova_row[
-                        "p_value_corrected"
-                    ].values[0]
+                    feature_data["anova_p_corrected"] = anova_row["p_value_corrected"].values[0]
                 feature_data["eta_squared"] = anova_row["eta_squared"].values[0]
-                feature_data["partial_eta_squared"] = anova_row[
-                    "partial_eta_squared"
-                ].values[0]
+                feature_data["partial_eta_squared"] = anova_row["partial_eta_squared"].values[0]
                 feature_data["omega_squared"] = anova_row["omega_squared"].values[0]
-                feature_data["effect_interpretation"] = anova_row[
-                    "effect_interpretation"
-                ].values[0]
+                feature_data["effect_interpretation"] = anova_row["effect_interpretation"].values[0]
 
             # Target correlation
             try:
@@ -286,12 +272,8 @@ class StatisticalFeatureSelector(LoggerMixin):
             return ranking.head(n_features)["feature"].tolist()
 
         elif method == "anova":
-            all_features = (
-                features or df.select_dtypes(include=[np.number]).columns.tolist()
-            )
-            all_features = [
-                f for f in all_features if f not in [subject_col, condition_col]
-            ]
+            all_features = features or df.select_dtypes(include=[np.number]).columns.tolist()
+            all_features = [f for f in all_features if f not in [subject_col, condition_col]]
 
             anova_results = self.hypothesis_tester.run_all_anova(
                 df, all_features, subject_col, condition_col, "none"
@@ -300,28 +282,18 @@ class StatisticalFeatureSelector(LoggerMixin):
             return anova_results.head(n_features)["feature"].tolist()
 
         elif method == "effect_size":
-            all_features = (
-                features or df.select_dtypes(include=[np.number]).columns.tolist()
-            )
-            all_features = [
-                f for f in all_features if f not in [subject_col, condition_col]
-            ]
+            all_features = features or df.select_dtypes(include=[np.number]).columns.tolist()
+            all_features = [f for f in all_features if f not in [subject_col, condition_col]]
 
             anova_results = self.hypothesis_tester.run_all_anova(
                 df, all_features, subject_col, condition_col, "none"
             )
-            anova_results = anova_results.sort_values(
-                "partial_eta_squared", ascending=False
-            )
+            anova_results = anova_results.sort_values("partial_eta_squared", ascending=False)
             return anova_results.head(n_features)["feature"].tolist()
 
         elif method == "mutual_info":
-            all_features = (
-                features or df.select_dtypes(include=[np.number]).columns.tolist()
-            )
-            all_features = [
-                f for f in all_features if f not in [subject_col, condition_col]
-            ]
+            all_features = features or df.select_dtypes(include=[np.number]).columns.tolist()
+            all_features = [f for f in all_features if f not in [subject_col, condition_col]]
 
             X = df[all_features].values
             y = df[condition_col].astype("category").cat.codes.values
@@ -363,9 +335,7 @@ class StatisticalFeatureSelector(LoggerMixin):
         # Count overlaps
         overlap_counts = {}
         for feature in any_method:
-            count = sum(
-                [feature in anova_set, feature in effect_set, feature in mi_set]
-            )
+            count = sum([feature in anova_set, feature in effect_set, feature in mi_set])
             overlap_counts[feature] = count
 
         self.logger.info(
@@ -402,9 +372,7 @@ class StatisticalFeatureSelector(LoggerMixin):
         for i in range(n_bootstrap):
             # Sample subjects with replacement
             subjects = df[subject_col].unique()
-            sampled_subjects = np.random.choice(
-                subjects, size=len(subjects), replace=True
-            )
+            sampled_subjects = np.random.choice(subjects, size=len(subjects), replace=True)
             sampled_df = df[df[subject_col].isin(sampled_subjects)]
 
             # Compute effect sizes
@@ -460,9 +428,7 @@ class StatisticalFeatureSelector(LoggerMixin):
     ) -> str:
 
         ranking = self.rank_features(df, features, subject_col, condition_col)
-        overlap = self.get_selection_overlap(
-            df, features, subject_col, condition_col, n_top
-        )
+        overlap = self.get_selection_overlap(df, features, subject_col, condition_col, n_top)
 
         lines = [
             "=" * 70,

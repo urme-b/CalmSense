@@ -29,9 +29,7 @@ class DimensionalityReducer(LoggerMixin):
             X = X.reshape(-1, 1)
 
         n_samples, n_features = X.shape
-        self._feature_names = feature_names or [
-            f"feature_{i}" for i in range(n_features)
-        ]
+        self._feature_names = feature_names or [f"feature_{i}" for i in range(n_features)]
 
         # Handle missing values
         if np.any(np.isnan(X)):
@@ -208,9 +206,7 @@ class DimensionalityReducer(LoggerMixin):
             PQ_diff = P - Q
             dY = np.zeros_like(Y)
             for i in range(n_samples):
-                dY[i] = 4 * np.sum(
-                    (PQ_diff[:, i] * num[:, i])[:, np.newaxis] * (Y[i] - Y), axis=0
-                )
+                dY[i] = 4 * np.sum((PQ_diff[:, i] * num[:, i])[:, np.newaxis] * (Y[i] - Y), axis=0)
 
             # Momentum update
             velocity = momentum * velocity - learning_rate * dY
@@ -219,9 +215,7 @@ class DimensionalityReducer(LoggerMixin):
             if iteration == 250:
                 momentum = 0.8
 
-        self.logger.warning(
-            "Using simplified t-SNE; install sklearn for better results"
-        )
+        self.logger.warning("Using simplified t-SNE; install sklearn for better results")
         return Y
 
     def fit_umap(
@@ -309,9 +303,7 @@ class DimensionalityReducer(LoggerMixin):
                 "feature": feature_names,
                 "loading": loadings,
                 "abs_loading": abs_loadings,
-                "contribution_pct": 100 * abs_loadings / total_loading
-                if total_loading > 0
-                else 0,
+                "contribution_pct": 100 * abs_loadings / total_loading if total_loading > 0 else 0,
             }
         )
 
@@ -395,9 +387,7 @@ class DimensionalityReducer(LoggerMixin):
         X_reconstructed = X_projected @ loadings.T
 
         # Unscale
-        X_reconstructed_orig = (
-            X_reconstructed * self._pca_model["std"] + self._pca_model["mean"]
-        )
+        X_reconstructed_orig = X_reconstructed * self._pca_model["std"] + self._pca_model["mean"]
 
         # Compute errors
         mse = np.mean((X - X_reconstructed_orig) ** 2)

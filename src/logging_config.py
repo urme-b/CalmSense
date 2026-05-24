@@ -5,7 +5,7 @@ from typing import Optional
 
 import structlog
 
-from .config import LOG_LEVEL, LOG_FILE
+from .config import LOG_FILE, LOG_LEVEL
 
 _logging_configured = False
 
@@ -32,8 +32,7 @@ def setup_logging(
 
     # Configure structlog
     structlog.configure(
-        processors=_shared_processors
-        + [structlog.stdlib.ProcessorFormatter.wrap_for_formatter],
+        processors=_shared_processors + [structlog.stdlib.ProcessorFormatter.wrap_for_formatter],
         logger_factory=structlog.stdlib.LoggerFactory(),
         wrapper_class=structlog.stdlib.BoundLogger,
         cache_logger_on_first_use=True,

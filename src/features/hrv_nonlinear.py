@@ -17,9 +17,7 @@ class HRVNonlinearExtractor(LoggerMixin):
         rr = rr[np.isfinite(rr)]
 
         if len(rr) < self.min_rr_count:
-            self.logger.warning(
-                f"Insufficient RR intervals: {len(rr)} < {self.min_rr_count}"
-            )
+            self.logger.warning(f"Insufficient RR intervals: {len(rr)} < {self.min_rr_count}")
             return None
 
         rr = rr[(rr >= 200) & (rr <= 2500)]
@@ -29,9 +27,7 @@ class HRVNonlinearExtractor(LoggerMixin):
 
         return rr
 
-    def compute_sample_entropy(
-        self, rr: np.ndarray, m: int = 2, r: float = 0.2
-    ) -> float:
+    def compute_sample_entropy(self, rr: np.ndarray, m: int = 2, r: float = 0.2) -> float:
         n = len(rr)
         if n < m + 2:
             return np.nan
@@ -42,9 +38,7 @@ class HRVNonlinearExtractor(LoggerMixin):
             count = 0
             for i in range(n - template_len):
                 for j in range(i + 1, n - template_len):
-                    dist = np.max(
-                        np.abs(rr[i : i + template_len] - rr[j : j + template_len])
-                    )
+                    dist = np.max(np.abs(rr[i : i + template_len] - rr[j : j + template_len]))
                     if dist < r_val:
                         count += 1
             return count
@@ -55,13 +49,9 @@ class HRVNonlinearExtractor(LoggerMixin):
         if b == 0:
             return np.nan
 
-        return float(
-            -np.log((a + FEATURE_PARAMS.EPSILON) / (b + FEATURE_PARAMS.EPSILON))
-        )
+        return float(-np.log((a + FEATURE_PARAMS.EPSILON) / (b + FEATURE_PARAMS.EPSILON)))
 
-    def compute_approximate_entropy(
-        self, rr: np.ndarray, m: int = 2, r: float = 0.2
-    ) -> float:
+    def compute_approximate_entropy(self, rr: np.ndarray, m: int = 2, r: float = 0.2) -> float:
         n = len(rr)
         if n < m + 2:
             return np.nan
@@ -69,9 +59,7 @@ class HRVNonlinearExtractor(LoggerMixin):
         r_val = r * np.std(rr)
 
         def _phi(template_len: int) -> float:
-            patterns = np.array(
-                [rr[i : i + template_len] for i in range(n - template_len + 1)]
-            )
+            patterns = np.array([rr[i : i + template_len] for i in range(n - template_len + 1)])
             n_patterns = len(patterns)
 
             if n_patterns == 0:
@@ -142,9 +130,7 @@ class HRVNonlinearExtractor(LoggerMixin):
         # Alpha1: short-term (4-16 beats)
         mask_alpha1 = (scales_used >= 4) & (scales_used <= 16)
         if np.sum(mask_alpha1) >= 2:
-            slope1, _, _, _, _ = stats.linregress(
-                log_scales[mask_alpha1], log_fluct[mask_alpha1]
-            )
+            slope1, _, _, _, _ = stats.linregress(log_scales[mask_alpha1], log_fluct[mask_alpha1])
             alpha1 = float(slope1)
         else:
             alpha1 = np.nan
@@ -152,9 +138,7 @@ class HRVNonlinearExtractor(LoggerMixin):
         # Alpha2: long-term (16-64 beats)
         mask_alpha2 = (scales_used >= 16) & (scales_used <= 64)
         if np.sum(mask_alpha2) >= 2:
-            slope2, _, _, _, _ = stats.linregress(
-                log_scales[mask_alpha2], log_fluct[mask_alpha2]
-            )
+            slope2, _, _, _, _ = stats.linregress(log_scales[mask_alpha2], log_fluct[mask_alpha2])
             alpha2 = float(slope2)
         else:
             alpha2 = np.nan

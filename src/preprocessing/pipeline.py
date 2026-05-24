@@ -4,14 +4,14 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 
-from ..config import FS, FEATURE_PARAMS, LABEL_NAMES, VALID_SUBJECTS
+from ..config import FEATURE_PARAMS, FS, LABEL_NAMES, VALID_SUBJECTS
 from ..logging_config import LoggerMixin
-from ..utils import timer, ensure_directory
+from ..utils import ensure_directory, timer
 from .ecg_processor import ECGProcessor
 from .eda_processor import EDAProcessor
+from .filters import SignalProcessor
 from .respiratory_processor import RespiratoryProcessor
 from .windowing import SignalWindower
-from .filters import SignalProcessor
 
 
 class PreprocessingPipeline(LoggerMixin):
@@ -67,9 +67,7 @@ class PreprocessingPipeline(LoggerMixin):
         self.logger.info(f"Loaded data for {subject_id}")
         return data
 
-    def process_chest_signals(
-        self, chest_data: Dict[str, np.ndarray]
-    ) -> Dict[str, Dict]:
+    def process_chest_signals(self, chest_data: Dict[str, np.ndarray]) -> Dict[str, Dict]:
         results = {}
 
         if "ECG" in chest_data:
@@ -93,9 +91,7 @@ class PreprocessingPipeline(LoggerMixin):
 
         if "Temp" in chest_data:
             temp = chest_data["Temp"].flatten()
-            results["Temp"] = {
-                "filtered_temp": self.signal_processor.process_temperature(temp)
-            }
+            results["Temp"] = {"filtered_temp": self.signal_processor.process_temperature(temp)}
 
         if "ACC" in chest_data:
             acc = np.asarray(chest_data["ACC"])
@@ -104,9 +100,7 @@ class PreprocessingPipeline(LoggerMixin):
 
         return results
 
-    def process_wrist_signals(
-        self, wrist_data: Dict[str, np.ndarray]
-    ) -> Dict[str, Dict]:
+    def process_wrist_signals(self, wrist_data: Dict[str, np.ndarray]) -> Dict[str, Dict]:
         results = {}
 
         if "EDA" in wrist_data:
@@ -163,9 +157,7 @@ class PreprocessingPipeline(LoggerMixin):
             raise ValueError("No reference signal found for windowing")
 
         if len(labels) != ref_length:
-            self.logger.warning(
-                f"Label length mismatch: {len(labels)} vs signal {ref_length}"
-            )
+            self.logger.warning(f"Label length mismatch: {len(labels)} vs signal {ref_length}")
             min_len = min(len(labels), ref_length)
             labels = labels[:min_len]
 
@@ -207,14 +199,12 @@ class PreprocessingPipeline(LoggerMixin):
             elif modality == "ACC":
                 signals_to_window["ACC_mag"] = results.get("acc_magnitude")
 
-        windows_dict, window_labels, valid_mask = (
-            self.windower.create_windows_multimodal(
-                signals_to_window,
-                labels,
-                reference_signal="ECG"
-                if "ECG" in signals_to_window
-                else list(signals_to_window.keys())[0],
-            )
+        windows_dict, window_labels, valid_mask = self.windower.create_windows_multimodal(
+            signals_to_window,
+            labels,
+            reference_signal="ECG"
+            if "ECG" in signals_to_window
+            else list(signals_to_window.keys())[0],
         )
 
         return windows_dict, window_labels, valid_mask
@@ -246,9 +236,7 @@ class PreprocessingPipeline(LoggerMixin):
 
         return resampled
 
-    def process_subject(
-        self, subject_id: str, save_results: bool = True
-    ) -> Dict[str, Any]:
+    def process_subject(self, subject_id: str, save_results: bool = True) -> Dict[str, Any]:
         self.logger.info(f"Processing subject {subject_id}")
 
         with timer(f"Subject {subject_id} total processing"):
@@ -274,9 +262,7 @@ class PreprocessingPipeline(LoggerMixin):
                 )
 
             valid_windows = {k: v[valid_mask] for k, v in windows.items()}
-            valid_labels = (
-                window_labels[valid_mask] if window_labels is not None else None
-            )
+            valid_labels = window_labels[valid_mask] if window_labels is not None else None
 
             output = {
                 "subject_id": subject_id,

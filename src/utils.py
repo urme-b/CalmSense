@@ -107,9 +107,7 @@ def load_pickle(filepath: Union[str, Path]) -> Any:
         return pickle.load(f)
 
 
-def get_cache_path(
-    name: str, params: Optional[Dict] = None, extension: str = ".pkl"
-) -> Path:
+def get_cache_path(name: str, params: Optional[Dict] = None, extension: str = ".pkl") -> Path:
     if params:
         param_hash = compute_hash(params)[:8]
         filename = f"{name}_{param_hash}{extension}"
@@ -171,9 +169,7 @@ def validate_array(
         raise ValueError(f"{name} has {arr.ndim} dimensions, expected {expected_ndim}")
 
 
-def check_signal_quality(
-    signal: np.ndarray, fs: float, name: str = "signal"
-) -> Dict[str, Any]:
+def check_signal_quality(signal: np.ndarray, fs: float, name: str = "signal") -> Dict[str, Any]:
     signal = np.asarray(signal).flatten()
 
     mean_val = float(np.nanmean(signal))

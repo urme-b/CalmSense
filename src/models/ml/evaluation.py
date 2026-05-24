@@ -14,9 +14,7 @@ class ModelEvaluator(LoggerMixin):
         2: "Amusement",
     }
 
-    def __init__(
-        self, class_names: Optional[Dict[int, str]] = None, threshold: float = 0.5
-    ):
+    def __init__(self, class_names: Optional[Dict[int, str]] = None, threshold: float = 0.5):
 
         self.class_names = class_names or self.CLASS_NAMES
         self.threshold = threshold
@@ -31,14 +29,14 @@ class ModelEvaluator(LoggerMixin):
 
         from sklearn.metrics import (
             accuracy_score,
+            average_precision_score,
             balanced_accuracy_score,
+            cohen_kappa_score,
             f1_score,
+            matthews_corrcoef,
             precision_score,
             recall_score,
-            matthews_corrcoef,
             roc_auc_score,
-            average_precision_score,
-            cohen_kappa_score,
         )
 
         y_true = np.asarray(y_true)
@@ -48,21 +46,13 @@ class ModelEvaluator(LoggerMixin):
             "accuracy": accuracy_score(y_true, y_pred),
             "balanced_accuracy": balanced_accuracy_score(y_true, y_pred),
             "f1_macro": f1_score(y_true, y_pred, average="macro", zero_division=0),
-            "f1_weighted": f1_score(
-                y_true, y_pred, average="weighted", zero_division=0
-            ),
-            "precision_macro": precision_score(
-                y_true, y_pred, average="macro", zero_division=0
-            ),
+            "f1_weighted": f1_score(y_true, y_pred, average="weighted", zero_division=0),
+            "precision_macro": precision_score(y_true, y_pred, average="macro", zero_division=0),
             "precision_weighted": precision_score(
                 y_true, y_pred, average="weighted", zero_division=0
             ),
-            "recall_macro": recall_score(
-                y_true, y_pred, average="macro", zero_division=0
-            ),
-            "recall_weighted": recall_score(
-                y_true, y_pred, average="weighted", zero_division=0
-            ),
+            "recall_macro": recall_score(y_true, y_pred, average="macro", zero_division=0),
+            "recall_weighted": recall_score(y_true, y_pred, average="weighted", zero_division=0),
             "mcc": matthews_corrcoef(y_true, y_pred),
             "kappa": cohen_kappa_score(y_true, y_pred),
         }
@@ -90,8 +80,7 @@ class ModelEvaluator(LoggerMixin):
                 metrics["auc_roc"] = np.nan
 
         self.logger.debug(
-            f"Computed metrics: acc={metrics['accuracy']:.3f}, "
-            f"f1={metrics['f1_macro']:.3f}"
+            f"Computed metrics: acc={metrics['accuracy']:.3f}, f1={metrics['f1_macro']:.3f}"
         )
 
         return metrics
@@ -104,9 +93,9 @@ class ModelEvaluator(LoggerMixin):
     ) -> pd.DataFrame:
 
         from sklearn.metrics import (
+            f1_score,
             precision_score,
             recall_score,
-            f1_score,
         )
 
         y_true = np.asarray(y_true)
@@ -124,9 +113,7 @@ class ModelEvaluator(LoggerMixin):
                 "class": cls,
                 "class_name": self.class_names.get(cls, f"Class {cls}"),
                 "support": np.sum(y_true_binary),
-                "precision": precision_score(
-                    y_true_binary, y_pred_binary, zero_division=0
-                ),
+                "precision": precision_score(y_true_binary, y_pred_binary, zero_division=0),
                 "recall": recall_score(y_true_binary, y_pred_binary, zero_division=0),
                 "f1": f1_score(y_true_binary, y_pred_binary, zero_division=0),
             }
@@ -136,9 +123,7 @@ class ModelEvaluator(LoggerMixin):
                 try:
                     from sklearn.metrics import roc_auc_score
 
-                    class_metrics["auc_roc"] = roc_auc_score(
-                        y_true_binary, y_proba[:, cls]
-                    )
+                    class_metrics["auc_roc"] = roc_auc_score(y_true_binary, y_proba[:, cls])
                 except Exception:
                     class_metrics["auc_roc"] = np.nan
 
@@ -160,9 +145,7 @@ class ModelEvaluator(LoggerMixin):
 
         from sklearn.metrics import classification_report
 
-        target_names = [
-            self.class_names.get(i, f"Class {i}") for i in sorted(np.unique(y_true))
-        ]
+        target_names = [self.class_names.get(i, f"Class {i}") for i in sorted(np.unique(y_true))]
 
         return classification_report(
             y_true,
@@ -183,9 +166,7 @@ class ModelEvaluator(LoggerMixin):
         import matplotlib.pyplot as plt
         import seaborn as sns
 
-        cm = self.get_confusion_matrix(
-            y_true, y_pred, normalize="true" if normalize else None
-        )
+        cm = self.get_confusion_matrix(y_true, y_pred, normalize="true" if normalize else None)
 
         classes = sorted(np.unique(y_true))
         class_names = [self.class_names.get(c, f"Class {c}") for c in classes]
@@ -218,7 +199,7 @@ class ModelEvaluator(LoggerMixin):
     ) -> Any:
 
         import matplotlib.pyplot as plt
-        from sklearn.metrics import roc_curve, auc
+        from sklearn.metrics import auc, roc_curve
         from sklearn.preprocessing import label_binarize
 
         y_true = np.asarray(y_true)
@@ -241,9 +222,7 @@ class ModelEvaluator(LoggerMixin):
             roc_auc = auc(fpr, tpr)
 
             class_name = self.class_names.get(cls, f"Class {cls}")
-            ax.plot(
-                fpr, tpr, color=color, lw=2, label=f"{class_name} (AUC = {roc_auc:.3f})"
-            )
+            ax.plot(fpr, tpr, color=color, lw=2, label=f"{class_name} (AUC = {roc_auc:.3f})")
 
         ax.plot([0, 1], [0, 1], "k--", lw=1, label="Random")
         ax.set_xlim([0.0, 1.0])
@@ -264,7 +243,7 @@ class ModelEvaluator(LoggerMixin):
     ) -> Any:
 
         import matplotlib.pyplot as plt
-        from sklearn.metrics import precision_recall_curve, average_precision_score
+        from sklearn.metrics import average_precision_score, precision_recall_curve
         from sklearn.preprocessing import label_binarize
 
         y_true = np.asarray(y_true)
@@ -282,9 +261,7 @@ class ModelEvaluator(LoggerMixin):
         colors = plt.cm.Set1(np.linspace(0, 1, n_classes))
 
         for i, (cls, color) in enumerate(zip(classes, colors)):
-            precision, recall, _ = precision_recall_curve(
-                y_true_bin[:, i], y_proba[:, i]
-            )
+            precision, recall, _ = precision_recall_curve(y_true_bin[:, i], y_proba[:, i])
             ap = average_precision_score(y_true_bin[:, i], y_proba[:, i])
 
             class_name = self.class_names.get(cls, f"Class {cls}")
@@ -377,15 +354,11 @@ class ModelEvaluator(LoggerMixin):
                 std_val = cv_results.get(std_key, 0)
                 ci_val = cv_results.get(ci_key, std_val * 1.96)
 
-                summary[metric] = (
-                    f"{mean_val:.3f} ± {std_val:.3f} (95% CI: ±{ci_val:.3f})"
-                )
+                summary[metric] = f"{mean_val:.3f} ± {std_val:.3f} (95% CI: ±{ci_val:.3f})"
 
         return summary
 
-    def evaluate_subject_variability(
-        self, subject_results: pd.DataFrame
-    ) -> Dict[str, Any]:
+    def evaluate_subject_variability(self, subject_results: pd.DataFrame) -> Dict[str, Any]:
 
         variability = {}
 

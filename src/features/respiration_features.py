@@ -9,9 +9,7 @@ from ..logging_config import LoggerMixin
 class RespirationFeatureExtractor(LoggerMixin):
     def __init__(self, sampling_rate: float = 700.0):
         self.sampling_rate = sampling_rate
-        self.logger.debug(
-            f"RespirationFeatureExtractor initialized, fs={sampling_rate} Hz"
-        )
+        self.logger.debug(f"RespirationFeatureExtractor initialized, fs={sampling_rate} Hz")
 
     def _validate_signal(self, signal: np.ndarray) -> Optional[np.ndarray]:
         if signal is None:
@@ -58,9 +56,7 @@ class RespirationFeatureExtractor(LoggerMixin):
 
                     std_interval = np.std(breath_intervals)
                     if mean_interval > FEATURE_PARAMS.EPSILON:
-                        features["RESP_variability"] = float(
-                            std_interval / mean_interval
-                        )
+                        features["RESP_variability"] = float(std_interval / mean_interval)
 
             if np.isnan(features["RESP_rate"]):
                 features["RESP_rate"] = self._estimate_breathing_rate(resp)
@@ -94,13 +90,10 @@ class RespirationFeatureExtractor(LoggerMixin):
                 ie_ratio = self._compute_ie_ratio(resp, breath_peaks, breath_troughs)
                 features["RESP_inhale_exhale_ratio"] = ie_ratio
 
-            features["RESP_apnea_index"] = self._compute_apnea_index(
-                resp, breath_intervals
-            )
+            features["RESP_apnea_index"] = self._compute_apnea_index(resp, breath_intervals)
 
             self.logger.debug(
-                f"Extracted 5 respiration features, "
-                f"rate={features['RESP_rate']:.1f} BPM"
+                f"Extracted 5 respiration features, rate={features['RESP_rate']:.1f} BPM"
                 if np.isfinite(features["RESP_rate"])
                 else "Extracted 5 respiration features"
             )
@@ -132,9 +125,7 @@ class RespirationFeatureExtractor(LoggerMixin):
 
         return float(peak_freq * 60.0)
 
-    def _compute_ie_ratio(
-        self, resp: np.ndarray, peaks: np.ndarray, troughs: np.ndarray
-    ) -> float:
+    def _compute_ie_ratio(self, resp: np.ndarray, peaks: np.ndarray, troughs: np.ndarray) -> float:
         inspiration_times = []
         expiration_times = []
 
@@ -180,9 +171,7 @@ class RespirationFeatureExtractor(LoggerMixin):
                 if window_var < 0.1 * np.var(resp):
                     low_variance_count += 1
 
-            return (
-                float(100.0 * low_variance_count / n_windows) if n_windows > 0 else 0.0
-            )
+            return float(100.0 * low_variance_count / n_windows) if n_windows > 0 else 0.0
 
         breath_intervals = np.asarray(breath_intervals)
         breath_intervals = breath_intervals[np.isfinite(breath_intervals)]

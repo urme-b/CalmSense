@@ -81,20 +81,14 @@ class EDAFeatureExtractor(LoggerMixin):
             features["SCR_count"] = float(n_scr)
 
             duration_min = signal_duration / 60.0
-            features["SCR_rate"] = (
-                float(n_scr / duration_min) if duration_min > 0 else 0.0
-            )
+            features["SCR_rate"] = float(n_scr / duration_min) if duration_min > 0 else 0.0
 
-            amplitudes = [
-                scr.get("amplitude", 0) for scr in scr_peaks if "amplitude" in scr
-            ]
+            amplitudes = [scr.get("amplitude", 0) for scr in scr_peaks if "amplitude" in scr]
             if len(amplitudes) > 0:
                 features["SCR_amplitude_mean"] = float(np.mean(amplitudes))
                 features["SCR_amplitude_max"] = float(np.max(amplitudes))
 
-            rise_times = [
-                scr.get("rise_time", 0) for scr in scr_peaks if "rise_time" in scr
-            ]
+            rise_times = [scr.get("rise_time", 0) for scr in scr_peaks if "rise_time" in scr]
             if len(rise_times) > 0:
                 features["SCR_rise_time_mean"] = float(np.mean(rise_times))
 

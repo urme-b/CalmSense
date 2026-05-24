@@ -1,8 +1,9 @@
-import numpy as np
-import pandas as pd
-from typing import Dict, List, Optional, Any
 from dataclasses import dataclass
 from enum import Enum
+from typing import Any, Dict, List, Optional
+
+import numpy as np
+import pandas as pd
 
 from ..logging_config import LoggerMixin
 
@@ -300,9 +301,7 @@ class ClinicalInterpreter(LoggerMixin):
             deviation = "normal"
 
         # Determine stress implication
-        stress_implication = self._interpret_stress_implication(
-            deviation, normal.stress_direction
-        )
+        stress_implication = self._interpret_stress_implication(deviation, normal.stress_direction)
 
         # Calculate confidence based on
         if deviation == "normal":
@@ -338,9 +337,7 @@ class ClinicalInterpreter(LoggerMixin):
             interpretation=interpretation,
         )
 
-    def _interpret_stress_implication(
-        self, deviation: str, stress_direction: str
-    ) -> str:
+    def _interpret_stress_implication(self, deviation: str, stress_direction: str) -> str:
 
         if deviation == "normal":
             return "Within normal range - no stress indication"
@@ -386,31 +383,23 @@ class ClinicalInterpreter(LoggerMixin):
         lines.append(f"{normal.description}: {value:.2f} {normal.unit}")
 
         # Normal range context
-        lines.append(
-            f"Normal range: {normal.low:.1f} - {normal.high:.1f} {normal.unit}"
-        )
+        lines.append(f"Normal range: {normal.low:.1f} - {normal.high:.1f} {normal.unit}")
 
         # Deviation assessment
         if deviation == "normal":
             lines.append("Assessment: Within normal limits")
         elif deviation == "critical_low":
-            lines.append(
-                f"Assessment: CRITICALLY LOW (below {normal.critical_low} {normal.unit})"
-            )
+            lines.append(f"Assessment: CRITICALLY LOW (below {normal.critical_low} {normal.unit})")
         elif deviation == "critical_high":
             lines.append(
                 f"Assessment: CRITICALLY HIGH (above {normal.critical_high} {normal.unit})"
             )
         elif deviation == "low":
             pct_below = ((normal.low - value) / max(abs(normal.low), 1e-10)) * 100
-            lines.append(
-                f"Assessment: Below normal ({pct_below:.1f}% below lower limit)"
-            )
+            lines.append(f"Assessment: Below normal ({pct_below:.1f}% below lower limit)")
         else:  # high
             pct_above = ((value - normal.high) / max(abs(normal.high), 1e-10)) * 100
-            lines.append(
-                f"Assessment: Above normal ({pct_above:.1f}% above upper limit)"
-            )
+            lines.append(f"Assessment: Above normal ({pct_above:.1f}% above upper limit)")
 
         # Clinical significance
         if "hrv" in feature_name.lower() or "rmssd" in feature_name.lower():
@@ -480,9 +469,7 @@ class ClinicalInterpreter(LoggerMixin):
         )
 
         # Generate recommendations
-        recommendations = self._generate_recommendations(
-            stress_level, stress_indicators
-        )
+        recommendations = self._generate_recommendations(stress_level, stress_indicators)
 
         report = {
             "prediction": {
@@ -536,10 +523,7 @@ class ClinicalInterpreter(LoggerMixin):
             # Base score on deviation
             if finding.deviation == "normal":
                 score = 0.0
-            elif (
-                finding.deviation == "critical_high"
-                or finding.deviation == "critical_low"
-            ):
+            elif finding.deviation == "critical_high" or finding.deviation == "critical_low":
                 score = 1.0
             elif finding.deviation in ["high", "low"]:
                 # Check if deviation is
@@ -650,8 +634,7 @@ class ClinicalInterpreter(LoggerMixin):
                 )
 
             eda_high = any(
-                "eda" in f.feature.lower() and f.deviation == "high"
-                for f in stress_indicators
+                "eda" in f.feature.lower() and f.deviation == "high" for f in stress_indicators
             )
             if eda_high:
                 recommendations.append(

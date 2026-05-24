@@ -68,11 +68,7 @@ class HypothesisTesting(LoggerMixin):
 
         # F-statistic
         F_stat = MS_between / MS_error if MS_error > 0 else np.nan
-        p_value = (
-            1 - stats.f.cdf(F_stat, df_between, df_error)
-            if not np.isnan(F_stat)
-            else np.nan
-        )
+        p_value = 1 - stats.f.cdf(F_stat, df_between, df_error) if not np.isnan(F_stat) else np.nan
 
         # Effect sizes
         eta_squared = SS_between / SS_total if SS_total > 0 else 0
@@ -89,18 +85,12 @@ class HypothesisTesting(LoggerMixin):
         omega_squared = max(0, omega_squared)  # Can't be negative
 
         # Sphericity test (Mauchly)
-        sphericity_W, sphericity_p, epsilon_GG, epsilon_HF = self._mauchly_sphericity(
-            data_matrix
-        )
+        sphericity_W, sphericity_p, epsilon_GG, epsilon_HF = self._mauchly_sphericity(data_matrix)
 
         # Corrected p-values
         if not np.isnan(F_stat):
-            p_value_GG = 1 - stats.f.cdf(
-                F_stat, df_between * epsilon_GG, df_error * epsilon_GG
-            )
-            p_value_HF = 1 - stats.f.cdf(
-                F_stat, df_between * epsilon_HF, df_error * epsilon_HF
-            )
+            p_value_GG = 1 - stats.f.cdf(F_stat, df_between * epsilon_GG, df_error * epsilon_GG)
+            p_value_HF = 1 - stats.f.cdf(F_stat, df_between * epsilon_HF, df_error * epsilon_HF)
         else:
             p_value_GG = p_value_HF = np.nan
 
@@ -143,9 +133,7 @@ class HypothesisTesting(LoggerMixin):
 
         return result
 
-    def _mauchly_sphericity(
-        self, data_matrix: np.ndarray
-    ) -> Tuple[float, float, float, float]:
+    def _mauchly_sphericity(self, data_matrix: np.ndarray) -> Tuple[float, float, float, float]:
 
         n_subjects, n_conditions = data_matrix.shape
 
@@ -187,17 +175,13 @@ class HypothesisTesting(LoggerMixin):
             sum_eigen = np.sum(eigenvalues)
             sum_eigen_sq = np.sum(eigenvalues**2)
 
-            epsilon_GG = (
-                (sum_eigen**2) / (k * sum_eigen_sq) if sum_eigen_sq > 0 else 1.0
-            )
+            epsilon_GG = (sum_eigen**2) / (k * sum_eigen_sq) if sum_eigen_sq > 0 else 1.0
             epsilon_GG = min(1.0, max(1.0 / k, epsilon_GG))
 
             # Huynh-Feldt epsilon
             hf_denom = k * (n_subjects - 1 - k * epsilon_GG)
             epsilon_HF = (
-                (n_subjects * k * epsilon_GG - 2) / hf_denom
-                if abs(hf_denom) > 1e-10
-                else 1.0
+                (n_subjects * k * epsilon_GG - 2) / hf_denom if abs(hf_denom) > 1e-10 else 1.0
             )
             epsilon_HF = min(1.0, max(epsilon_GG, epsilon_HF))
 
@@ -241,9 +225,7 @@ class HypothesisTesting(LoggerMixin):
                 self.logger.warning(f"Feature {feature} not found in DataFrame")
                 continue
 
-            result = self.repeated_measures_anova(
-                df, feature, subject_col, condition_col
-            )
+            result = self.repeated_measures_anova(df, feature, subject_col, condition_col)
             results.append(result)
 
         if not results:
@@ -452,9 +434,7 @@ class HypothesisTesting(LoggerMixin):
                         }
                     )
                 except Exception as e:
-                    self.logger.warning(
-                        f"Wilcoxon test failed for {cond1} vs {cond2}: {e}"
-                    )
+                    self.logger.warning(f"Wilcoxon test failed for {cond1} vs {cond2}: {e}")
 
         result["wilcoxon_results"] = wilcoxon_results
 
@@ -475,9 +455,7 @@ class HypothesisTesting(LoggerMixin):
         # Cohen's d
         if paired:
             diff = group2[: min(n1, n2)] - group1[: min(n1, n2)]
-            cohens_d = (
-                np.mean(diff) / np.std(diff, ddof=1) if np.std(diff, ddof=1) > 0 else 0
-            )
+            cohens_d = np.mean(diff) / np.std(diff, ddof=1) if np.std(diff, ddof=1) > 0 else 0
         else:
             # Pooled standard deviation
             pooled_std = np.sqrt(((n1 - 1) * var1 + (n2 - 1) * var2) / (n1 + n2 - 2))

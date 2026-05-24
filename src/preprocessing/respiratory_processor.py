@@ -3,7 +3,7 @@ from typing import Dict, Tuple
 import numpy as np
 from scipy import signal
 
-from ..config import FS, FILTER_PARAMS, FEATURE_PARAMS
+from ..config import FEATURE_PARAMS, FILTER_PARAMS, FS
 from ..logging_config import LoggerMixin
 
 
@@ -35,16 +35,12 @@ class RespiratoryProcessor(LoggerMixin):
         effective_order = order
         if low_norm < 0.01 or high_norm < 0.01:
             effective_order = min(2, order)
-            self.logger.debug(
-                f"Reducing filter order to {effective_order} for low frequencies"
-            )
+            self.logger.debug(f"Reducing filter order to {effective_order} for low frequencies")
 
         b, a = signal.butter(effective_order, [low_norm, high_norm], btype="band")
         filtered = signal.filtfilt(b, a, resp)
 
-        self.logger.debug(
-            f"Applied bandpass filter: {low}-{high} Hz (order={effective_order})"
-        )
+        self.logger.debug(f"Applied bandpass filter: {low}-{high} Hz (order={effective_order})")
         return filtered
 
     def detect_breaths(
@@ -139,9 +135,7 @@ class RespiratoryProcessor(LoggerMixin):
             features["breath_interval_mean"] = float(mean_interval)
             features["breath_interval_std"] = float(np.std(breath_intervals))
             features["breath_interval_cv"] = (
-                float(features["breath_interval_std"] / mean_interval)
-                if mean_interval > 0
-                else 0.0
+                float(features["breath_interval_std"] / mean_interval) if mean_interval > 0 else 0.0
             )
 
             if len(breath_intervals) > 1:
@@ -168,9 +162,7 @@ class RespiratoryProcessor(LoggerMixin):
         resp_std = np.std(resp)
         if resp_std > 1e6:
             resp = resp / resp_std
-            self.logger.debug(
-                f"Normalized signal with std={resp_std:.2e} for spectral computation"
-            )
+            self.logger.debug(f"Normalized signal with std={resp_std:.2e} for spectral computation")
 
         resp = np.clip(resp, -1e6, 1e6)
 
@@ -291,9 +283,7 @@ class RespiratoryProcessor(LoggerMixin):
         resp_std = np.std(resp)
         if resp_std > 1e6:
             resp = resp / resp_std
-            self.logger.debug(
-                f"Normalized signal with std={resp_std:.2e} for quality computation"
-            )
+            self.logger.debug(f"Normalized signal with std={resp_std:.2e} for quality computation")
 
         resp = np.clip(resp, -1e6, 1e6)
 
@@ -344,9 +334,7 @@ class RespiratoryProcessor(LoggerMixin):
             np.clip(quality["periodicity"] * (1 + quality["snr_db"] / 20) / 2, 0, 1)
         )
 
-        self.logger.debug(
-            f"Respiratory quality: periodicity={quality['periodicity']:.2f}"
-        )
+        self.logger.debug(f"Respiratory quality: periodicity={quality['periodicity']:.2f}")
         return quality
 
     def process(self, resp: np.ndarray) -> Dict[str, np.ndarray]:
@@ -356,9 +344,7 @@ class RespiratoryProcessor(LoggerMixin):
         breath_data = self.detect_breaths(filtered)
         rate_features = self.compute_breathing_rate(breath_data)
 
-        rate_features["breathing_rate_spectral"] = self.compute_spectral_breathing_rate(
-            filtered
-        )
+        rate_features["breathing_rate_spectral"] = self.compute_spectral_breathing_rate(filtered)
 
         amplitude_features = self.compute_amplitude_features(filtered, breath_data)
         timing_features = self.compute_timing_features(filtered, breath_data)

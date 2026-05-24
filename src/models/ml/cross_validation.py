@@ -9,9 +9,7 @@ from .base_model import BaseMLModel
 
 
 class CrossValidator(LoggerMixin):
-    def __init__(
-        self, cv_strategy: str = "loso", n_splits: int = 5, random_state: int = 42
-    ):
+    def __init__(self, cv_strategy: str = "loso", n_splits: int = 5, random_state: int = 42):
 
         self.cv_strategy = cv_strategy
         self.n_splits = n_splits
@@ -36,9 +34,7 @@ class CrossValidator(LoggerMixin):
         from sklearn.model_selection import StratifiedKFold
 
         n_splits = n_splits or self.n_splits
-        skf = StratifiedKFold(
-            n_splits=n_splits, shuffle=True, random_state=self.random_state
-        )
+        skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=self.random_state)
 
         for train_idx, test_idx in skf.split(X, y):
             yield train_idx, test_idx
@@ -50,9 +46,7 @@ class CrossValidator(LoggerMixin):
         from sklearn.model_selection import StratifiedKFold
 
         n_splits = n_splits or self.n_splits
-        skf = StratifiedKFold(
-            n_splits=n_splits, shuffle=True, random_state=self.random_state
-        )
+        skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=self.random_state)
 
         for train_idx, test_idx in skf.split(X, y):
             yield train_idx, test_idx
@@ -174,9 +168,7 @@ class CrossValidator(LoggerMixin):
 
         # Compute mean and std
         for metric in ["accuracy", "f1_macro", "f1_weighted", "auc_roc"]:
-            values = [
-                f[metric] for f in fold_results if not np.isnan(f.get(metric, np.nan))
-            ]
+            values = [f[metric] for f in fold_results if not np.isnan(f.get(metric, np.nan))]
             if values:
                 results[f"{metric}_mean"] = np.mean(values)
                 results[f"{metric}_std"] = np.std(values)
@@ -225,9 +217,7 @@ class CrossValidator(LoggerMixin):
             # Inner CV for hyperparameter
             from sklearn.model_selection import GroupKFold
 
-            inner_cv_obj = GroupKFold(
-                n_splits=min(inner_cv, len(np.unique(groups_train)))
-            )
+            inner_cv_obj = GroupKFold(n_splits=min(inner_cv, len(np.unique(groups_train))))
 
             base_model = model_class()
             grid_search = GridSearchCV(
@@ -307,12 +297,8 @@ class CrossValidator(LoggerMixin):
 
         # Calculate overfitting gap (K-Fold
         if len(comparison_df) > 1:
-            loso_acc = comparison_df[comparison_df["strategy"] == "LOSO"][
-                "accuracy_mean"
-            ].values
-            kfold_acc = comparison_df[comparison_df["strategy"] == "KFOLD"][
-                "accuracy_mean"
-            ].values
+            loso_acc = comparison_df[comparison_df["strategy"] == "LOSO"]["accuracy_mean"].values
+            kfold_acc = comparison_df[comparison_df["strategy"] == "KFOLD"]["accuracy_mean"].values
 
             if len(loso_acc) > 0 and len(kfold_acc) > 0:
                 gap = (kfold_acc[0] - loso_acc[0]) * 100

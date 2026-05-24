@@ -4,7 +4,7 @@ import numpy as np
 from scipy import signal as scipy_signal
 from scipy import stats
 
-from ..config import FS, FEATURE_PARAMS
+from ..config import FEATURE_PARAMS, FS
 from ..logging_config import LoggerMixin
 
 
@@ -70,23 +70,15 @@ class FeatureExtractor(LoggerMixin):
         features["spectral_std"] = float(np.sqrt(max(spectral_var, 0)))
 
         psd_norm = psd / psd_sum
-        features["spectral_entropy"] = float(
-            stats.entropy(psd_norm + FEATURE_PARAMS.EPSILON)
-        )
+        features["spectral_entropy"] = float(stats.entropy(psd_norm + FEATURE_PARAMS.EPSILON))
 
         features["dominant_freq"] = float(freqs[np.argmax(psd)])
         features["max_psd"] = float(np.max(psd))
 
         # HRV-style band powers
-        vlf_mask = (freqs >= FEATURE_PARAMS.HRV_VLF_LOW) & (
-            freqs < FEATURE_PARAMS.HRV_VLF_HIGH
-        )
-        lf_mask = (freqs >= FEATURE_PARAMS.HRV_LF_LOW) & (
-            freqs < FEATURE_PARAMS.HRV_LF_HIGH
-        )
-        hf_mask = (freqs >= FEATURE_PARAMS.HRV_HF_LOW) & (
-            freqs < FEATURE_PARAMS.HRV_HF_HIGH
-        )
+        vlf_mask = (freqs >= FEATURE_PARAMS.HRV_VLF_LOW) & (freqs < FEATURE_PARAMS.HRV_VLF_HIGH)
+        lf_mask = (freqs >= FEATURE_PARAMS.HRV_LF_LOW) & (freqs < FEATURE_PARAMS.HRV_LF_HIGH)
+        hf_mask = (freqs >= FEATURE_PARAMS.HRV_HF_LOW) & (freqs < FEATURE_PARAMS.HRV_HF_HIGH)
 
         features["vlf_power"] = float(
             np.trapezoid(psd[vlf_mask], freqs[vlf_mask]) if np.any(vlf_mask) else 0
@@ -157,9 +149,7 @@ class FeatureExtractor(LoggerMixin):
         if b == 0:
             return 0.0
 
-        return float(
-            -np.log((a + FEATURE_PARAMS.EPSILON) / (b + FEATURE_PARAMS.EPSILON))
-        )
+        return float(-np.log((a + FEATURE_PARAMS.EPSILON) / (b + FEATURE_PARAMS.EPSILON)))
 
     def extract_all(self, data: np.ndarray, prefix: str = "") -> Dict[str, float]:
         features: Dict[str, float] = {}
@@ -180,9 +170,7 @@ class FeatureExtractor(LoggerMixin):
 
         return features
 
-    def extract_from_segments(
-        self, segments: np.ndarray, prefix: str = ""
-    ) -> np.ndarray:
+    def extract_from_segments(self, segments: np.ndarray, prefix: str = "") -> np.ndarray:
         first_features = self.extract_all(segments[0], prefix=prefix)
         feature_names = list(first_features.keys())
         n_features = len(feature_names)
@@ -197,8 +185,7 @@ class FeatureExtractor(LoggerMixin):
             features_array[i] = [segment_features[name] for name in feature_names]
 
         self.logger.info(
-            f"Extracted features from {n_segments} segments: "
-            f"({n_segments}, {n_features}) array"
+            f"Extracted features from {n_segments} segments: ({n_segments}, {n_features}) array"
         )
 
         return features_array

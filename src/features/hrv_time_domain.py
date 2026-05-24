@@ -16,9 +16,7 @@ class HRVTimeDomainExtractor(LoggerMixin):
         rr = rr[np.isfinite(rr)]
 
         if len(rr) < self.min_rr_count:
-            self.logger.warning(
-                f"Insufficient RR intervals: {len(rr)} < {self.min_rr_count}"
-            )
+            self.logger.warning(f"Insufficient RR intervals: {len(rr)} < {self.min_rr_count}")
             return None
 
         # Normal RR: 200-2500ms (24-300

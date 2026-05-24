@@ -37,9 +37,7 @@ class HRVFrequencyDomainExtractor(LoggerMixin):
         rr = rr[np.isfinite(rr)]
 
         if len(rr) < self.min_rr_count:
-            self.logger.warning(
-                f"Insufficient RR intervals: {len(rr)} < {self.min_rr_count}"
-            )
+            self.logger.warning(f"Insufficient RR intervals: {len(rr)} < {self.min_rr_count}")
             return None
 
         rr = rr[(rr >= 200) & (rr <= 2500)]
@@ -128,9 +126,7 @@ class HRVFrequencyDomainExtractor(LoggerMixin):
 
         try:
             psd = lombscargle(t, rr_centered, angular_freqs, normalize=True)
-            psd = psd * (
-                np.var(rr_centered) / (2 * np.sum(psd) * (freqs[1] - freqs[0]))
-            )
+            psd = psd * (np.var(rr_centered) / (2 * np.sum(psd) * (freqs[1] - freqs[0])))
         except Exception as e:
             self.logger.warning(f"Lomb-Scargle failed: {e}")
             return np.array([]), np.array([])
@@ -208,9 +204,7 @@ class HRVFrequencyDomainExtractor(LoggerMixin):
         peak_idx = np.argmax(lf_psd)
         return float(lf_freqs[peak_idx])
 
-    def extract_all(
-        self, rr_intervals: np.ndarray, method: str = "welch"
-    ) -> Dict[str, float]:
+    def extract_all(self, rr_intervals: np.ndarray, method: str = "welch") -> Dict[str, float]:
         features = {
             "VLF_power": np.nan,
             "LF_power": np.nan,
@@ -237,18 +231,13 @@ class HRVFrequencyDomainExtractor(LoggerMixin):
             features["LF_HF_ratio"] = self.compute_lf_hf_ratio(
                 features["LF_power"], features["HF_power"]
             )
-            features["LFn"] = self.compute_lfn(
-                features["LF_power"], features["HF_power"]
-            )
-            features["HFn"] = self.compute_hfn(
-                features["LF_power"], features["HF_power"]
-            )
+            features["LFn"] = self.compute_lfn(features["LF_power"], features["HF_power"])
+            features["HFn"] = self.compute_hfn(features["LF_power"], features["HF_power"])
             features["LF_peak_freq"] = self.compute_lf_peak_freq(freqs, psd)
 
             if np.isfinite(features["LF_HF_ratio"]):
                 self.logger.debug(
-                    f"Extracted 8 frequency-domain features, "
-                    f"LF/HF={features['LF_HF_ratio']:.2f}"
+                    f"Extracted 8 frequency-domain features, LF/HF={features['LF_HF_ratio']:.2f}"
                 )
             else:
                 self.logger.debug("Extracted 8 frequency-domain features")

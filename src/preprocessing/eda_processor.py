@@ -4,7 +4,7 @@ import numpy as np
 from scipy import signal
 from scipy.ndimage import median_filter
 
-from ..config import FS, FILTER_PARAMS
+from ..config import FILTER_PARAMS, FS
 from ..logging_config import LoggerMixin
 
 
@@ -63,9 +63,7 @@ class EDAProcessor(LoggerMixin):
         cutoff_norm = cutoff / nyq
 
         if cutoff_norm >= 1.0:
-            self.logger.warning(
-                "Cutoff too high for Nyquist, returning original as tonic"
-            )
+            self.logger.warning("Cutoff too high for Nyquist, returning original as tonic")
             return eda.copy(), np.zeros_like(eda)
 
         b, a = signal.butter(2, cutoff_norm, btype="low")
@@ -86,18 +84,14 @@ class EDAProcessor(LoggerMixin):
         tonic = median_filter(eda, size=window_samples)
         phasic = eda - tonic
 
-        self.logger.debug(
-            f"Decomposed EDA using median filter ({window_samples} samples)"
-        )
+        self.logger.debug(f"Decomposed EDA using median filter ({window_samples} samples)")
         return tonic, phasic
 
     def _decompose_cvxeda(self, eda: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         try:
             import neurokit2 as nk
 
-            decomposed = nk.eda_phasic(
-                eda, sampling_rate=int(self.sampling_rate), method="cvxeda"
-            )
+            decomposed = nk.eda_phasic(eda, sampling_rate=int(self.sampling_rate), method="cvxeda")
             tonic = decomposed["EDA_Tonic"].values
             phasic = decomposed["EDA_Phasic"].values
             self.logger.debug("Decomposed EDA using cvxEDA (neurokit2)")

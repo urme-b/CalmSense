@@ -152,14 +152,10 @@ class DescriptiveStatistics(LoggerMixin):
 
             # Determine normality (both tests
             shapiro_normal = (
-                result["shapiro_p"] > alpha
-                if not np.isnan(result["shapiro_p"])
-                else True
+                result["shapiro_p"] > alpha if not np.isnan(result["shapiro_p"]) else True
             )
             dagostino_normal = (
-                result["dagostino_p"] > alpha
-                if not np.isnan(result["dagostino_p"])
-                else True
+                result["dagostino_p"] > alpha if not np.isnan(result["dagostino_p"]) else True
             )
             result["is_normal"] = shapiro_normal and dagostino_normal
 
@@ -202,9 +198,7 @@ class DescriptiveStatistics(LoggerMixin):
                 z_threshold = threshold if threshold > 1.5 else 3.0
                 outlier_mask = self._zscore_outliers(values.values, z_threshold)
             elif method == "isolation_forest":
-                outlier_mask = self._isolation_forest_outliers(
-                    values.values, contamination
-                )
+                outlier_mask = self._isolation_forest_outliers(values.values, contamination)
             else:
                 raise ValueError(
                     f"Unknown method: {method}. Use 'iqr', 'zscore', or 'isolation_forest'"
@@ -245,9 +239,7 @@ class DescriptiveStatistics(LoggerMixin):
 
         return (values < lower_bound) | (values > upper_bound)
 
-    def _zscore_outliers(
-        self, values: np.ndarray, threshold: float = 3.0
-    ) -> np.ndarray:
+    def _zscore_outliers(self, values: np.ndarray, threshold: float = 3.0) -> np.ndarray:
 
         z_scores = np.abs(stats.zscore(values))
         return z_scores > threshold
@@ -259,9 +251,7 @@ class DescriptiveStatistics(LoggerMixin):
         try:
             from sklearn.ensemble import IsolationForest
 
-            clf = IsolationForest(
-                contamination=contamination, random_state=42, n_estimators=100
-            )
+            clf = IsolationForest(contamination=contamination, random_state=42, n_estimators=100)
             predictions = clf.fit_predict(values.reshape(-1, 1))
             return predictions == -1
         except ImportError:

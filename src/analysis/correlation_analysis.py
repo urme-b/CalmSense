@@ -27,13 +27,9 @@ class CorrelationAnalyzer(LoggerMixin):
         if method in ["pearson", "spearman", "kendall"]:
             corr_matrix = subset.corr(method=method)
         else:
-            raise ValueError(
-                f"Unknown method: {method}. Use 'pearson', 'spearman', or 'kendall'"
-            )
+            raise ValueError(f"Unknown method: {method}. Use 'pearson', 'spearman', or 'kendall'")
 
-        self.logger.info(
-            f"Computed {method} correlation matrix: {len(features)} features"
-        )
+        self.logger.info(f"Computed {method} correlation matrix: {len(features)} features")
 
         return corr_matrix
 
@@ -87,9 +83,7 @@ class CorrelationAnalyzer(LoggerMixin):
 
         return corr_df, pval_df
 
-    def compute_vif(
-        self, df: pd.DataFrame, features: Optional[List[str]] = None
-    ) -> pd.DataFrame:
+    def compute_vif(self, df: pd.DataFrame, features: Optional[List[str]] = None) -> pd.DataFrame:
 
         if features is None:
             features = df.select_dtypes(include=[np.number]).columns.tolist()
@@ -106,9 +100,7 @@ class CorrelationAnalyzer(LoggerMixin):
 
         if len(X) < len(valid_features) + 1:
             self.logger.warning("Insufficient samples for VIF calculation")
-            return pd.DataFrame(
-                {"feature": valid_features, "VIF": [np.nan] * len(valid_features)}
-            )
+            return pd.DataFrame({"feature": valid_features, "VIF": [np.nan] * len(valid_features)})
 
         vif_values = []
 
@@ -161,9 +153,7 @@ class CorrelationAnalyzer(LoggerMixin):
         vif_df = vif_df.sort_values("VIF", ascending=False)
 
         n_high = (vif_df["VIF"] > 10).sum()
-        self.logger.info(
-            f"VIF computed: {n_high}/{len(valid_features)} features have VIF > 10"
-        )
+        self.logger.info(f"VIF computed: {n_high}/{len(valid_features)} features have VIF > 10")
 
         return vif_df
 
@@ -190,9 +180,7 @@ class CorrelationAnalyzer(LoggerMixin):
         # Sort by absolute correlation
         high_corr_pairs.sort(key=lambda x: abs(x[2]), reverse=True)
 
-        self.logger.info(
-            f"Found {len(high_corr_pairs)} feature pairs with |r| >= {threshold}"
-        )
+        self.logger.info(f"Found {len(high_corr_pairs)} feature pairs with |r| >= {threshold}")
 
         return high_corr_pairs
 
@@ -313,7 +301,7 @@ class CorrelationAnalyzer(LoggerMixin):
         distance_matrix = 1 - np.abs(corr_matrix.values)
 
         try:
-            from scipy.cluster.hierarchy import linkage, fcluster
+            from scipy.cluster.hierarchy import fcluster, linkage
 
             # Hierarchical clustering
             linkage_matrix = linkage(

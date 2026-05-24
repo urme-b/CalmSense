@@ -9,9 +9,7 @@ from ..logging_config import LoggerMixin
 class TemperatureFeatureExtractor(LoggerMixin):
     def __init__(self, sampling_rate: float = 4.0):
         self.sampling_rate = sampling_rate
-        self.logger.debug(
-            f"TemperatureFeatureExtractor initialized, fs={sampling_rate} Hz"
-        )
+        self.logger.debug(f"TemperatureFeatureExtractor initialized, fs={sampling_rate} Hz")
 
     def _validate_signal(self, signal: np.ndarray) -> Optional[np.ndarray]:
         if signal is None:

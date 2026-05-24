@@ -2,7 +2,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Tuple
 
-
 PROJECT_ROOT = Path(__file__).parent.parent.absolute()
 
 DATA_DIR = PROJECT_ROOT / "data"

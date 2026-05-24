@@ -97,9 +97,7 @@ class BaseMLModel(ABC, LoggerMixin):
                 proba[i, class_idx] = 1.0
             return proba
 
-    def get_feature_importance(
-        self, feature_names: Optional[List[str]] = None
-    ) -> pd.DataFrame:
+    def get_feature_importance(self, feature_names: Optional[List[str]] = None) -> pd.DataFrame:
 
         self._check_is_fitted()
 
@@ -113,17 +111,13 @@ class BaseMLModel(ABC, LoggerMixin):
             else:
                 importances = np.abs(coef)
         else:
-            self.logger.warning(
-                f"{self.model_name} does not support feature importances"
-            )
+            self.logger.warning(f"{self.model_name} does not support feature importances")
             return pd.DataFrame()
 
         if feature_names is None:
             feature_names = [f"feature_{i}" for i in range(len(importances))]
 
-        importance_df = pd.DataFrame(
-            {"feature": feature_names, "importance": importances}
-        )
+        importance_df = pd.DataFrame({"feature": feature_names, "importance": importances})
 
         importance_df = importance_df.sort_values("importance", ascending=False)
         importance_df["rank"] = range(1, len(importance_df) + 1)

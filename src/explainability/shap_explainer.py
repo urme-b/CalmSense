@@ -111,9 +111,7 @@ class SHAPExplainer(LoggerMixin):
 
         # Compute SHAP values
         if self.model_type == "tree":
-            shap_values = self.explainer.shap_values(
-                X, check_additivity=check_additivity
-            )
+            shap_values = self.explainer.shap_values(X, check_additivity=check_additivity)
         else:
             shap_values = self.explainer.shap_values(X)
 
@@ -230,11 +228,7 @@ class SHAPExplainer(LoggerMixin):
                     else self._expected_value
                 )
             else:
-                sv = (
-                    shap_values[1][idx]
-                    if len(shap_values) == 2
-                    else shap_values[-1][idx]
-                )
+                sv = shap_values[1][idx] if len(shap_values) == 2 else shap_values[-1][idx]
                 base = (
                     self._expected_value[1]
                     if isinstance(self._expected_value, (list, np.ndarray))
@@ -289,11 +283,7 @@ class SHAPExplainer(LoggerMixin):
                     else self._expected_value
                 )
             else:
-                sv = (
-                    shap_values[1][idx]
-                    if len(shap_values) == 2
-                    else shap_values[-1][idx]
-                )
+                sv = shap_values[1][idx] if len(shap_values) == 2 else shap_values[-1][idx]
                 base = (
                     self._expected_value[1]
                     if isinstance(self._expected_value, (list, np.ndarray))
@@ -355,9 +345,7 @@ class SHAPExplainer(LoggerMixin):
         else:
             sv = shap_values
 
-        feature_idx = (
-            feature_names.index(feature) if isinstance(feature, str) else feature
-        )
+        feature_idx = feature_names.index(feature) if isinstance(feature, str) else feature
 
         fig, ax = plt.subplots(figsize=(8, 6))
 
@@ -410,9 +398,7 @@ class SHAPExplainer(LoggerMixin):
 
         fig, ax = plt.subplots(figsize=(8, 6))
 
-        scatter = ax.scatter(
-            X[:, idx1], sv[:, idx1], c=X[:, idx2], cmap="viridis", alpha=0.6
-        )
+        scatter = ax.scatter(X[:, idx1], sv[:, idx1], c=X[:, idx2], cmap="viridis", alpha=0.6)
 
         ax.set_xlabel(f"{feature1} Value")
         ax.set_ylabel(f"SHAP Value for {feature1}")
@@ -483,11 +469,7 @@ class SHAPExplainer(LoggerMixin):
             if class_idx is not None:
                 sv = shap_values[class_idx][idx]
             else:
-                sv = (
-                    shap_values[1][idx]
-                    if len(shap_values) == 2
-                    else shap_values[-1][idx]
-                )
+                sv = shap_values[1][idx] if len(shap_values) == 2 else shap_values[-1][idx]
         else:
             sv = shap_values[idx]
 
@@ -619,9 +601,7 @@ class SHAPExplainer(LoggerMixin):
                 parts.append(base_info["low"])
 
         impact_str = "increases" if shap_value > 0 else "decreases"
-        parts.append(
-            f"This feature {impact_str} stress prediction by {abs(shap_value):.4f}"
-        )
+        parts.append(f"This feature {impact_str} stress prediction by {abs(shap_value):.4f}")
 
         return " | ".join(parts)
 
