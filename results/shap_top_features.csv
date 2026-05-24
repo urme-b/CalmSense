@@ -1,0 +1,16 @@
+feature,mean_abs_shap
+ACC_zero_crossings,1.3612982
+HRV_MedianNN,0.9866541
+HRV_MeanNN,0.87146235
+ACC_std,0.803978
+EDA_SCR_recovery_time_mean,0.7719178
+EDA_SCR_amplitude_max,0.70294964
+EDA_SCL_max,0.5064553
+EDA_SCL_slope,0.35127616
+TEMP_mean,0.34093
+EDA_SCL_mean,0.33874714
+ACC_magnitude,0.32643047
+HRV_CVSD,0.29860625
+EDA_SCR_amplitude_mean,0.21980889
+HRV_LF_peak_freq,0.21021613
+EDA_range,0.17704281
