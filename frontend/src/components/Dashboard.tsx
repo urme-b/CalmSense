@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { getHealth, getModels, getModelStatistics } from '../services/api';
 import { HealthResponse, ModelListResponse, RecentPrediction } from '../types';
+import results from '../results.json';
 
 // Metric Card Component
 const MetricCard: React.FC<{
@@ -52,26 +53,22 @@ const MetricCard: React.FC<{
 
 // Feature Importance Chart
 const FeatureImportanceChart: React.FC = () => {
-  const data = [
-    { name: 'HRV RMSSD', value: 0.18, color: '#3182CE' },
-    { name: 'EDA Mean', value: 0.15, color: '#38A169' },
-    { name: 'LF/HF Ratio', value: 0.12, color: '#D69E2E' },
-    { name: 'HR Mean', value: 0.10, color: '#E53E3E' },
-    { name: 'Resp Rate', value: 0.09, color: '#805AD5' },
-    { name: 'HRV SDNN', value: 0.08, color: '#DD6B20' },
-    { name: 'SCR Count', value: 0.07, color: '#319795' },
-    { name: 'Temp Mean', value: 0.06, color: '#D53F8C' },
-  ];
+  const palette = ['#3182CE', '#38A169', '#D69E2E', '#E53E3E', '#805AD5', '#DD6B20', '#319795', '#D53F8C'];
+  const data = ((results as any).shap || []).slice(0, 8).map((s: any, i: number) => ({
+    name: s.feature,
+    value: s.mean_abs_shap,
+    color: palette[i % palette.length],
+  }));
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
       <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-        Top Feature Importance
+        Top biomarkers (mean |SHAP|)
       </h3>
       <ResponsiveContainer width="100%" height={300}>
-        <BarChart data={data} layout="vertical" margin={{ left: 80 }}>
+        <BarChart data={data} layout="vertical" margin={{ left: 100 }}>
           <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-          <XAxis type="number" domain={[0, 0.2]} />
+          <XAxis type="number" />
           <YAxis type="category" dataKey="name" tick={{ fontSize: 12 }} />
           <Tooltip
             contentStyle={{
@@ -316,27 +313,27 @@ const Dashboard: React.FC = () => {
       {/* Metric Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard
-          title="Best Accuracy"
-          value="94.2%"
+          title="LOSO Accuracy"
+          value="91.2%"
           icon={<TrendingUp className="w-6 h-6 text-blue-600" />}
-          trend={{ value: 2.3, label: 'vs baseline' }}
+          trend={{ value: 26.5, label: 'over majority class' }}
           color="blue"
         />
         <MetricCard
-          title="Total Features"
-          value="147"
+          title="Features"
+          value="60+"
           icon={<Activity className="w-6 h-6 text-green-600" />}
           color="green"
         />
         <MetricCard
-          title="Models Trained"
-          value={models?.total_models || 12}
+          title="Subjects (LOSO)"
+          value="15"
           icon={<Layers className="w-6 h-6 text-purple-600" />}
           color="purple"
         />
         <MetricCard
-          title="Avg Inference"
-          value="5.2ms"
+          title="Best Model"
+          value="Random Forest"
           icon={<Clock className="w-6 h-6 text-orange-600" />}
           color="orange"
         />
