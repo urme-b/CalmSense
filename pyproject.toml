@@ -35,94 +35,49 @@ classifiers = [
 ]
 
 dependencies = [
-    # Data manipulation & scientific computing
-    "numpy>=1.24.0,<3.0.0",
-    "pandas>=2.0.0,<3.0.0",
-    "scipy>=1.10.0,<2.0.0",
-    "scikit-learn>=1.3.0,<2.0.0",
+    # Scientific core
+    "numpy>=1.24,<3.0",
+    "pandas>=2.0,<3.0",
+    "scipy>=1.10,<2.0",
+    "pyarrow>=14.0",
+    "scikit-learn>=1.3,<2.0",
 
     # Biosignal processing
-    "neurokit2>=0.2.0,<1.0.0",
-    "pyhrv>=0.4.1,<1.0.0",
-    "biosppy>=1.0.0,<2.0.0",
-    "heartpy>=1.2.7,<2.0.0",
+    "neurokit2==0.2.7",
 
-    # Time series processing
-    "pyts>=0.13.0,<1.0.0",
-    "tsfresh>=0.20.0,<1.0.0",
-    "tslearn>=0.6.0,<1.0.0",
-
-    # Machine Learning - Gradient Boosting
-    "xgboost>=2.0.0,<3.0.0",
-    "lightgbm>=4.0.0,<5.0.0",
-    "catboost>=1.2.0,<2.0.0",
-
-    # Deep Learning
-    "torch>=2.0.0,<3.0.0",
-    "pytorch-tabnet>=4.1.0,<5.0.0",
-    "torchvision>=0.15.0,<1.0.0",
+    # Models
+    "xgboost>=2.0,<3.0",
+    "lightgbm>=4.0,<5.0",
+    "torch>=2.0,<3.0",
 
     # Explainability
-    "shap>=0.42.0,<1.0.0",
-    "lime>=0.2.0,<1.0.0",
-    "captum>=0.6.0,<1.0.0",
+    "shap>=0.43,<1.0",
 
-    # Hyperparameter optimization
-    "optuna>=3.3.0,<4.0.0",
-    "optuna-dashboard>=0.13.0,<1.0.0",
+    # Figures
+    "matplotlib>=3.7,<4.0",
+    "seaborn>=0.12,<1.0",
 
-    # API & Backend
-    "fastapi>=0.103.0,<1.0.0",
-    "uvicorn[standard]>=0.23.0,<1.0.0",
-    "pydantic>=2.0.0,<3.0.0",
-    "python-multipart>=0.0.6,<1.0.0",
-
-    # Visualization
-    "matplotlib>=3.7.0,<4.0.0",
-    "seaborn>=0.12.0,<1.0.0",
-    "plotly>=5.15.0,<6.0.0",
+    # Serving
+    "fastapi>=0.103,<1.0",
+    "uvicorn[standard]>=0.23,<1.0",
+    "pydantic>=2.0,<3.0",
+    "pydantic-settings>=2.0,<3.0",
+    "python-multipart>=0.0.6,<1.0",
+    "PyJWT>=2.8,<3.0",
 
     # Utilities
-    "python-dotenv>=1.0.0,<2.0.0",
-    "pyyaml>=6.0.0,<7.0.0",
-    "tqdm>=4.65.0,<5.0.0",
-    "joblib>=1.3.0,<2.0.0",
-    "pydantic-settings>=2.0.0,<3.0.0",
-    "structlog>=23.1.0,<25.0.0",
-    "PyJWT>=2.8.0,<3.0.0",
-    "celery[redis]>=5.3.0,<6.0.0",
-    "imbalanced-learn>=0.11.0,<1.0.0",
-
-    # Logging & Experiment tracking
-    "mlflow>=2.7.0,<3.0.0",
-    "wandb>=0.15.0,<1.0.0",
+    "joblib>=1.3,<2.0",
+    "structlog>=23.1,<25.0",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest>=7.4.0",
     "pytest-cov>=4.1.0",
-    "pytest-asyncio>=0.21.0",
-    "black>=23.7.0",
-    "isort>=5.12.0",
-    "flake8>=6.1.0",
-    "mypy>=1.5.0",
-    "pre-commit>=3.3.0",
-]
-docs = [
-    "mkdocs>=1.5.0",
-    "mkdocs-material>=9.2.0",
-    "mkdocstrings[python]>=0.22.0",
-]
-notebooks = [
-    "jupyter>=1.0.0",
-    "jupyterlab>=4.0.0",
-    "ipywidgets>=8.1.0",
-    "nbformat>=5.9.0",
+    "ruff>=0.5.0",
 ]
 
 [project.scripts]
-calmsense = "src.cli:main"
 calmsense-api = "api.main:run_server"
 
 [project.urls]
@@ -133,51 +88,19 @@ Repository = "https://github.com/urme-b/CalmSense"
 where = ["."]
 include = ["src*", "api*"]
 
-[tool.black]
+[tool.ruff]
 line-length = 100
-target-version = ["py39", "py310", "py311"]
-include = '\.pyi?$'
-exclude = '''
-/(
-    \.git
-    | \.hg
-    | \.mypy_cache
-    | \.tox
-    | \.venv
-    | _build
-    | buck-out
-    | build
-    | dist
-    | data
-)/
-'''
+target-version = "py39"
+extend-exclude = ["data", "outputs", "results", ".venv"]
 
-[tool.isort]
-profile = "black"
-line_length = 100
-known_first_party = ["src", "api"]
-skip = [".git", ".venv", "data"]
-
-[tool.mypy]
-python_version = "3.10"
-warn_return_any = false
-warn_unused_configs = true
-ignore_missing_imports = true
-disallow_untyped_defs = false
-check_untyped_defs = false
-no_implicit_optional = false
-
-[[tool.mypy.overrides]]
-module = [
-    "src.*",
-    "api.*",
-]
-ignore_errors = true
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
+ignore = ["E501"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-python_files = ["test_*.py", "*_test.py"]
-addopts = "-v"
+python_files = ["test_*.py"]
+addopts = "-q"
 filterwarnings = [
     "ignore::DeprecationWarning",
     "ignore::UserWarning",

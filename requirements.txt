@@ -1,67 +1,36 @@
-# =============================================================================
-# CalmSense Requirements
-# =============================================================================
+# CalmSense dependencies
+# macOS note: xgboost/lightgbm need OpenMP -> `brew install libomp`
 
-# Core Scientific Computing
-numpy>=1.24.0,<3.0.0
-scipy>=1.10.0,<2.0.0
-pandas>=2.0.0,<3.0.0
+# Scientific core
+numpy>=1.24,<3.0
+scipy>=1.10,<2.0
+pandas>=2.0,<3.0
+pyarrow>=14.0
+scikit-learn>=1.3,<2.0
 
-# Signal Processing
-neurokit2>=0.2.0,<1.0.0
-heartpy>=1.2.7,<2.0.0
-biosppy>=1.0.0,<2.0.0
+# Biosignal processing
+neurokit2==0.2.7
 
-# Machine Learning
-scikit-learn>=1.3.0,<2.0.0
-xgboost>=2.0.0,<3.0.0
-lightgbm>=4.0.0,<5.0.0
-catboost>=1.2.0,<2.0.0
-optuna>=3.3.0,<4.0.0
-imbalanced-learn>=0.11.0,<1.0.0
-
-# Deep Learning
-torch>=2.0.0,<3.0.0
-torchvision>=0.15.0,<1.0.0
-pytorch-tabnet>=4.1.0,<5.0.0
+# Models
+xgboost>=2.0,<3.0
+lightgbm>=4.0,<5.0
+torch>=2.0,<3.0
 
 # Explainability
-shap>=0.42.0,<1.0.0
-lime>=0.2.0,<1.0.0
+shap>=0.43,<1.0
 
-# API Framework
-fastapi>=0.103.0,<1.0.0
-uvicorn[standard]>=0.23.0,<1.0.0
-pydantic>=2.0.0,<3.0.0
-python-multipart>=0.0.6,<1.0.0
+# Figures
+matplotlib>=3.7,<4.0
+seaborn>=0.12,<1.0
 
-# Visualization
-matplotlib>=3.7.0,<4.0.0
-seaborn>=0.12.0,<1.0.0
-plotly>=5.15.0,<6.0.0
-
-# Jupyter
-jupyterlab>=4.0.0,<5.0.0
-ipywidgets>=8.0.0,<9.0.0
-nbformat>=5.9.0,<6.0.0
+# Serving
+fastapi>=0.103,<1.0
+uvicorn[standard]>=0.23,<1.0
+pydantic>=2.0,<3.0
+pydantic-settings>=2.0,<3.0
+python-multipart>=0.0.6,<1.0
+PyJWT>=2.8,<3.0
 
 # Utilities
-pyyaml>=6.0.0,<7.0.0
-python-dotenv>=1.0.0,<2.0.0
-tqdm>=4.65.0,<5.0.0
-joblib>=1.3.0,<2.0.0
-
-# Structured Logging
-structlog>=23.1.0,<25.0.0
-
-# Configuration
-pydantic-settings>=2.0.0,<3.0.0
-
-# Authentication
-PyJWT>=2.8.0,<3.0.0
-
-# Task Queue
-celery[redis]>=5.3.0,<6.0.0
-
-# Type checking (optional)
-types-PyYAML>=6.0.0,<7.0.0
+joblib>=1.3,<2.0
+structlog>=23.1,<25.0
