@@ -52,9 +52,10 @@ const About: React.FC = () => {
           React dashboard.
         </p>
         <p className="mt-4 text-gray-600 dark:text-gray-400 leading-relaxed">
-          Our best model (Random Forest with LOSO cross-validation) achieves <strong>94.2% accuracy</strong> in
-          three-class classification (Baseline, Stress, Amusement), with comprehensive explainability
-          through SHAP, LIME, and clinically-grounded interpretation based on HRV standards.
+          Every result uses <strong>Leave-One-Subject-Out</strong> cross-validation, so models are always tested
+          on people they never trained on. The best model (Random Forest) reaches <strong>91.2% accuracy</strong> for
+          binary stress detection and 65.0% for three-class (baseline/stress/amusement), with SHAP-based and
+          clinically-grounded interpretation built on HRV standards.
         </p>
       </div>
 
@@ -79,10 +80,10 @@ const About: React.FC = () => {
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Models</h3>
           </div>
           <ul className="space-y-2 text-gray-600 dark:text-gray-400">
-            <li>• Classical ML: RF, XGBoost, LightGBM, CatBoost, SVM</li>
-            <li>• Deep Learning: CNN, LSTM, Transformer</li>
-            <li>• Cross-Modal Attention for multimodal fusion</li>
-            <li>• LOSO cross-validation for robustness</li>
+            <li>• Classical ML: Logistic Regression, Random Forest, XGBoost, LightGBM</li>
+            <li>• Deep Learning: residual 1D-CNN on raw signals</li>
+            <li>• Leakage-free per-fold imputation and scaling</li>
+            <li>• Leave-One-Subject-Out cross-validation</li>
           </ul>
         </div>
 
@@ -92,10 +93,10 @@ const About: React.FC = () => {
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Features</h3>
           </div>
           <ul className="space-y-2 text-gray-600 dark:text-gray-400">
-            <li>• 147 physiological features extracted</li>
-            <li>• HRV time/frequency domain analysis</li>
+            <li>• 60+ physiological features extracted</li>
+            <li>• HRV time/frequency/nonlinear analysis</li>
             <li>• EDA phasic/tonic decomposition</li>
-            <li>• Signal quality assessment</li>
+            <li>• 60s windows, 50% overlap</li>
           </ul>
         </div>
 
@@ -106,8 +107,8 @@ const About: React.FC = () => {
           </div>
           <ul className="space-y-2 text-gray-600 dark:text-gray-400">
             <li>• SHAP values for global/local importance</li>
-            <li>• LIME for instance-level explanations</li>
-            <li>• Grad-CAM for CNN visualization</li>
+            <li>• Top-biomarker contributions per prediction</li>
+            <li>• Optimism-gap analysis (LOSO vs within-subject)</li>
             <li>• Clinical interpretation (Task Force 1996)</li>
           </ul>
         </div>
@@ -156,24 +157,22 @@ const About: React.FC = () => {
             <thead>
               <tr className="border-b border-gray-200 dark:border-gray-700">
                 <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Model</th>
-                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Accuracy</th>
-                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">F1 Score</th>
-                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">AUC-ROC</th>
+                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">LOSO Accuracy</th>
+                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Macro-F1</th>
               </tr>
             </thead>
             <tbody>
               {[
-                { model: 'Random Forest', acc: '94.2%', f1: '94.1%', auc: '97.8%' },
-                { model: 'XGBoost', acc: '93.8%', f1: '93.7%', auc: '97.5%' },
-                { model: 'LightGBM', acc: '93.5%', f1: '93.4%', auc: '97.2%' },
-                { model: 'CNN-LSTM', acc: '92.5%', f1: '92.4%', auc: '96.5%' },
-                { model: 'Transformer', acc: '92.8%', f1: '92.7%', auc: '96.8%' },
+                { model: 'Random Forest', acc: '91.2%', f1: '89.8%' },
+                { model: 'XGBoost', acc: '88.8%', f1: '85.8%' },
+                { model: 'LightGBM', acc: '87.5%', f1: '83.8%' },
+                { model: 'Logistic Regression', acc: '86.8%', f1: '85.3%' },
+                { model: '1D-CNN', acc: '64.7%', f1: '39.3%' },
               ].map((row, i) => (
                 <tr key={row.model} className={`border-b border-gray-100 dark:border-gray-700 ${i === 0 ? 'bg-green-50 dark:bg-green-900/20' : ''}`}>
                   <td className="px-4 py-2 text-gray-900 dark:text-white font-medium">{row.model}</td>
                   <td className="px-4 py-2 text-gray-600 dark:text-gray-400">{row.acc}</td>
                   <td className="px-4 py-2 text-gray-600 dark:text-gray-400">{row.f1}</td>
-                  <td className="px-4 py-2 text-gray-600 dark:text-gray-400">{row.auc}</td>
                 </tr>
               ))}
             </tbody>
