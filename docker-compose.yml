@@ -12,11 +12,8 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ./data:/app/data:ro
-      - ./models/trained:/app/models/trained:ro
-      - ./outputs:/app/outputs
+      - ./outputs:/app/outputs:ro
     environment:
-      - MODEL_PATH=/app/models/trained
       - LOG_LEVEL=INFO
       - PYTHONPATH=/app
     deploy:

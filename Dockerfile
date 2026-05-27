@@ -30,13 +30,13 @@ FROM python:3.11-slim-bookworm AS production
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PYTHONPATH=/app \
-    MODEL_PATH=/app/models/trained \
     LOG_LEVEL=INFO
 
-# Install system dependencies and
+# OpenMP for xgboost/lightgbm
 RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-recommends \
     build-essential \
     curl \
+    libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -46,15 +46,13 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-# Copy source code
+# Copy source and trained model
 COPY src/ ./src/
 COPY api/ ./api/
-COPY config/ ./config/
+COPY configs/ ./configs/
+COPY outputs/ ./outputs/
 
-# Copy trained models (if
-COPY models/ ./models/
-
-# Copy frontend build from
+# Copy frontend build
 COPY --from=frontend-build /app/frontend/build ./static
 
 # Create non-root user
