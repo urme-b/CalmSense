@@ -10,9 +10,6 @@ __pycache__/
 # C extensions
 *.so
 
-# CatBoost artifacts
-catboost_info/
-
 # Distribution / packaging
 .Python
 build/
@@ -120,30 +117,17 @@ data/interim/*
 data/external/*
 !data/external/.gitkeep
 
-# Model files (large binary files)
+# Model files, except the small serving model
 *.pkl
 *.pickle
-*.joblib
 *.h5
 *.hdf5
 *.pt
 *.pth
 *.onnx
-*.pb
-*.tflite
 outputs/models/*
 !outputs/models/.gitkeep
-
-# MLflow artifacts
-mlruns/
-mlartifacts/
-
-# Weights & Biases
-wandb/
-
-# Optuna
-optuna_studies/
-*.db
+!outputs/models/stress_classifier.joblib
 
 # =============================================================================
 # IDE / Editor
@@ -214,9 +198,10 @@ logs/*
 !logs/.gitkeep
 *.log
 
-# Figures (regenerate from code)
+# Figures: keep generated result PNGs
 outputs/figures/*
 !outputs/figures/.gitkeep
+!outputs/figures/*.png
 
 # Reports
 outputs/reports/*
