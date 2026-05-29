@@ -22,10 +22,10 @@ keywords:
 abstract: >-
   CalmSense is a multimodal physiological stress detection system
   that classifies baseline, stress, and amusement states from
-  wearable sensor data. The system implements end-to-end signal
-  processing, 60+ biomarker extraction, 13 ML/DL models with
-  Leave-One-Subject-Out cross-validation, and SHAP/LIME-based
-  clinical interpretation.
+  wearable sensor data. It implements end-to-end signal processing,
+  60+ biomarker extraction, and a leakage-free Leave-One-Subject-Out
+  benchmark of classical models and a 1D-CNN, with SHAP-based
+  biomarker interpretation.
 references:
   - type: article
     authors:
