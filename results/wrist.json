@@ -1,0 +1,39 @@
+{
+  "wrist_models": [
+    {
+      "model": "Logistic Regression",
+      "accuracy_mean": 0.8684553042879136,
+      "f1_macro_mean": 0.8560614727976099
+    },
+    {
+      "model": "Random Forest",
+      "accuracy_mean": 0.8912148474642141,
+      "f1_macro_mean": 0.8695455983977314
+    },
+    {
+      "model": "XGBoost",
+      "accuracy_mean": 0.9083977541443266,
+      "f1_macro_mean": 0.8873618171033295
+    },
+    {
+      "model": "LightGBM",
+      "accuracy_mean": 0.8640660916547692,
+      "f1_macro_mean": 0.83851045223368
+    }
+  ],
+  "wrist_best": {
+    "model": "XGBoost",
+    "accuracy_mean": 0.9083977541443266,
+    "f1_macro_mean": 0.8873618171033295
+  },
+  "chest_best": {
+    "model": "Random Forest",
+    "accuracy_mean": 0.9121384762281433
+  },
+  "same_model_rf": {
+    "chest": 0.9121384762281433,
+    "wrist": 0.8912148474642141,
+    "drop_pts": 2.092362876392917
+  },
+  "best_per_arm_drop_pts": 0.37407220838167055
+}
