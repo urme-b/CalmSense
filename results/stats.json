@@ -1,0 +1,22 @@
+{
+  "best_model": "Random Forest",
+  "accuracy_mean": 0.9121384762281433,
+  "ci95": [
+    0.8627925118050157,
+    0.9564632910496984
+  ],
+  "paired_tests_vs_best": {
+    "Logistic Regression": {
+      "delta_mean": 0.0445052498948344,
+      "p_value": 0.0328542199286437
+    },
+    "XGBoost": {
+      "delta_mean": 0.024251525063300194,
+      "p_value": 0.04252247799805163
+    },
+    "LightGBM": {
+      "delta_mean": 0.03689919889690285,
+      "p_value": 0.04085984371280629
+    }
+  }
+}
