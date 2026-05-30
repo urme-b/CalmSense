@@ -1,0 +1,23 @@
+{
+  "n_shared_features": 18,
+  "within_wesad": {
+    "accuracy": 0.8734267427703267,
+    "f1_macro": 0.8494514478692596,
+    "balanced_accuracy": 0.8637080227665273
+  },
+  "within_noneeg": {
+    "accuracy": 0.7198166147474223,
+    "f1_macro": 0.6722363419883234,
+    "balanced_accuracy": 0.698948159778588
+  },
+  "wesad_to_noneeg": {
+    "accuracy": 0.6354810238305384,
+    "balanced_accuracy": 0.5731730845996221,
+    "f1_macro": 0.5693454438025572
+  },
+  "noneeg_to_wesad": {
+    "accuracy": 0.5592635212888377,
+    "balanced_accuracy": 0.5003709413796701,
+    "f1_macro": 0.49872205579578194
+  }
+}
