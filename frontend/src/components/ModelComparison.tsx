@@ -73,6 +73,29 @@ const ModelComparison: React.FC = () => {
         gap that inflates many reported WESAD results.
       </div>
 
+      {/* Generalization */}
+      {(results as any).cross_dataset && (results as any).wrist && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 text-sm">
+            <p className="font-semibold text-gray-900 dark:text-white mb-1">Wrist-only is enough</p>
+            <p className="text-gray-600 dark:text-gray-400">
+              With the same model, Empatica E4 wrist signals reach{' '}
+              <strong>{pct((results as any).wrist.same_model_rf.wrist)}</strong> vs{' '}
+              {pct((results as any).wrist.same_model_rf.chest)} for the chest — a{' '}
+              {(results as any).wrist.same_model_rf.drop_pts.toFixed(1)}-pt drop. No chest strap needed.
+            </p>
+          </div>
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 text-sm">
+            <p className="font-semibold text-gray-900 dark:text-white mb-1">It doesn't cross datasets</p>
+            <p className="text-gray-600 dark:text-gray-400">
+              Trained on WESAD, tested on PhysioNet Non-EEG, balanced accuracy falls to{' '}
+              <strong>{pct((results as any).cross_dataset.wesad_to_noneeg.balanced_accuracy)}</strong> —
+              near chance. Within-dataset success ≠ real-world generalization.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Metrics table */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">

@@ -143,5 +143,133 @@
       "feature": "HRV_CVSD",
       "mean_abs_shap": 0.29860625
     }
+  ],
+  "stats": {
+    "best_model": "Random Forest",
+    "accuracy_mean": 0.9121384762281433,
+    "ci95": [
+      0.8627925118050157,
+      0.9564632910496984
+    ],
+    "paired_tests_vs_best": {
+      "Logistic Regression": {
+        "delta_mean": 0.0445052498948344,
+        "p_value": 0.0328542199286437
+      },
+      "XGBoost": {
+        "delta_mean": 0.024251525063300194,
+        "p_value": 0.04252247799805163
+      },
+      "LightGBM": {
+        "delta_mean": 0.03689919889690285,
+        "p_value": 0.04085984371280629
+      }
+    }
+  },
+  "wrist": {
+    "wrist_models": [
+      {
+        "model": "Logistic Regression",
+        "accuracy_mean": 0.8684553042879136,
+        "f1_macro_mean": 0.8560614727976099
+      },
+      {
+        "model": "Random Forest",
+        "accuracy_mean": 0.8912148474642141,
+        "f1_macro_mean": 0.8695455983977314
+      },
+      {
+        "model": "XGBoost",
+        "accuracy_mean": 0.9083977541443266,
+        "f1_macro_mean": 0.8873618171033295
+      },
+      {
+        "model": "LightGBM",
+        "accuracy_mean": 0.8640660916547692,
+        "f1_macro_mean": 0.83851045223368
+      }
+    ],
+    "wrist_best": {
+      "model": "XGBoost",
+      "accuracy_mean": 0.9083977541443266,
+      "f1_macro_mean": 0.8873618171033295
+    },
+    "chest_best": {
+      "model": "Random Forest",
+      "accuracy_mean": 0.9121384762281433
+    },
+    "same_model_rf": {
+      "chest": 0.9121384762281433,
+      "wrist": 0.8912148474642141,
+      "drop_pts": 2.092362876392917
+    },
+    "best_per_arm_drop_pts": 0.37407220838167055
+  },
+  "cross_dataset": {
+    "n_shared_features": 18,
+    "within_wesad": {
+      "accuracy": 0.8734267427703267,
+      "f1_macro": 0.8494514478692596,
+      "balanced_accuracy": 0.8637080227665273
+    },
+    "within_noneeg": {
+      "accuracy": 0.7198166147474223,
+      "f1_macro": 0.6722363419883234,
+      "balanced_accuracy": 0.698948159778588
+    },
+    "wesad_to_noneeg": {
+      "accuracy": 0.6354810238305384,
+      "balanced_accuracy": 0.5731730845996221,
+      "f1_macro": 0.5693454438025572
+    },
+    "noneeg_to_wesad": {
+      "accuracy": 0.5592635212888377,
+      "balanced_accuracy": 0.5003709413796701,
+      "f1_macro": 0.49872205579578194
+    }
+  },
+  "ablation": [
+    {
+      "subset": "All features",
+      "n_features": 54,
+      "accuracy_mean": 0.9121384762281431,
+      "accuracy_std": 0.0949467393298402,
+      "f1_macro_mean": 0.8977922751610052
+    },
+    {
+      "subset": "No motion (HRV+EDA+TEMP+RESP)",
+      "n_features": 50,
+      "accuracy_mean": 0.9032454834696056,
+      "accuracy_std": 0.1109252711975042,
+      "f1_macro_mean": 0.8897712945159797
+    },
+    {
+      "subset": "Autonomic (HRV+EDA)",
+      "n_features": 45,
+      "accuracy_mean": 0.8842102179555287,
+      "accuracy_std": 0.1431566838743333,
+      "f1_macro_mean": 0.8721787277839319
+    },
+    {
+      "subset": "HRV only",
+      "n_features": 30,
+      "accuracy_mean": 0.8133426296385987,
+      "accuracy_std": 0.1565193525544925,
+      "f1_macro_mean": 0.7794761298251327
+    },
+    {
+      "subset": "EDA only",
+      "n_features": 15,
+      "accuracy_mean": 0.8280149288265276,
+      "accuracy_std": 0.1278242330897043,
+      "f1_macro_mean": 0.8029723389993931
+    },
+    {
+      "subset": "Motion only (ACC)",
+      "n_features": 4,
+      "accuracy_mean": 0.8436408890623184,
+      "accuracy_std": 0.110002312079767,
+      "f1_macro_mean": 0.8233446458915474
+    }
   ]
 }
