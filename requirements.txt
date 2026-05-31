@@ -20,6 +20,11 @@ torch>=2.0,<3.0
 # Explainability
 shap>=0.43,<1.0
 
+# Export the trained model to ONNX for in-browser inference
+skl2onnx>=1.17,<2.0
+onnx>=1.15
+onnxruntime>=1.17
+
 # Figures
 matplotlib>=3.7,<4.0
 seaborn>=0.12,<1.0
