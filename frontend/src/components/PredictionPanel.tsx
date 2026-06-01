@@ -20,7 +20,8 @@ import {
   Download,
   Trash2,
 } from 'lucide-react';
-import { predictFromFeatures, parseCSV } from '../services/api';
+import { parseCSV } from '../services/api';
+import { predictLocal } from '../services/onnx';
 import { PredictionResponse } from '../types';
 
 // Confidence Gauge Component
@@ -214,9 +215,9 @@ const PredictionPanel: React.FC = () => {
       setProgress(50);
       const features = data[0];
 
-      // Make prediction
+      // Make prediction (in-browser)
       setProgress(80);
-      const result = await predictFromFeatures(features, undefined, true, false);
+      const result = await predictLocal(features);
 
       setProgress(100);
       setCurrentPrediction(result);
@@ -234,22 +235,23 @@ const PredictionPanel: React.FC = () => {
     setError(null);
 
     try {
+      // Real feature values from a WESAD stress window (top SHAP features)
       const sampleFeatures: Record<string, number> = {
-        hr_mean: 85.5,
-        hrv_sdnn: 42.3,
-        hrv_rmssd: 28.7,
-        hrv_pnn50: 15.2,
-        hrv_lf_power: 1250,
-        hrv_hf_power: 450,
-        hrv_lf_hf_ratio: 2.78,
-        eda_mean: 5.8,
-        eda_std: 1.2,
-        scr_count: 8,
-        resp_rate: 16.5,
-        temp_mean: 33.2,
+        ACC_zero_crossings: 51.75,
+        HRV_MedianNN: 728.571,
+        HRV_MeanNN: 748.828,
+        ACC_std: 0.014,
+        EDA_SCR_recovery_time_mean: 1.897,
+        EDA_SCR_amplitude_max: 0.156,
+        EDA_SCL_max: 1.416,
+        EDA_SCL_slope: 0.003,
+        TEMP_mean: 31.357,
+        EDA_SCL_mean: 1.325,
+        ACC_magnitude: 0.929,
+        HRV_CVSD: 0.042,
       };
 
-      const result = await predictFromFeatures(sampleFeatures);
+      const result = await predictLocal(sampleFeatures);
       setCurrentPrediction(result);
       setHistory((prev) => [result, ...prev].slice(0, 10));
     } catch (err: any) {
