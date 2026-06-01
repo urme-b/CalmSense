@@ -79,7 +79,7 @@ const FeatureImportanceChart: React.FC = () => {
             }}
           />
           <Bar dataKey="value" radius={[0, 4, 4, 0]}>
-            {data.map((entry, index) => (
+            {data.map((entry: { color: string }, index: number) => (
               <Cell key={`cell-${index}`} fill={entry.color} />
             ))}
           </Bar>
@@ -113,7 +113,7 @@ const ClassDistributionChart: React.FC = () => {
             paddingAngle={5}
             dataKey="value"
           >
-            {data.map((entry, index) => (
+            {data.map((entry: { color: string }, index: number) => (
               <Cell key={`cell-${index}`} fill={entry.color} />
             ))}
           </Pie>
