@@ -1,54 +1,13 @@
 import React, { useState, useMemo } from 'react';
 import Plot from 'react-plotly.js';
 import { ZoomIn, ZoomOut, Move, RefreshCw, Download } from 'lucide-react';
+import realSignals from '../signals.json';
 
-// Synthetic signal data
-const generateSignalData = (subject: string, duration: number = 300, fs: number = 100) => {
-  const n = duration * fs;
-  const time = Array.from({ length: n }, (_, i) => i / fs);
-
-  // Generate ECG-like signal
-  const ecg = time.map((t, i) => {
-    const heartRate = 70 + 10 * Math.sin(2 * Math.PI * t / 60);
-    const rrInterval = 60 / heartRate;
-    const phase = (t % rrInterval) / rrInterval;
-
-    // Simplified ECG waveform
-    if (phase < 0.1) return 0.1 * Math.sin(phase * 10 * Math.PI);
-    if (phase < 0.15) return 1.0 * Math.exp(-50 * (phase - 0.12) ** 2); // R peak
-    if (phase < 0.25) return -0.3 * Math.exp(-30 * (phase - 0.18) ** 2);
-    return 0.05 * Math.sin(phase * 4 * Math.PI) + 0.02 * (Math.random() - 0.5);
-  });
-
-  // Generate EDA signal
-  const eda = time.map((t, i) => {
-    const baseline = 3 + 0.5 * Math.sin(2 * Math.PI * t / 120);
-    const scr = Math.random() > 0.995 ? 0.5 * Math.exp(-0.1 * (t % 10)) : 0;
-    return baseline + scr + 0.1 * (Math.random() - 0.5);
-  });
-
-  // Generate temperature signal
-  const temp = time.map((t) => {
-    return 33 + 0.5 * Math.sin(2 * Math.PI * t / 300) + 0.1 * (Math.random() - 0.5);
-  });
-
-  // Generate accelerometer signals
-  const accX = time.map((t) => 0.1 * Math.sin(2 * Math.PI * t / 2) + 0.05 * (Math.random() - 0.5));
-  const accY = time.map((t) => 0.1 * Math.cos(2 * Math.PI * t / 2) + 0.05 * (Math.random() - 0.5));
-  const accZ = time.map((t) => 1.0 + 0.05 * (Math.random() - 0.5));
-
-  // Generate condition labels
-  const conditions = time.map((t) => {
-    if (t < 100) return 'Baseline';
-    if (t < 200) return 'Stress';
-    return 'Amusement';
-  });
-
-  return { time, ecg, eda, temp, accX, accY, accZ, conditions };
-};
+// Real WESAD chest signals (baseline -> stress -> amusement), downsampled for display
+const subjects = Object.keys(realSignals);
 
 const SignalExplorer: React.FC = () => {
-  const [selectedSubject, setSelectedSubject] = useState('S2');
+  const [selectedSubject, setSelectedSubject] = useState(subjects[0]);
   const [visibleSignals, setVisibleSignals] = useState({
     ecg: true,
     eda: true,
@@ -57,9 +16,10 @@ const SignalExplorer: React.FC = () => {
   });
   const [xRange, setXRange] = useState<[number, number]>([0, 60]);
 
-  const subjects = ['S2', 'S3', 'S4', 'S5', 'S6', 'S7', 'S8', 'S9', 'S10', 'S11'];
-
-  const signalData = useMemo(() => generateSignalData(selectedSubject), [selectedSubject]);
+  const signalData = useMemo(
+    () => (realSignals as any)[selectedSubject],
+    [selectedSubject]
+  );
 
   const toggleSignal = (signal: keyof typeof visibleSignals) => {
     setVisibleSignals((prev) => ({ ...prev, [signal]: !prev[signal] }));
