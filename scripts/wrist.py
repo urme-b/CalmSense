@@ -70,7 +70,11 @@ def run():
         "wrist_models": rows,
         "wrist_best": best,
         "chest_best": {"model": chest_best["model"], "accuracy_mean": chest_best["accuracy_mean"]},
-        "same_model_rf": {"chest": chest_rf, "wrist": wrist_rf, "drop_pts": (chest_rf - wrist_rf) * 100},
+        "same_model_rf": {
+            "chest": chest_rf,
+            "wrist": wrist_rf,
+            "drop_pts": (chest_rf - wrist_rf) * 100,
+        },
         "best_per_arm_drop_pts": (chest_best["accuracy_mean"] - best["accuracy_mean"]) * 100,
     }
     json.dump(out, open(RESULTS_DIR / "wrist.json", "w"), indent=2)

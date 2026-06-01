@@ -20,7 +20,11 @@ FRONTEND = PROJECT_ROOT / "frontend"
 def run():
     bundle = joblib.load(MODELS_DIR / "stress_classifier.joblib")
     pipe, features, classes = bundle["pipeline"], bundle["features"], bundle["classes"]
-    imputer, scaler, rf = pipe.named_steps["impute"], pipe.named_steps["scale"], pipe.named_steps["clf"]
+    imputer, scaler, rf = (
+        pipe.named_steps["impute"],
+        pipe.named_steps["scale"],
+        pipe.named_steps["clf"],
+    )
     n = len(features)
 
     onx = convert_sklearn(
@@ -57,8 +61,10 @@ def run():
     proba = out[1]
 
     max_err = float(np.abs(np.asarray(proba) - ref).max())
-    print(f"Exported model.onnx ({(FRONTEND / 'public' / 'model.onnx').stat().st_size // 1024} KB), "
-          f"{n} features, classes {classes}")
+    print(
+        f"Exported model.onnx ({(FRONTEND / 'public' / 'model.onnx').stat().st_size // 1024} KB), "
+        f"{n} features, classes {classes}"
+    )
     print(f"ONNX vs sklearn max probability error: {max_err:.6f}")
     assert max_err < 1e-4, "ONNX output diverges from the sklearn pipeline"
     print("Match OK — the browser will reproduce the trained model exactly.")
