@@ -20,7 +20,6 @@ from .config import (
     get_project_root,
 )
 from .data import WESADLoader
-from .explainability import ClinicalInterpreter, SHAPExplainer
 from .features import FeatureExtractor
 from .logging_config import (
     LoggerMixin,
@@ -76,8 +75,6 @@ __all__ = [
     "WESADLoader",
     "SignalProcessor",
     "FeatureExtractor",
-    "SHAPExplainer",
-    "ClinicalInterpreter",
 ]
 
 
