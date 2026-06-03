@@ -78,7 +78,8 @@ class WindowedDataset(LoggerMixin):
 
             mask = (r_peaks >= start) & (r_peaks < end)
             rr = self.ecg.extract_rr_intervals(r_peaks[mask], unit="ms")
-            rr_clean, _ = self.ecg.remove_ectopic_beats(rr)
+            _, valid = self.ecg.remove_ectopic_beats(rr)
+            rr_clean = self.ecg.interpolate_artifacts(rr, valid)
 
             scr_in = [s for s, idx in zip(scr_features, scr_idx) if start <= idx < end]
 

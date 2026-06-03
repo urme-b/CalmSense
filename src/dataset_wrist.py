@@ -73,7 +73,8 @@ class WristDataset(LoggerMixin):
                 b0, b1 = int(t * FS.WRIST_BVP), int((t + self.window_sec) * FS.WRIST_BVP)
                 in_win = (peaks >= b0) & (peaks < b1)
                 rr = self.rr.extract_rr_intervals(peaks[in_win], unit="ms")
-                rr_clean, _ = self.rr.remove_ectopic_beats(rr)
+                _, valid = self.rr.remove_ectopic_beats(rr)
+                rr_clean = self.rr.interpolate_artifacts(rr, valid)
 
                 e0, e1 = int(t * FS.WRIST_EDA), int((t + self.window_sec) * FS.WRIST_EDA)
                 a0, a1 = int(t * FS.WRIST_ACC), int((t + self.window_sec) * FS.WRIST_ACC)

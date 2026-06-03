@@ -190,6 +190,14 @@ class ECGProcessor(LoggerMixin):
         x_valid = np.where(valid_mask)[0]
         x_all = np.arange(len(rr))
 
+        # A single valid beat cannot be interpolated; fall back to that value
+        if len(x_valid) == 1:
+            return np.full_like(rr, float(rr[valid_mask][0]))
+
+        # Drop to an order the valid points can support (cubic needs >=4, quadratic >=3)
+        if method == "cubic" and len(x_valid) < 4:
+            method = "quadratic" if len(x_valid) >= 3 else "linear"
+
         interpolator = interp1d(
             x_valid,
             rr[valid_mask],
