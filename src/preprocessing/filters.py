@@ -34,8 +34,16 @@ class SignalProcessor(LoggerMixin):
         if len(data) == 0:
             return data
 
-        b, a = signal.butter(order, normalized_cutoff, btype=btype)
-        return signal.filtfilt(b, a, data)
+        # Very low normalized cutoffs make high-order IIR filters unstable;
+        # drop the order and use second-order sections for numerical stability.
+        low_norm = (
+            min(normalized_cutoff) if isinstance(normalized_cutoff, tuple) else normalized_cutoff
+        )
+        if low_norm < 0.01:
+            order = min(order, 2)
+
+        sos = signal.butter(order, normalized_cutoff, btype=btype, output="sos")
+        return signal.sosfiltfilt(sos, data)
 
     def notch_filter(
         self,
