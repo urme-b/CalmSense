@@ -8,6 +8,7 @@ import structlog
 from .config import LOG_FILE, LOG_LEVEL
 
 _logging_configured = False
+_configured_level: Optional[str] = None
 
 # Processors
 _shared_processors = [
@@ -23,9 +24,9 @@ _shared_processors = [
 def setup_logging(
     level: str = LOG_LEVEL, log_file: Optional[Path] = LOG_FILE, console: bool = True
 ) -> None:
-    global _logging_configured
+    global _logging_configured, _configured_level
 
-    if _logging_configured and level == LOG_LEVEL:
+    if _logging_configured and level == _configured_level:
         return
 
     log_level = getattr(logging, level.upper())
@@ -61,6 +62,7 @@ def setup_logging(
         root.addHandler(fh)
 
     _logging_configured = True
+    _configured_level = level
 
 
 def get_logger(name: str):
