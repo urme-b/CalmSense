@@ -79,11 +79,13 @@ class AccelerometerFeatureExtractor(LoggerMixin):
                 float(np.sum(magnitude**2) / n_samples) if n_samples > 0 else 0.0
             )
 
-            if len(magnitude) > 64:
+            if len(magnitude) >= 64:
+                # Fine resolution so the 0.1-10 Hz movement band has frequency bins
+                nperseg = int(min(len(magnitude), max(256, self.sampling_rate * 4)))
                 freqs, psd = scipy_signal.welch(
                     mag_centered,
                     fs=self.sampling_rate,
-                    nperseg=min(64, len(magnitude) // 2),
+                    nperseg=nperseg,
                 )
                 mask = (freqs >= 0.1) & (freqs <= 10.0)
                 if np.any(mask):
