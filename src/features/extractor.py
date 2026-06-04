@@ -129,7 +129,7 @@ class FeatureExtractor(LoggerMixin):
     ) -> float:
         n = len(data)
         if n < m + 2:
-            return 0.0
+            return float("nan")
 
         r_val = r * np.std(data)
 
@@ -146,10 +146,11 @@ class FeatureExtractor(LoggerMixin):
         a = _count_matches(m + 1)
         b = _count_matches(m)
 
-        if b == 0:
-            return 0.0
+        # Undefined when no template matches exist at either length
+        if a == 0 or b == 0:
+            return float("nan")
 
-        return float(-np.log((a + FEATURE_PARAMS.EPSILON) / (b + FEATURE_PARAMS.EPSILON)))
+        return float(-np.log(a / b))
 
     def extract_all(self, data: np.ndarray, prefix: str = "") -> Dict[str, float]:
         features: Dict[str, float] = {}
