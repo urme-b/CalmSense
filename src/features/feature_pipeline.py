@@ -44,7 +44,7 @@ class FeatureExtractionPipeline(LoggerMixin):
             "eda": EDAFeatureExtractor(sampling_rate=wrist_eda_fs),
             "temperature": TemperatureFeatureExtractor(
                 sampling_rate=wrist_eda_fs
-            ),  # WESAD wrist TEMP =
+            ),  # wrist TEMP and EDA share 4 Hz
             "respiration": RespirationFeatureExtractor(sampling_rate=chest_fs),
             "accelerometer": AccelerometerFeatureExtractor(sampling_rate=wrist_acc_fs),
         }
