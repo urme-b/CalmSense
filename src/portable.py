@@ -1,7 +1,10 @@
 """Shared feature space (EDA + TEMP + ACC + HR) for cross-dataset transfer.
 
 The same statistics are computed for WESAD wrist signals and the PhysioNet
-Non-EEG dataset, so a model trained on one can be tested on the other.
+Non-EEG dataset, so a model trained on one can be tested on the other. This is
+deliberately separate from the full 54-feature WESAD chest model served by the
+API and dashboard — cross-dataset transfer only works on features both devices
+share.
 """
 
 from typing import Dict, List, Optional
@@ -39,7 +42,7 @@ def _stats(x: np.ndarray, prefix: str, keys: List[str]) -> Dict[str, float]:
 
 
 def portable_features(eda, temp, acc_mag, hr) -> Dict[str, float]:
-    """21 device-agnostic features from one window."""
+    """18 device-agnostic features from one window (EDA 6, TEMP 5, ACC 3, HR 4)."""
     feats = {}
     feats.update(_stats(eda, "EDA", ["mean", "std", "min", "max", "range", "slope"]))
     feats.update(_stats(temp, "TEMP", ["mean", "std", "min", "max", "slope"]))
