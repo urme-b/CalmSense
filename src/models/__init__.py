@@ -1,9 +1,7 @@
 from .ml import (
     BaseMLModel,
-    CrossValidator,
     LightGBMClassifier,
     LogisticRegressionClassifier,
-    ModelEvaluator,
     RandomForestClassifier,
     SVMClassifier,
     XGBoostClassifier,
@@ -25,7 +23,5 @@ __all__ = [
     "XGBoostClassifier",
     "LightGBMClassifier",
     "get_classifier",
-    "CrossValidator",
-    "ModelEvaluator",
     "CNN1DClassifier",
 ]

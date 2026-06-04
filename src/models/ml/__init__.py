@@ -7,8 +7,6 @@ from .classifiers import (
     XGBoostClassifier,
     get_classifier,
 )
-from .cross_validation import CrossValidator
-from .evaluation import ModelEvaluator
 
 __all__ = [
     "BaseMLModel",
@@ -18,6 +16,4 @@ __all__ = [
     "XGBoostClassifier",
     "LightGBMClassifier",
     "get_classifier",
-    "CrossValidator",
-    "ModelEvaluator",
 ]
