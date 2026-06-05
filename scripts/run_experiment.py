@@ -99,6 +99,7 @@ def loso_evaluate(pipeline_factory, X, y, groups):
         "f1_macro_mean": float(subj_df["f1_macro"].mean()),
         "f1_macro_std": float(subj_df["f1_macro"].std()),
         "balanced_accuracy": float(balanced_accuracy_score(pooled_true, pooled_pred)),
+        "pooled_accuracy": float(accuracy_score(pooled_true, pooled_pred)),
         "per_subject": subj_df,
         "y_true": pooled_true,
         "y_pred": pooled_pred,
@@ -141,15 +142,27 @@ def cnn_loso(x_raw, y, groups):
     }
 
 
-def kfold_accuracy(pipeline_factory, X, y) -> float:
-    """Within-subject 5-fold accuracy for the overfitting gap."""
+def kfold_accuracy(pipeline_factory, X, y, groups) -> float:
+    """Subject-mixed 5-fold pooled accuracy for the optimism gap.
+
+    Windows overlap 50%, so adjacent ones share half their signal. We keep only
+    non-overlapping windows (every other window per subject) so the gap reflects
+    subject mixing, not leakage between near-duplicate neighbours.
+    """
+    keep = np.zeros(len(y), dtype=bool)
+    for g in np.unique(groups):
+        idx = np.where(groups == g)[0]
+        keep[idx[::2]] = True
+    Xk, yk = X[keep], y[keep]
+
     skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=SEED)
-    scores = []
-    for train_idx, test_idx in skf.split(X, y):
+    pooled_true, pooled_pred = [], []
+    for train_idx, test_idx in skf.split(Xk, yk):
         pipe = pipeline_factory()
-        pipe.fit(X[train_idx], y[train_idx], **_fit_params(pipe, y[train_idx]))
-        scores.append(accuracy_score(y[test_idx], pipe.predict(X[test_idx])))
-    return float(np.mean(scores))
+        pipe.fit(Xk[train_idx], yk[train_idx], **_fit_params(pipe, yk[train_idx]))
+        pooled_true.extend(yk[test_idx])
+        pooled_pred.extend(pipe.predict(Xk[test_idx]))
+    return float(accuracy_score(pooled_true, pooled_pred))
 
 
 def plot_confusion(result, names, title, path):
@@ -347,9 +360,10 @@ def run():
         plot_embedding(X, y, cfg["names"], FIGURES_DIR / f"{task}_pca.png")
 
         if best[0] in CLASSIFIERS:
-            loso_acc = best[1]["accuracy_mean"]
-            kf_acc = kfold_accuracy(lambda k=best[0]: build_pipeline(k), X, y)
-            plot_gap(loso_acc, kf_acc, FIGURES_DIR / f"{task}_optimism_gap.png")
+            # Same aggregation (pooled) for both bars so the gap is comparable
+            loso_pooled = best[1]["pooled_accuracy"]
+            kf_acc = kfold_accuracy(lambda k=best[0]: build_pipeline(k), X, y, groups)
+            plot_gap(loso_pooled, kf_acc, FIGURES_DIR / f"{task}_optimism_gap.png")
         else:
             kf_acc = None
 
@@ -358,11 +372,16 @@ def run():
 
         summary[task] = {
             "n_windows": int(len(y)),
+            "n_features": int(X.shape[1]),
             "classes": cfg["names"],
             "models": rows,
             "best_model": best_key,
             "loso_accuracy": best[1]["accuracy_mean"],
+            "loso_pooled_accuracy": best[1]["pooled_accuracy"],
             "within_subject_accuracy": kf_acc,
+            "optimism_gap_pts": (
+                round((kf_acc - best[1]["pooled_accuracy"]) * 100, 1) if kf_acc else None
+            ),
             "per_subject": best[1]["per_subject"].to_dict("records"),
         }
 
@@ -385,15 +404,8 @@ def run():
     with open(RESULTS_DIR / "metrics.json", "w") as f:
         json.dump(summary, f, indent=2)
 
-    # Mirror results into the dashboard
-    shap_csv = RESULTS_DIR / "shap_top_features.csv"
-    summary["shap"] = pd.read_csv(shap_csv).head(12).to_dict("records") if shap_csv.exists() else []
-    frontend_results = PROJECT_ROOT / "frontend" / "src" / "results.json"
-    if frontend_results.parent.exists():
-        with open(frontend_results, "w") as f:
-            json.dump(summary, f, indent=2)
-
     print(f"\nResults written to {RESULTS_DIR}")
+    print("Run scripts/build_dashboard_data.py to refresh the dashboard.")
 
 
 if __name__ == "__main__":
