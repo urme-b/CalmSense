@@ -1,13 +1,14 @@
-"""Paired significance tests and bootstrap CIs across the per-subject LOSO scores."""
+"""Omnibus and corrected pairwise significance tests across per-subject LOSO scores."""
 
 import json
 import sys
+from itertools import combinations
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import numpy as np
-from scipy.stats import wilcoxon
+from scipy.stats import friedmanchisquare, wilcoxon
 
 from scripts.run_experiment import (
     CLASSIFIERS,
@@ -33,41 +34,69 @@ def bootstrap_ci(values, n=10000, seed=SEED):
     return float(np.percentile(means, 2.5)), float(np.percentile(means, 97.5))
 
 
+def holm_bonferroni(pairs):
+    """Holm-Bonferroni step-down correction over a list of (key, raw_p)."""
+    ordered = sorted(pairs, key=lambda kv: kv[1])
+    m = len(ordered)
+    corrected, running = {}, 0.0
+    for rank, (key, p) in enumerate(ordered):
+        running = max(running, min((m - rank) * p, 1.0))
+        corrected[key] = running
+    return corrected
+
+
 def run():
-    features_df, x_raw = load_cached()
-    X, y, groups, feature_cols, _ = prepare_task(features_df, x_raw, [1, 2])
+    cached = load_cached()
+    if cached is None:
+        raise SystemExit("No cached features. Run scripts/run_experiment.py first.")
+    features_df, x_raw = cached
+    X, y, groups, _, _ = prepare_task(features_df, x_raw, [1, 2])
 
     scores = {}
     for key in CLASSIFIERS:
         scores[key] = per_subject_acc(loso_evaluate(lambda k=key: build_pipeline(k), X, y, groups))
 
-    best = max(CLASSIFIERS, key=lambda k: np.mean(list(scores[k].values())))
-    subjects = sorted(scores[best])
-    best_vals = np.array([scores[best][s] for s in subjects])
+    subjects = sorted(set.intersection(*[set(scores[k]) for k in CLASSIFIERS]))
+    vecs = {k: np.array([scores[k][s] for s in subjects]) for k in CLASSIFIERS}
 
-    lo, hi = bootstrap_ci(best_vals)
+    # Omnibus: are the models different at all?
+    chi2, omnibus_p = friedmanchisquare(*[vecs[k] for k in CLASSIFIERS])
+
+    # All pairwise Wilcoxon with Holm correction (no winner pre-selection)
+    raw = {}
+    for a, b in combinations(CLASSIFIERS, 2):
+        if np.allclose(vecs[a], vecs[b]):
+            raw[(a, b)] = 1.0
+        else:
+            raw[(a, b)] = float(wilcoxon(vecs[a], vecs[b]).pvalue)
+    corrected = holm_bonferroni(list(raw.items()))
+
+    best = max(CLASSIFIERS, key=lambda k: vecs[k].mean())
+    lo, hi = bootstrap_ci(vecs[best])
+
     out = {
         "best_model": CLF_NAMES[best],
-        "accuracy_mean": float(best_vals.mean()),
-        "ci95": [lo, hi],
-        "paired_tests_vs_best": {},
+        "best_accuracy_mean": float(vecs[best].mean()),
+        "best_ci95": [lo, hi],
+        "omnibus_friedman": {"chi2": float(chi2), "p_value": float(omnibus_p)},
+        "pairwise_holm": {
+            f"{CLF_NAMES[a]} vs {CLF_NAMES[b]}": {
+                "delta_mean": float(vecs[a].mean() - vecs[b].mean()),
+                "p_raw": raw[(a, b)],
+                "p_holm": corrected[(a, b)],
+            }
+            for a, b in combinations(CLASSIFIERS, 2)
+        },
     }
-    print(f"Best: {CLF_NAMES[best]}  acc={best_vals.mean():.3f}  95% CI [{lo:.3f}, {hi:.3f}]")
-    print("Wilcoxon signed-rank (best vs each, per-subject accuracy):")
-    for key in CLASSIFIERS:
-        if key == best:
-            continue
-        other = np.array([scores[key][s] for s in subjects])
-        # Identical paired scores break wilcoxon
-        if np.allclose(best_vals, other):
-            stat, p = float("nan"), 1.0
-        else:
-            stat, p = wilcoxon(best_vals, other)
-        out["paired_tests_vs_best"][CLF_NAMES[key]] = {
-            "delta_mean": float(best_vals.mean() - other.mean()),
-            "p_value": float(p),
-        }
-        print(f"  vs {CLF_NAMES[key]:20s} Δ={best_vals.mean() - other.mean():+.3f}  p={p:.3f}")
+
+    print(f"Best: {CLF_NAMES[best]}  acc={vecs[best].mean():.3f}  95% CI [{lo:.3f}, {hi:.3f}]")
+    print(f"Friedman omnibus: chi2={chi2:.2f}  p={omnibus_p:.3f}")
+    print("Pairwise Wilcoxon (Holm-corrected):")
+    for a, b in combinations(CLASSIFIERS, 2):
+        d = out["pairwise_holm"][f"{CLF_NAMES[a]} vs {CLF_NAMES[b]}"]
+        print(
+            f"  {CLF_NAMES[a]:20s} vs {CLF_NAMES[b]:20s} Δ={d['delta_mean']:+.3f}  p_holm={d['p_holm']:.3f}"
+        )
 
     with open(RESULTS_DIR / "stats.json", "w") as f:
         json.dump(out, f, indent=2)
