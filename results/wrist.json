@@ -2,38 +2,38 @@
   "wrist_models": [
     {
       "model": "Logistic Regression",
-      "accuracy_mean": 0.8684553042879136,
-      "f1_macro_mean": 0.8560614727976099
+      "accuracy_mean": 0.859865352263528,
+      "f1_macro_mean": 0.8437449444563258
     },
     {
       "model": "Random Forest",
-      "accuracy_mean": 0.8912148474642141,
-      "f1_macro_mean": 0.8695455983977314
+      "accuracy_mean": 0.8931950318845121,
+      "f1_macro_mean": 0.8695873626969576
     },
     {
       "model": "XGBoost",
-      "accuracy_mean": 0.9083977541443266,
-      "f1_macro_mean": 0.8873618171033295
+      "accuracy_mean": 0.9056235360205233,
+      "f1_macro_mean": 0.8844367064723023
     },
     {
       "model": "LightGBM",
-      "accuracy_mean": 0.8640660916547692,
-      "f1_macro_mean": 0.83851045223368
+      "accuracy_mean": 0.8874690584966299,
+      "f1_macro_mean": 0.8652392560683516
     }
   ],
   "wrist_best": {
     "model": "XGBoost",
-    "accuracy_mean": 0.9083977541443266,
-    "f1_macro_mean": 0.8873618171033295
+    "accuracy_mean": 0.9056235360205233,
+    "f1_macro_mean": 0.8844367064723023
   },
   "chest_best": {
     "model": "Random Forest",
-    "accuracy_mean": 0.9121384762281433
+    "accuracy_mean": 0.9132857382783859
   },
   "same_model_rf": {
-    "chest": 0.9121384762281433,
-    "wrist": 0.8912148474642141,
-    "drop_pts": 2.092362876392917
+    "chest": 0.9132857382783859,
+    "wrist": 0.8931950318845121,
+    "drop_pts": 2.009070639387378
   },
-  "best_per_arm_drop_pts": 0.37407220838167055
+  "best_per_arm_drop_pts": 0.7662202257862627
 }

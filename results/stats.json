@@ -1,22 +1,44 @@
 {
   "best_model": "Random Forest",
-  "accuracy_mean": 0.9121384762281433,
-  "ci95": [
-    0.8627925118050157,
-    0.9564632910496984
+  "best_accuracy_mean": 0.9132857382783859,
+  "best_ci95": [
+    0.8602649526590214,
+    0.9602347205671683
   ],
-  "paired_tests_vs_best": {
-    "Logistic Regression": {
-      "delta_mean": 0.0445052498948344,
-      "p_value": 0.0328542199286437
+  "omnibus_friedman": {
+    "chi2": 0.9813084112149771,
+    "p_value": 0.8057746412606928
+  },
+  "pairwise_holm": {
+    "Logistic Regression vs Random Forest": {
+      "delta_mean": -0.01145971498535403,
+      "p_raw": 0.5939546753269146,
+      "p_holm": 1.0
     },
-    "XGBoost": {
-      "delta_mean": 0.024251525063300194,
-      "p_value": 0.04252247799805163
+    "Logistic Regression vs XGBoost": {
+      "delta_mean": -0.0006852268282948604,
+      "p_raw": 0.6100665567498502,
+      "p_holm": 1.0
     },
-    "LightGBM": {
-      "delta_mean": 0.03689919889690285,
-      "p_value": 0.04085984371280629
+    "Logistic Regression vs LightGBM": {
+      "delta_mean": 0.008256020987408519,
+      "p_raw": 1.0,
+      "p_holm": 1.0
+    },
+    "Random Forest vs XGBoost": {
+      "delta_mean": 0.01077448815705917,
+      "p_raw": 0.4768097606977212,
+      "p_holm": 1.0
+    },
+    "Random Forest vs LightGBM": {
+      "delta_mean": 0.01971573597276255,
+      "p_raw": 0.2615722360139494,
+      "p_holm": 1.0
+    },
+    "XGBoost vs LightGBM": {
+      "delta_mean": 0.00894124781570338,
+      "p_raw": 0.40652926629258523,
+      "p_holm": 1.0
     }
   }
 }
