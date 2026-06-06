@@ -1,6 +1,7 @@
 {
   "binary": {
     "n_windows": 869,
+    "n_features": 58,
     "classes": [
       "baseline",
       "stress"
@@ -8,46 +9,49 @@
     "models": [
       {
         "model": "Logistic Regression",
-        "accuracy_mean": 0.8676332263333089,
-        "accuracy_std": 0.1370012119828864,
-        "f1_macro_mean": 0.853496544265562,
-        "balanced_accuracy": 0.8696054111073759
+        "accuracy_mean": 0.9018260232930319,
+        "accuracy_std": 0.1050115077832913,
+        "f1_macro_mean": 0.8825822730594991,
+        "balanced_accuracy": 0.8985127569058852
       },
       {
         "model": "Random Forest",
-        "accuracy_mean": 0.9121384762281433,
-        "accuracy_std": 0.09494673932984027,
-        "f1_macro_mean": 0.8977922751610052,
-        "balanced_accuracy": 0.901196285949436
+        "accuracy_mean": 0.9132857382783859,
+        "accuracy_std": 0.10067168914776647,
+        "f1_macro_mean": 0.8983021720206017,
+        "balanced_accuracy": 0.90282495044455
       },
       {
         "model": "XGBoost",
-        "accuracy_mean": 0.8878869511648431,
-        "accuracy_std": 0.1255924621006552,
-        "f1_macro_mean": 0.8578536354252642,
-        "balanced_accuracy": 0.8706892554510994
+        "accuracy_mean": 0.9025112501213267,
+        "accuracy_std": 0.11842527517884838,
+        "f1_macro_mean": 0.873121621157624,
+        "balanced_accuracy": 0.885211030869278
       },
       {
         "model": "LightGBM",
-        "accuracy_mean": 0.8752392773312404,
-        "accuracy_std": 0.11408585937642447,
-        "f1_macro_mean": 0.8379824807632545,
-        "balanced_accuracy": 0.8490790221057878
+        "accuracy_mean": 0.8935700023056233,
+        "accuracy_std": 0.11446973551180127,
+        "f1_macro_mean": 0.8599324552875776,
+        "balanced_accuracy": 0.8714427301285543
       },
       {
         "model": "1D-CNN",
-        "accuracy_mean": 0.6469240243555829,
-        "accuracy_std": 0.010932381598736753,
-        "f1_macro_mean": 0.3927824262922673,
-        "balanced_accuracy": 0.5
+        "accuracy_mean": 0.7183561164569502,
+        "accuracy_std": 0.27722034724356825,
+        "f1_macro_mean": 0.6480460011342682,
+        "balanced_accuracy": 0.730012635190745
       }
     ],
     "best_model": "Random Forest",
-    "loso_accuracy": 0.9121384762281433,
-    "within_subject_accuracy": 0.9781542754634243
+    "loso_accuracy": 0.9132857382783859,
+    "loso_pooled_accuracy": 0.9125431530494822,
+    "within_subject_accuracy": 0.9635535307517085,
+    "optimism_gap_pts": 5.1
   },
   "multiclass": {
     "n_windows": 1032,
+    "n_features": 58,
     "classes": [
       "baseline",
       "stress",
@@ -56,113 +60,137 @@
     "models": [
       {
         "model": "Logistic Regression",
-        "accuracy_mean": 0.6472752383830286,
-        "accuracy_std": 0.1586165827510636,
-        "f1_macro_mean": 0.5877460338766464,
-        "balanced_accuracy": 0.6389924556051464
+        "accuracy_mean": 0.6703704077878144,
+        "accuracy_std": 0.16290182282941648,
+        "f1_macro_mean": 0.6126683067120021,
+        "balanced_accuracy": 0.6682125876235817
       },
       {
         "model": "Random Forest",
-        "accuracy_mean": 0.6292914234198878,
-        "accuracy_std": 0.2084999482854779,
-        "f1_macro_mean": 0.5192536625715287,
-        "balanced_accuracy": 0.5582643821627357
+        "accuracy_mean": 0.6367187240148422,
+        "accuracy_std": 0.21471396206514726,
+        "f1_macro_mean": 0.5345091832414199,
+        "balanced_accuracy": 0.5659130805740479
       },
       {
         "model": "XGBoost",
-        "accuracy_mean": 0.6273998610958654,
-        "accuracy_std": 0.20869545065860534,
-        "f1_macro_mean": 0.5445695531644538,
-        "balanced_accuracy": 0.5754558604767341
+        "accuracy_mean": 0.6334898885478485,
+        "accuracy_std": 0.20318066113706604,
+        "f1_macro_mean": 0.5518748200396154,
+        "balanced_accuracy": 0.5829297319021652
       },
       {
         "model": "LightGBM",
-        "accuracy_mean": 0.6504774029924877,
-        "accuracy_std": 0.20657884294305104,
-        "f1_macro_mean": 0.5658340547523312,
-        "balanced_accuracy": 0.6047803908742636
+        "accuracy_mean": 0.6582011585550105,
+        "accuracy_std": 0.18671909663718414,
+        "f1_macro_mean": 0.5683473906942399,
+        "balanced_accuracy": 0.6129739449949972
       },
       {
         "model": "1D-CNN",
-        "accuracy_mean": 0.5446766025835771,
-        "accuracy_std": 0.008186225645613587,
-        "f1_macro_mean": 0.23506555344683527,
-        "balanced_accuracy": 0.3333333333333333
+        "accuracy_mean": 0.6255016718370817,
+        "accuracy_std": 0.23598541801728817,
+        "f1_macro_mean": 0.5429313964846325,
+        "balanced_accuracy": 0.6387417833390854
       }
     ],
-    "best_model": "LightGBM",
-    "loso_accuracy": 0.6504774029924877,
-    "within_subject_accuracy": 0.9874067820458702
+    "best_model": "Logistic Regression",
+    "loso_accuracy": 0.6703704077878144,
+    "loso_pooled_accuracy": 0.6705426356589147,
+    "within_subject_accuracy": 0.7915057915057915,
+    "optimism_gap_pts": 12.1
   },
   "shap": [
     {
       "feature": "ACC_zero_crossings",
-      "mean_abs_shap": 1.3612982
+      "mean_abs_shap": 1.3547838
     },
     {
       "feature": "HRV_MedianNN",
-      "mean_abs_shap": 0.9866541
-    },
-    {
-      "feature": "HRV_MeanNN",
-      "mean_abs_shap": 0.87146235
-    },
-    {
-      "feature": "ACC_std",
-      "mean_abs_shap": 0.803978
-    },
-    {
-      "feature": "EDA_SCR_recovery_time_mean",
-      "mean_abs_shap": 0.7719178
+      "mean_abs_shap": 0.8845277
     },
     {
       "feature": "EDA_SCR_amplitude_max",
-      "mean_abs_shap": 0.70294964
+      "mean_abs_shap": 0.851968
+    },
+    {
+      "feature": "ACC_std",
+      "mean_abs_shap": 0.8164616
+    },
+    {
+      "feature": "EDA_SCR_recovery_time_mean",
+      "mean_abs_shap": 0.7394631
+    },
+    {
+      "feature": "HRV_MeanNN",
+      "mean_abs_shap": 0.68244267
+    },
+    {
+      "feature": "RESP_rate",
+      "mean_abs_shap": 0.66373026
     },
     {
       "feature": "EDA_SCL_max",
-      "mean_abs_shap": 0.5064553
+      "mean_abs_shap": 0.51800895
     },
     {
-      "feature": "EDA_SCL_slope",
-      "mean_abs_shap": 0.35127616
+      "feature": "ACC_peak_freq",
+      "mean_abs_shap": 0.396291
     },
     {
       "feature": "TEMP_mean",
-      "mean_abs_shap": 0.34093
-    },
-    {
-      "feature": "EDA_SCL_mean",
-      "mean_abs_shap": 0.33874714
+      "mean_abs_shap": 0.3304044
     },
     {
       "feature": "ACC_magnitude",
-      "mean_abs_shap": 0.32643047
+      "mean_abs_shap": 0.29409736
     },
     {
-      "feature": "HRV_CVSD",
-      "mean_abs_shap": 0.29860625
+      "feature": "EDA_SCL_slope",
+      "mean_abs_shap": 0.25538525
     }
   ],
   "stats": {
     "best_model": "Random Forest",
-    "accuracy_mean": 0.9121384762281433,
-    "ci95": [
-      0.8627925118050157,
-      0.9564632910496984
+    "best_accuracy_mean": 0.9132857382783859,
+    "best_ci95": [
+      0.8602649526590214,
+      0.9602347205671683
     ],
-    "paired_tests_vs_best": {
-      "Logistic Regression": {
-        "delta_mean": 0.0445052498948344,
-        "p_value": 0.0328542199286437
+    "omnibus_friedman": {
+      "chi2": 0.9813084112149771,
+      "p_value": 0.8057746412606928
+    },
+    "pairwise_holm": {
+      "Logistic Regression vs Random Forest": {
+        "delta_mean": -0.01145971498535403,
+        "p_raw": 0.5939546753269146,
+        "p_holm": 1.0
       },
-      "XGBoost": {
-        "delta_mean": 0.024251525063300194,
-        "p_value": 0.04252247799805163
+      "Logistic Regression vs XGBoost": {
+        "delta_mean": -0.0006852268282948604,
+        "p_raw": 0.6100665567498502,
+        "p_holm": 1.0
       },
-      "LightGBM": {
-        "delta_mean": 0.03689919889690285,
-        "p_value": 0.04085984371280629
+      "Logistic Regression vs LightGBM": {
+        "delta_mean": 0.008256020987408519,
+        "p_raw": 1.0,
+        "p_holm": 1.0
+      },
+      "Random Forest vs XGBoost": {
+        "delta_mean": 0.01077448815705917,
+        "p_raw": 0.4768097606977212,
+        "p_holm": 1.0
+      },
+      "Random Forest vs LightGBM": {
+        "delta_mean": 0.01971573597276255,
+        "p_raw": 0.2615722360139494,
+        "p_holm": 1.0
+      },
+      "XGBoost vs LightGBM": {
+        "delta_mean": 0.00894124781570338,
+        "p_raw": 0.40652926629258523,
+        "p_holm": 1.0
       }
     }
   },
@@ -170,40 +198,40 @@
     "wrist_models": [
       {
         "model": "Logistic Regression",
-        "accuracy_mean": 0.8684553042879136,
-        "f1_macro_mean": 0.8560614727976099
+        "accuracy_mean": 0.859865352263528,
+        "f1_macro_mean": 0.8437449444563258
       },
       {
         "model": "Random Forest",
-        "accuracy_mean": 0.8912148474642141,
-        "f1_macro_mean": 0.8695455983977314
+        "accuracy_mean": 0.8931950318845121,
+        "f1_macro_mean": 0.8695873626969576
       },
       {
         "model": "XGBoost",
-        "accuracy_mean": 0.9083977541443266,
-        "f1_macro_mean": 0.8873618171033295
+        "accuracy_mean": 0.9056235360205233,
+        "f1_macro_mean": 0.8844367064723023
       },
       {
         "model": "LightGBM",
-        "accuracy_mean": 0.8640660916547692,
-        "f1_macro_mean": 0.83851045223368
+        "accuracy_mean": 0.8874690584966299,
+        "f1_macro_mean": 0.8652392560683516
       }
     ],
     "wrist_best": {
       "model": "XGBoost",
-      "accuracy_mean": 0.9083977541443266,
-      "f1_macro_mean": 0.8873618171033295
+      "accuracy_mean": 0.9056235360205233,
+      "f1_macro_mean": 0.8844367064723023
     },
     "chest_best": {
       "model": "Random Forest",
-      "accuracy_mean": 0.9121384762281433
+      "accuracy_mean": 0.9132857382783859
     },
     "same_model_rf": {
-      "chest": 0.9121384762281433,
-      "wrist": 0.8912148474642141,
-      "drop_pts": 2.092362876392917
+      "chest": 0.9132857382783859,
+      "wrist": 0.8931950318845121,
+      "drop_pts": 2.009070639387378
     },
-    "best_per_arm_drop_pts": 0.37407220838167055
+    "best_per_arm_drop_pts": 0.7662202257862627
   },
   "cross_dataset": {
     "n_shared_features": 18,
@@ -231,31 +259,31 @@
   "ablation": [
     {
       "subset": "All features",
-      "n_features": 54,
-      "accuracy_mean": 0.9121384762281431,
-      "accuracy_std": 0.0949467393298402,
-      "f1_macro_mean": 0.8977922751610052
+      "n_features": 58,
+      "accuracy_mean": 0.913285738278386,
+      "accuracy_std": 0.1006716891477664,
+      "f1_macro_mean": 0.8983021720206017
     },
     {
       "subset": "No motion (HRV+EDA+TEMP+RESP)",
-      "n_features": 50,
-      "accuracy_mean": 0.9032454834696056,
-      "accuracy_std": 0.1109252711975042,
-      "f1_macro_mean": 0.8897712945159797
+      "n_features": 53,
+      "accuracy_mean": 0.9010784915742408,
+      "accuracy_std": 0.1247711917291928,
+      "f1_macro_mean": 0.8902200515248017
     },
     {
       "subset": "Autonomic (HRV+EDA)",
       "n_features": 45,
-      "accuracy_mean": 0.8842102179555287,
-      "accuracy_std": 0.1431566838743333,
-      "f1_macro_mean": 0.8721787277839319
+      "accuracy_mean": 0.8896425448986681,
+      "accuracy_std": 0.1296709506848814,
+      "f1_macro_mean": 0.8772234226146852
     },
     {
       "subset": "HRV only",
       "n_features": 30,
-      "accuracy_mean": 0.8133426296385987,
-      "accuracy_std": 0.1565193525544925,
-      "f1_macro_mean": 0.7794761298251327
+      "accuracy_mean": 0.8098888705356447,
+      "accuracy_std": 0.1607918300147734,
+      "f1_macro_mean": 0.775126908397853
     },
     {
       "subset": "EDA only",
@@ -266,10 +294,10 @@
     },
     {
       "subset": "Motion only (ACC)",
-      "n_features": 4,
-      "accuracy_mean": 0.8436408890623184,
-      "accuracy_std": 0.110002312079767,
-      "f1_macro_mean": 0.8233446458915474
+      "n_features": 5,
+      "accuracy_mean": 0.884758068444891,
+      "accuracy_std": 0.0806252403036477,
+      "f1_macro_mean": 0.870252363040202
     }
   ]
 }
