@@ -7,7 +7,9 @@ from pydantic import BaseModel, Field
 
 class PredictionRequest(BaseModel):
     features: Dict[str, float] = Field(
-        ..., description="Feature name -> value (e.g. HRV_RMSSD, EDA_SCR_count)"
+        ...,
+        min_length=1,
+        description="Feature name -> value (e.g. HRV_RMSSD, EDA_SCR_count)",
     )
 
 

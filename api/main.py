@@ -1,5 +1,7 @@
 """CalmSense prediction API."""
 
+import os
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -15,12 +17,18 @@ from .schemas import (
 app = FastAPI(
     title="CalmSense API",
     description="Subject-independent stress detection from wearable physiology.",
-    version="1.0.0",
+    version="0.1.0",
 )
+
+# Restrict CORS to the dashboard origins; override with CALMSENSE_CORS_ORIGINS (comma-separated)
+_default_origins = "http://localhost:3000,https://urme-b.github.io"
+ALLOWED_ORIGINS = [
+    o.strip() for o in os.getenv("CALMSENSE_CORS_ORIGINS", _default_origins).split(",")
+]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
+    allow_origins=ALLOWED_ORIGINS,
+    allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
 
@@ -49,17 +57,20 @@ def model_info() -> ModelInfo:
 @app.post("/predict", response_model=PredictionResponse)
 def predict(request: PredictionRequest) -> PredictionResponse:
     model = _require_model()
-    return PredictionResponse(**model.predict(request.features))
+    try:
+        return PredictionResponse(**model.predict(request.features))
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
 
 
 @app.post("/explain", response_model=ExplanationResponse)
 def explain(request: PredictionRequest) -> ExplanationResponse:
     model = _require_model()
-    result = model.predict(request.features)
-    return ExplanationResponse(
-        prediction=result["prediction"],
-        contributions=model.explain(request.features),
-    )
+    try:
+        result, contributions = model.predict_and_explain(request.features)
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    return ExplanationResponse(prediction=result["prediction"], contributions=contributions)
 
 
 def run_server(host: str = "0.0.0.0", port: int = 8000, reload: bool = False):
