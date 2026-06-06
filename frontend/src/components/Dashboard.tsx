@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
   BarChart,
   Bar,
@@ -7,54 +7,43 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  PieChart,
-  Pie,
   Cell,
 } from 'recharts';
-import {
-  Activity,
-  Brain,
-  Layers,
-  TrendingUp,
-  Clock,
-  Server,
-  CheckCircle,
-  AlertCircle,
-} from 'lucide-react';
-import { getHealth, getModels, getModelStatistics } from '../services/api';
-import { HealthResponse, ModelListResponse, RecentPrediction } from '../types';
+import { Activity, Brain, Layers, Award } from 'lucide-react';
 import results from '../results.json';
 
-// Metric Card Component
+const r = results as any;
+
+// Static color classes (dynamic `bg-${color}-100` would be purged by Tailwind)
+const CARD_COLORS: Record<string, string> = {
+  blue: 'bg-blue-100 dark:bg-blue-900/30',
+  green: 'bg-green-100 dark:bg-green-900/30',
+  purple: 'bg-purple-100 dark:bg-purple-900/30',
+  orange: 'bg-orange-100 dark:bg-orange-900/30',
+};
+
 const MetricCard: React.FC<{
   title: string;
   value: string | number;
   icon: React.ReactNode;
-  trend?: { value: number; label: string };
   color?: string;
-}> = ({ title, value, icon, trend, color = 'blue' }) => (
+}> = ({ title, value, icon, color = 'blue' }) => (
   <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
     <div className="flex items-center justify-between">
       <div>
         <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{title}</p>
         <p className="mt-2 text-3xl font-bold text-gray-900 dark:text-white">{value}</p>
-        {trend && (
-          <p className={`mt-2 text-sm ${trend.value >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-            {trend.value >= 0 ? '+' : ''}{trend.value}% {trend.label}
-          </p>
-        )}
       </div>
-      <div className={`p-3 bg-${color}-100 dark:bg-${color}-900/30 rounded-lg`}>
-        {icon}
-      </div>
+      <div className={`p-3 rounded-lg ${CARD_COLORS[color]}`}>{icon}</div>
     </div>
   </div>
 );
 
-// Feature Importance Chart
+const pct = (x: number) => `${(x * 100).toFixed(1)}%`;
+
 const FeatureImportanceChart: React.FC = () => {
   const palette = ['#3182CE', '#38A169', '#D69E2E', '#E53E3E', '#805AD5', '#DD6B20', '#319795', '#D53F8C'];
-  const data = ((results as any).shap || []).slice(0, 8).map((s: any, i: number) => ({
+  const data = (r.shap || []).slice(0, 8).map((s: any, i: number) => ({
     name: s.feature,
     value: s.mean_abs_shap,
     color: palette[i % palette.length],
@@ -63,21 +52,14 @@ const FeatureImportanceChart: React.FC = () => {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
       <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-        Top biomarkers (mean |SHAP|)
+        Top biomarkers (mean |SHAP|, binary model)
       </h3>
       <ResponsiveContainer width="100%" height={300}>
-        <BarChart data={data} layout="vertical" margin={{ left: 100 }}>
+        <BarChart data={data} layout="vertical" margin={{ left: 110 }}>
           <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
           <XAxis type="number" />
           <YAxis type="category" dataKey="name" tick={{ fontSize: 12 }} />
-          <Tooltip
-            contentStyle={{
-              backgroundColor: 'rgba(255, 255, 255, 0.95)',
-              borderRadius: '8px',
-              border: 'none',
-              boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-            }}
-          />
+          <Tooltip />
           <Bar dataKey="value" radius={[0, 4, 4, 0]}>
             {data.map((entry: { color: string }, index: number) => (
               <Cell key={`cell-${index}`} fill={entry.color} />
@@ -89,84 +71,59 @@ const FeatureImportanceChart: React.FC = () => {
   );
 };
 
-// Class Distribution Chart
-const ClassDistributionChart: React.FC = () => {
+// The project's signature finding: subject-independent vs within-subject accuracy
+const OptimismGapChart: React.FC = () => {
+  const b = r.binary || {};
+  const loso = b.loso_pooled_accuracy ?? b.loso_accuracy;
+  const within = b.within_subject_accuracy;
   const data = [
-    { name: 'Baseline', value: 35, color: '#38A169' },
-    { name: 'Stress', value: 45, color: '#E53E3E' },
-    { name: 'Amusement', value: 20, color: '#D69E2E' },
+    { name: 'LOSO\n(subject-independent)', value: loso, color: '#3182CE' },
+    { name: 'Within-subject\n(5-fold)', value: within, color: '#E67E22' },
   ];
-
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-        Recent Predictions Distribution
-      </h3>
+      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">Optimism gap</h3>
+      <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+        Within-subject validation inflates accuracy by {b.optimism_gap_pts} points
+      </p>
       <ResponsiveContainer width="100%" height={250}>
-        <PieChart>
-          <Pie
-            data={data}
-            cx="50%"
-            cy="50%"
-            innerRadius={60}
-            outerRadius={80}
-            paddingAngle={5}
-            dataKey="value"
-          >
-            {data.map((entry: { color: string }, index: number) => (
+        <BarChart data={data}>
+          <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+          <XAxis dataKey="name" tick={{ fontSize: 11 }} interval={0} />
+          <YAxis domain={[0, 1]} tickFormatter={(v) => `${(v * 100).toFixed(0)}%`} />
+          <Tooltip formatter={(v: number) => pct(v)} />
+          <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+            {data.map((entry, index) => (
               <Cell key={`cell-${index}`} fill={entry.color} />
             ))}
-          </Pie>
-          <Tooltip />
-        </PieChart>
+          </Bar>
+        </BarChart>
       </ResponsiveContainer>
-      <div className="flex justify-center space-x-4 mt-4">
-        {data.map((item) => (
-          <div key={item.name} className="flex items-center">
-            <div
-              className="w-3 h-3 rounded-full mr-2"
-              style={{ backgroundColor: item.color }}
-            />
-            <span className="text-sm text-gray-600 dark:text-gray-400">{item.name}</span>
-          </div>
-        ))}
-      </div>
     </div>
   );
 };
 
-// Recent Predictions List
-const RecentPredictionsList: React.FC<{ predictions: RecentPrediction[] }> = ({ predictions }) => {
-  const getClassColor = (prediction: string) => {
-    switch (prediction.toLowerCase()) {
-      case 'baseline': return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
-      case 'stress': return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400';
-      case 'amusement': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400';
-      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
-    }
-  };
-
+const ModelComparisonList: React.FC = () => {
+  const models = [...((r.binary || {}).models || [])].sort(
+    (a: any, b: any) => b.accuracy_mean - a.accuracy_mean
+  );
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
       <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-        Recent Predictions
+        Binary LOSO accuracy by model
       </h3>
       <div className="space-y-3">
-        {predictions.map((pred) => (
-          <div
-            key={pred.id}
-            className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
-          >
-            <div className="flex items-center space-x-3">
-              <span className={`px-2 py-1 rounded-full text-xs font-medium ${getClassColor(pred.prediction)}`}>
-                {pred.prediction}
-              </span>
-              <span className="text-sm text-gray-600 dark:text-gray-400">
-                {pred.confidence.toFixed(1)}% confidence
-              </span>
+        {models.map((m: any) => (
+          <div key={m.model} className="flex items-center justify-between">
+            <span className="text-sm text-gray-600 dark:text-gray-400 w-40">{m.model}</span>
+            <div className="flex-1 mx-3 bg-gray-100 dark:bg-gray-700 rounded-full h-2">
+              <div
+                className="bg-blue-500 h-2 rounded-full"
+                style={{ width: `${m.accuracy_mean * 100}%` }}
+              />
             </div>
-            <span className="text-xs text-gray-500 dark:text-gray-500">
-              {new Date(pred.timestamp).toLocaleTimeString()}
+            <span className="text-sm font-medium text-gray-900 dark:text-white w-16 text-right">
+              {pct(m.accuracy_mean)}
             </span>
           </div>
         ))}
@@ -175,180 +132,60 @@ const RecentPredictionsList: React.FC<{ predictions: RecentPrediction[] }> = ({ 
   );
 };
 
-// System Status Component
-const SystemStatus: React.FC<{ health: HealthResponse | null }> = ({ health }) => {
-  const isHealthy = health?.status === 'healthy';
-
+const DatasetSummary: React.FC = () => {
+  const b = r.binary || {};
+  const m = r.multiclass || {};
+  const rows = [
+    ['Dataset', 'WESAD (chest, 15 subjects)'],
+    ['Windows (binary)', b.n_windows],
+    ['Features', b.n_features],
+    ['Binary classes', (b.classes || []).join(', ')],
+    ['3-class classes', (m.classes || []).join(', ')],
+    ['Validation', 'Leave-One-Subject-Out'],
+  ];
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-        System Status
-      </h3>
+      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Dataset & setup</h3>
       <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <Server className="w-4 h-4 text-gray-500" />
-            <span className="text-sm text-gray-600 dark:text-gray-400">API Server</span>
+        {rows.map(([k, v]) => (
+          <div key={k as string} className="flex items-center justify-between">
+            <span className="text-sm text-gray-600 dark:text-gray-400">{k}</span>
+            <span className="text-sm font-medium text-gray-900 dark:text-white">{v}</span>
           </div>
-          <div className="flex items-center space-x-1">
-            {isHealthy ? (
-              <CheckCircle className="w-4 h-4 text-green-500" />
-            ) : (
-              <AlertCircle className="w-4 h-4 text-red-500" />
-            )}
-            <span className={`text-sm ${isHealthy ? 'text-green-600' : 'text-red-600'}`}>
-              {isHealthy ? 'Online' : 'Offline'}
-            </span>
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <Layers className="w-4 h-4 text-gray-500" />
-            <span className="text-sm text-gray-600 dark:text-gray-400">Models Loaded</span>
-          </div>
-          <span className="text-sm font-medium text-gray-900 dark:text-white">
-            {health?.models_loaded || 0}
-          </span>
-        </div>
-
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <Activity className="w-4 h-4 text-gray-500" />
-            <span className="text-sm text-gray-600 dark:text-gray-400">GPU Available</span>
-          </div>
-          <span className={`text-sm ${health?.gpu_available ? 'text-green-600' : 'text-gray-500'}`}>
-            {health?.gpu_available ? 'Yes' : 'No'}
-          </span>
-        </div>
-
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <Clock className="w-4 h-4 text-gray-500" />
-            <span className="text-sm text-gray-600 dark:text-gray-400">Uptime</span>
-          </div>
-          <span className="text-sm font-medium text-gray-900 dark:text-white">
-            {health?.uptime_seconds ? `${Math.floor(health.uptime_seconds / 60)}m` : '-'}
-          </span>
-        </div>
+        ))}
       </div>
     </div>
   );
 };
-
-// Main Dashboard Component
-const DEMO_MODE = !process.env.REACT_APP_API_URL;
 
 const Dashboard: React.FC = () => {
-  const [health, setHealth] = useState<HealthResponse | null>(null);
-  const [models, setModels] = useState<ModelListResponse | null>(null);
-  const [loading, setLoading] = useState(!DEMO_MODE);
-  const [apiError, setApiError] = useState<string | null>(null);
-
-  // Mock recent predictions
-  const recentPredictions: RecentPrediction[] = [
-    { id: '1', timestamp: new Date().toISOString(), prediction: 'Stress', confidence: 87.5, model: 'random_forest' },
-    { id: '2', timestamp: new Date(Date.now() - 60000).toISOString(), prediction: 'Baseline', confidence: 92.3, model: 'random_forest' },
-    { id: '3', timestamp: new Date(Date.now() - 120000).toISOString(), prediction: 'Amusement', confidence: 78.1, model: 'xgboost' },
-    { id: '4', timestamp: new Date(Date.now() - 180000).toISOString(), prediction: 'Stress', confidence: 81.4, model: 'random_forest' },
-    { id: '5', timestamp: new Date(Date.now() - 240000).toISOString(), prediction: 'Baseline', confidence: 95.2, model: 'lightgbm' },
-  ];
-
-  useEffect(() => {
-    if (DEMO_MODE) return;
-
-    const fetchData = async () => {
-      try {
-        const [healthData, modelsData] = await Promise.all([
-          getHealth(),
-          getModels(),
-        ]);
-        setHealth(healthData);
-        setModels(modelsData);
-        setApiError(null);
-      } catch (error: any) {
-        const msg = error?.message || 'Failed to connect to API';
-        setApiError(msg);
-        console.error('Dashboard fetch failed:', msg);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-    const interval = setInterval(fetchData, 30000);
-    return () => clearInterval(interval);
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-      </div>
-    );
-  }
+  const b = r.binary || {};
+  const m = r.multiclass || {};
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* API error banner */}
-      {apiError && (
-        <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg p-4">
-          <p className="text-red-800 dark:text-red-200 text-sm font-medium">
-            API Connection Error: {apiError}
-          </p>
-          <p className="text-red-600 dark:text-red-400 text-xs mt-1">
-            Showing cached data. Retrying every 30s...
-          </p>
-        </div>
-      )}
-
-      {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
         <p className="text-gray-500 dark:text-gray-400">
-          Multimodal Stress Detection System Overview
+          Subject-independent stress detection — real LOSO results
         </p>
       </div>
 
-      {/* Metric Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <MetricCard
-          title="LOSO Accuracy"
-          value="91.2%"
-          icon={<TrendingUp className="w-6 h-6 text-blue-600" />}
-          trend={{ value: 26.5, label: 'over majority class' }}
-          color="blue"
-        />
-        <MetricCard
-          title="Features"
-          value="60+"
-          icon={<Activity className="w-6 h-6 text-green-600" />}
-          color="green"
-        />
-        <MetricCard
-          title="Subjects (LOSO)"
-          value="15"
-          icon={<Layers className="w-6 h-6 text-purple-600" />}
-          color="purple"
-        />
-        <MetricCard
-          title="Best Model"
-          value="Random Forest"
-          icon={<Clock className="w-6 h-6 text-orange-600" />}
-          color="orange"
-        />
+        <MetricCard title="Binary LOSO accuracy" value={pct(b.loso_accuracy)} icon={<Activity className="w-6 h-6 text-blue-600" />} color="blue" />
+        <MetricCard title="3-class LOSO accuracy" value={pct(m.loso_accuracy)} icon={<Brain className="w-6 h-6 text-green-600" />} color="green" />
+        <MetricCard title="Features" value={b.n_features} icon={<Layers className="w-6 h-6 text-purple-600" />} color="purple" />
+        <MetricCard title="Best model" value={b.best_model} icon={<Award className="w-6 h-6 text-orange-600" />} color="orange" />
       </div>
 
-      {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <FeatureImportanceChart />
-        <ClassDistributionChart />
+        <OptimismGapChart />
       </div>
 
-      {/* Bottom Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <RecentPredictionsList predictions={recentPredictions} />
-        <SystemStatus health={health} />
+        <ModelComparisonList />
+        <DatasetSummary />
       </div>
     </div>
   );
