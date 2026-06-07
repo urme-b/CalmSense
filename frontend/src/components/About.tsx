@@ -9,6 +9,10 @@ import {
   Users,
   ExternalLink,
 } from 'lucide-react';
+import results from '../results.json';
+
+const r = results as any;
+const pct = (x: number) => `${(x * 100).toFixed(1)}%`;
 
 const About: React.FC = () => {
   return (
@@ -23,13 +27,13 @@ const About: React.FC = () => {
           Multimodal Stress Detection from Physiological Signals
         </p>
         <p className="mt-2 text-gray-500 dark:text-gray-500">
-          Version 1.0.0
+          Version 0.1.0
         </p>
       </div>
 
       {/* Badges */}
       <div className="flex flex-wrap justify-center gap-2">
-        {['Python 3.11', 'PyTorch', 'FastAPI', 'React', 'WESAD Dataset'].map((badge) => (
+        {['Python 3.9+', 'PyTorch', 'FastAPI', 'React', 'WESAD Dataset'].map((badge) => (
           <span
             key={badge}
             className="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 rounded-full text-sm font-medium"
@@ -53,9 +57,10 @@ const About: React.FC = () => {
         </p>
         <p className="mt-4 text-gray-600 dark:text-gray-400 leading-relaxed">
           Every result uses <strong>Leave-One-Subject-Out</strong> cross-validation, so models are always tested
-          on people they never trained on. The best model (Random Forest) reaches <strong>91.2% accuracy</strong> for
-          binary stress detection and 65.0% for three-class (baseline/stress/amusement), with SHAP-based and
-          clinically-grounded interpretation built on HRV standards.
+          on people they never trained on. The best binary model ({r.binary.best_model}) reaches{' '}
+          <strong>{pct(r.binary.loso_accuracy)}</strong> for stress detection, and the best three-class model
+          ({r.multiclass.best_model}) reaches <strong>{pct(r.multiclass.loso_accuracy)}</strong>{' '}
+          (baseline/stress/amusement), with SHAP-based interpretation built on HRV standards.
         </p>
       </div>
 
@@ -93,7 +98,7 @@ const About: React.FC = () => {
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Features</h3>
           </div>
           <ul className="space-y-2 text-gray-600 dark:text-gray-400">
-            <li>• 60+ physiological features extracted</li>
+            <li>• {r.binary.n_features} physiological features extracted</li>
             <li>• HRV time/frequency/nonlinear analysis</li>
             <li>• EDA phasic/tonic decomposition</li>
             <li>• 60s windows, 50% overlap</li>

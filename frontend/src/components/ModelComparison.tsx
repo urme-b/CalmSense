@@ -24,7 +24,8 @@ const ModelComparison: React.FC = () => {
     (a: any, b: any) => b.accuracy_mean - a.accuracy_mean
   );
   const best = models[0];
-  const gap = (data.within_subject_accuracy - data.loso_accuracy) * 100;
+  const losoPooled = data.loso_pooled_accuracy ?? data.loso_accuracy;
+  const gap = (data.within_subject_accuracy - losoPooled) * 100;
   const shap = (results as any).shap || [];
 
   const barData = models.map((m: any) => ({
@@ -69,7 +70,7 @@ const ModelComparison: React.FC = () => {
       {/* Optimism note */}
       <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-xl p-4 text-sm text-orange-800 dark:text-orange-200">
         The same model scores <strong>{pct(data.within_subject_accuracy)}</strong> under within-subject
-        5-fold but only <strong>{pct(data.loso_accuracy)}</strong> when tested on unseen subjects — the
+        5-fold but only <strong>{pct(losoPooled)}</strong> when tested on unseen subjects — the
         gap that inflates many reported WESAD results.
       </div>
 
