@@ -13,13 +13,16 @@ def test_rmssd_constant_rr_is_zero():
     assert abs(features["MeanNN"] - 800.0) < 1e-6
 
 
-def test_sdnn_increases_with_variability():
-    low = HRVTimeDomainExtractor().extract_all(800 + np.random.RandomState(0).randn(100) * 5)
-    high = HRVTimeDomainExtractor().extract_all(800 + np.random.RandomState(0).randn(100) * 50)
-    assert high["SDNN"] > low["SDNN"]
+def test_hrv_matches_known_sequence():
+    rr = np.tile([800.0, 820.0], 30)  # alternating RR, 60 beats
+    f = HRVTimeDomainExtractor().extract_all(rr)
+    assert abs(f["MeanNN"] - 810.0) < 1e-6
+    assert abs(f["RMSSD"] - 20.0) < 1e-6  # every successive diff is 20 ms
+    assert abs(f["SDNN"] - np.std(rr, ddof=1)) < 1e-6
 
 
-def test_invalid_rr_returns_nan():
+def test_too_few_rr_returns_nan():
+    # below the minimum RR count HRV is undefined
     features = HRVTimeDomainExtractor().extract_all(np.array([800.0, 810.0]))
     assert np.isnan(features["SDNN"])
 
