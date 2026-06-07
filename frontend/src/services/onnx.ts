@@ -24,18 +24,25 @@ async function getSession(): Promise<ort.InferenceSession> {
   return session;
 }
 
-// Build the standardized 54-feature vector: provided value or imputed median.
+// Build the standardized feature vector: provided finite value, else imputed median.
+// Non-finite inputs (NaN, ±Inf) are treated as missing, matching the training imputer.
 function vectorize(features: Record<string, number>): Float32Array {
   const vec = new Float32Array(NAMES.length);
   for (let i = 0; i < NAMES.length; i++) {
     const raw = features[NAMES[i]];
-    const filled = raw === undefined || raw === null || Number.isNaN(raw) ? MEDIANS[i] : raw;
+    const filled = Number.isFinite(raw) ? raw : MEDIANS[i];
     vec[i] = (filled - MEAN[i]) / SCALE[i];
   }
   return vec;
 }
 
 export async function predictLocal(features: Record<string, number>): Promise<PredictionResponse> {
+  const matched = NAMES.filter((n) => Number.isFinite(features[n])).length;
+  if (matched === 0) {
+    throw new Error(
+      `No recognised features. Expected names like ${NAMES.slice(0, 4).join(', ')}, ...`
+    );
+  }
   const t0 = performance.now();
   const sess = await getSession();
   const input = new ort.Tensor('float32', vectorize(features), [1, NAMES.length]);

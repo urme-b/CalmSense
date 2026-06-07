@@ -437,7 +437,7 @@ const PredictionPanel: React.FC = () => {
             ) : (
               history.map((pred, index) => (
                 <HistoryItem
-                  key={index}
+                  key={pred.timestamp}
                   prediction={pred}
                   onDelete={() => setHistory((prev) => prev.filter((_, i) => i !== index))}
                 />
