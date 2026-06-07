@@ -49,7 +49,6 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # Copy source and trained model
 COPY src/ ./src/
 COPY api/ ./api/
-COPY configs/ ./configs/
 COPY outputs/ ./outputs/
 
 # Copy frontend build
