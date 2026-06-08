@@ -55,9 +55,9 @@ dependencies = [
     "shap>=0.43,<1.0",
 
     # In-browser model export
-    "skl2onnx>=1.17,<2.0",
-    "onnx>=1.15",
-    "onnxruntime>=1.17",
+    "skl2onnx==1.20.0",
+    "onnx==1.19.1",
+    "onnxruntime==1.19.2",  # matches the browser's onnxruntime-web 1.19.2
 
     # Figures
     "matplotlib>=3.7,<4.0",

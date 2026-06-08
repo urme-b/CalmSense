@@ -51,5 +51,6 @@ def test_onnx_matches_sklearn_including_nonfinite():
     standardized = ((filled - mean) / scale).astype(np.float32)
 
     sess = ort.InferenceSession(ONNX.read_bytes())
-    proba = np.asarray(sess.run(None, {"input": standardized})[1])
+    outputs = sess.run(None, {"input": standardized})
+    proba = next(np.asarray(o) for o in outputs if np.asarray(o).ndim == 2)
     assert np.abs(proba - ref).max() < 1e-4
