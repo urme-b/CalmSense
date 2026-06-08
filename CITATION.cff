@@ -2,8 +2,8 @@ cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
 type: software
 title: "CalmSense: Multimodal Physiological Stress Detection"
-version: 1.0.0
-date-released: 2025-02-04
+version: 0.1.0
+date-released: 2026-06-14
 url: "https://github.com/urme-b/CalmSense"
 repository-code: "https://github.com/urme-b/CalmSense"
 license: MIT
@@ -23,7 +23,7 @@ abstract: >-
   CalmSense is a multimodal physiological stress detection system
   that classifies baseline, stress, and amusement states from
   wearable sensor data. It implements end-to-end signal processing,
-  60+ biomarker extraction, and a leakage-free Leave-One-Subject-Out
+  58-biomarker extraction, and a leakage-free Leave-One-Subject-Out
   benchmark of classical models and a 1D-CNN, with SHAP-based
   biomarker interpretation.
 references:
@@ -35,7 +35,7 @@ references:
         given-names: "Attila"
       - family-names: "Duerichen"
         given-names: "Robert"
-      - family-names: "Marber"
+      - family-names: "Marberger"
         given-names: "Claus"
       - family-names: "Van Laerhoven"
         given-names: "Kristof"
