@@ -7,19 +7,22 @@
 Wearable stress-detection studies routinely report accuracies of 95–99%, yet these numbers are
 frequently produced by evaluation protocols that leak information about the test set. CalmSense
 peels back three layers of this optimism on the WESAD dataset and quantifies how much performance
-survives each one. **(1) Subject leakage:** moving from within-subject k-fold to strict
-Leave-One-Subject-Out (LOSO) cross-validation drops three-class accuracy from 0.99 to 0.65 — the
-inflation that recurs across the literature. **(2) Motion confound:** a feature-group ablation shows
-that accelerometer features alone reach 0.84, but removing motion entirely still yields 0.90 — so
-autonomic physiology alone is sufficient for strong performance, though motion features are
-independently informative. **(3) Dataset shift:** even a leakage-free, subject-independent model does
-not transfer across these corpora — in this WESAD↔Non-EEG pairing (different stressors, devices, and
-label schemes, on a reduced shared 18-feature space), balanced accuracy collapses to 0.50–0.57, near
-chance. We also show that a wrist-only model using only consumer-wearable signals (Empatica E4: EDA,
-BVP, temperature, accelerometer) reaches 0.89–0.91 binary accuracy, within ~2 points of the
-research-grade chest sensor (0.912). The contribution is not a new architecture but a careful,
-fully reproducible accounting of what subject-independent wearable stress detection actually
-delivers — and a warning that within-dataset success does not imply real-world generalization.
+survives each one. **(1) Subject leakage:** moving from within-subject 5-fold to strict
+Leave-One-Subject-Out (LOSO) cross-validation drops three-class accuracy from 0.79 to 0.67 (a
+12-point gap) and binary accuracy from 0.96 to 0.91; allowing the overlapping windows many studies
+use inflates the within-subject figure further toward the 0.95–0.99 routinely reported. **(2) Motion
+confound:** a feature-group ablation shows that accelerometer features alone reach 0.88, but removing
+motion entirely still yields 0.90 — so autonomic physiology alone is sufficient for strong
+performance, though motion features are independently informative. **(3) Dataset shift:** even a
+leakage-free, subject-independent model does not transfer across these corpora — in this WESAD↔Non-EEG
+pairing (different stressors, devices, and label schemes, on a reduced shared 18-feature space),
+balanced accuracy collapses to 0.50–0.57, near chance. We also show that a wrist-only model using only
+consumer-wearable signals (Empatica E4: EDA, BVP, temperature, accelerometer) reaches 0.89–0.91 binary
+accuracy, within ~2 points of the research-grade chest sensor (0.913). The four feature-based models
+are statistically indistinguishable under LOSO (Friedman p=0.81), so we report the family rather than
+crown a winner. The contribution is not a new architecture but a careful, fully reproducible
+accounting of what subject-independent wearable stress detection actually delivers — and a warning
+that within-dataset success does not imply real-world generalization.
 
 ## 1. Introduction
 
@@ -29,7 +32,7 @@ a large body of work reports near-perfect accuracy on it. Much of that accuracy 
 evaluation. The clearest failure mode is **subject-dependent validation**: when 60-second windows
 are pooled across all participants and split randomly (or by k-fold), highly autocorrelated windows
 from one recording land in both train and test, and the model exploits person-specific physiological
-signatures rather than stress itself (Bhanushali et al., 2021; Vos et al., 2022). A recent example
+signatures rather than stress itself (Bhanushali et al., 2021; Vos et al., 2023). A recent example
 obtained 99.9% on WESAD with a random 85:15 split that did not separate subjects (Oliver & Dakshit,
 2025).
 
@@ -58,9 +61,9 @@ within-subject splits that overfit (Bhanushali et al., 2021).
 
 **The leakage problem.** A persistent issue is that many studies report 95–99.9% accuracy using
 random k-fold over windows without separating subjects; because overlapping windows from one person
-appear in both train and test, the reported accuracy is optimistically biased (Vos et al., 2022;
+appear in both train and test, the reported accuracy is optimistically biased (Vos et al., 2023;
 Oliver & Dakshit, 2025). Subject-dependent accuracy near 95% commonly falls to ~67% under
-subject-independent evaluation (Li et al., 2024, as surveyed by Vos et al., 2022). Systematic reviews
+subject-independent evaluation, as surveyed by Vos et al. (2023). Systematic reviews
 explicitly recommend subject-disjoint validation.
 
 **Cross-dataset generalization.** Models that perform well within a corpus degrade sharply across
@@ -84,7 +87,7 @@ excluding the motion-heavy physical block.
 
 Each recording is processed once, then segmented into 60-second windows with 50% overlap; a window
 keeps its label only if ≥90% of its samples share one condition (transition windows are dropped).
-From the chest signals we extract 60+ features: HRV time/frequency/nonlinear (RMSSD, SDNN, LF/HF,
+From the chest signals we extract 58 features: HRV time/frequency/nonlinear (RMSSD, SDNN, LF/HF,
 sample entropy, Poincaré SD1/SD2; Task Force, 1996) from Pan–Tompkins/NeuroKit2 R-peaks after ectopic
 correction; EDA tonic (SCL) and phasic (SCR) features from a decomposition; and temperature,
 respiration, and accelerometer descriptors. Feature extraction never sees the labels, and no
@@ -98,9 +101,11 @@ matched feature sets from the corresponding lower-rate signals (HRV from BVP pea
 residual 1D-CNN on the raw windows. Within every LOSO fold, a median imputer and standard scaler are
 fit **on the training subjects only**; class imbalance is handled with balanced weights inside each
 fold. **Protocol.** All headline numbers use LOSO (15 folds for WESAD). We report accuracy and
-macro-F1 (mean ± across-subject SD), balanced accuracy on pooled predictions, bootstrap 95% CIs, and
-Wilcoxon signed-rank tests across the per-subject scores. For the best model we also run within-subject
-5-fold CV to measure the optimism gap.
+macro-F1 (mean ± across-subject SD), balanced accuracy on pooled predictions, and bootstrap 95% CIs.
+Model differences are tested with a Friedman omnibus test across the four feature models, followed by
+Holm-corrected pairwise Wilcoxon signed-rank tests on the per-subject scores. For the best model we
+also run within-subject 5-fold CV (on non-overlapping windows) to measure the optimism gap on a
+matched, pooled basis.
 
 ## 6. Results
 
@@ -108,47 +113,48 @@ Wilcoxon signed-rank tests across the per-subject scores. For the best model we 
 
 | Model | Binary acc | Binary F1 | 3-class acc | 3-class F1 |
 |-------|:----------:|:---------:|:-----------:|:----------:|
-| Logistic Regression | 0.868 | 0.853 | 0.647 | 0.588 |
-| **Random Forest** | **0.912** | **0.898** | 0.629 | 0.519 |
-| XGBoost | 0.888 | 0.858 | 0.627 | 0.545 |
-| LightGBM | 0.875 | 0.838 | 0.650 | 0.566 |
-| 1D-CNN (raw) | 0.647 | 0.393 | 0.545 | 0.235 |
+| Logistic Regression | 0.902 | 0.883 | **0.670** | **0.613** |
+| **Random Forest** | **0.913** | **0.898** | 0.637 | 0.535 |
+| XGBoost | 0.903 | 0.873 | 0.633 | 0.552 |
+| LightGBM | 0.894 | 0.860 | 0.658 | 0.568 |
+| 1D-CNN (raw) | 0.718 | 0.648 | 0.626 | 0.543 |
 
-*Table 1. LOSO results (15 folds). Bold marks the best binary model.* On the binary task Random Forest
-achieves **0.912 (95% CI [0.863, 0.956])** and outperforms the other feature-based models on
-per-subject accuracy (Wilcoxon signed-rank: vs logistic regression p=0.033, vs XGBoost p=0.043, vs
-LightGBM p=0.041); these p-values are marginal and uncorrected (none survive Bonferroni correction),
-so the ranking among the feature models is suggestive rather than decisive. The feature-based models do,
-however, clearly beat the from-scratch 1D-CNN, which with ~1000 windows collapses toward the majority
-class (balanced accuracy 0.50). On the three-class task the feature models are statistically
-indistinguishable (top accuracies 0.629–0.650 with across-subject SD ≈ 0.16–0.21, no significant
-pairwise differences), and overall accuracy is markedly lower — consistent with the original WESAD LOSO
-numbers. Random Forest is the best binary model but not the best three-class model.
+*Table 1. LOSO results (15 folds). Bold marks the best model per task.* On the binary task Random
+Forest is nominally highest at **0.913 (95% CI [0.860, 0.960])**, but a Friedman omnibus test across
+the four feature models is not significant (p=0.81), and no Holm-corrected pairwise Wilcoxon test is
+either — the feature models are **statistically indistinguishable**, so we report the family rather
+than declare a winner. All four clearly beat the from-scratch 1D-CNN (0.718), which underperforms at
+this data scale (~1000 windows). On the three-class task accuracy is markedly lower (0.63–0.67),
+again with no significant differences and large across-subject SD (≈0.16–0.21), consistent with the
+original WESAD LOSO numbers; logistic regression is nominally best.
 
 ### 6.2 The subject-leakage optimism gap
 
-For the best model on each task (random forest for binary, LightGBM for three-class), replacing LOSO
-with within-subject 5-fold CV inflates accuracy from 0.912 to 0.978 on binary (+6.6 points) and from
-0.650 to **0.987 on three-class (+33.7 points)**. The three-class figure is the crux: a protocol that
-leaks subject identity turns a 65%-accurate model into an apparent 99%-accurate one — exactly the
-inflation that recurs in the WESAD literature.
+For the best model on each task, replacing LOSO with within-subject 5-fold CV — measured on
+non-overlapping windows and pooled the same way, so the only change is that subjects are mixed across
+folds — inflates accuracy from 0.913 to 0.964 on binary (+5.1 points) and from 0.671 to **0.792 on
+three-class (+12.1 points)**. Subject mixing alone therefore buys ~12 points on the harder task. This
+is a conservative measurement: many WESAD studies additionally split *overlapping* 60-second windows
+at random, so near-duplicate windows from one recording fall in both train and test, which inflates
+the within-subject figure further toward the 0.95–0.99 routinely reported. The honest LOSO number is
+0.67.
 
 ### 6.3 Motion-confound ablation
 
 | Feature set | Binary acc (RF) |
 |-------------|:---------------:|
-| All features (54) | 0.912 |
-| **No motion** (HRV+EDA+TEMP+RESP, 50) | **0.903** |
-| Autonomic (HRV+EDA, 45) | 0.884 |
-| HRV only (30) | 0.813 |
+| All features (58) | 0.913 |
+| **No motion** (HRV+EDA+TEMP+RESP, 53) | **0.901** |
+| Autonomic (HRV+EDA, 45) | 0.890 |
+| HRV only (30) | 0.810 |
 | EDA only (15) | 0.828 |
-| Motion only (ACC, 4) | 0.844 |
+| Motion only (ACC, 5) | 0.885 |
 
-*Table 2. Feature-group ablation.* Accelerometer features alone reach 0.844 — motion is genuinely
+*Table 2. Feature-group ablation.* Accelerometer features alone reach 0.885 — motion is genuinely
 informative, plausibly because the stress condition (public speaking/arithmetic while standing) differs
 in movement from seated baseline, which would also explain why the top SHAP feature is a motion
 descriptor (we do not measure posture/activity directly, so this is a plausible rather than confirmed
-mechanism). **Crucially, removing motion entirely still yields 0.903, within 0.9 points of the full
+mechanism). **Crucially, removing motion entirely still yields 0.901, within 1.2 points of the full
 model.** Stress is therefore detectable from autonomic physiology alone; the headline result does not
 depend on motion, even though motion is independently predictive.
 
@@ -156,10 +162,10 @@ depend on motion, even though motion is independently predictive.
 
 Using only consumer-wearable Empatica E4 signals (BVP→HRV, EDA, temperature, accelerometer), the
 wrist matches the chest closely. For a like-for-like comparison (random forest on both), wrist accuracy
-is **0.891 vs the chest's 0.912 — a 2.1-point drop** (within the 95% CI noise at N=15). The best wrist
-model (XGBoost, 0.908) comes within 0.4 points of the best chest model, though the two "best" models
-differ. Either way, subject-independent stress detection does not require a research-grade chest sensor;
-a wrist wearable suffices, which matters for any real deployment.
+is **0.893 vs the chest's 0.913 — a 2.0-point drop** (within the 95% CI noise at N=15). The best wrist
+model (XGBoost, 0.906) comes within 0.7 points of the best chest model. Either way, subject-independent
+stress detection does not require a research-grade chest sensor; a wrist wearable suffices, which
+matters for any real deployment.
 
 ### 6.5 Cross-dataset generalization
 
@@ -182,12 +188,12 @@ overstate generalization to a new dataset.
 
 ## 7. Interpretability
 
-SHAP values for the best tree model rank the most influential features as a motion descriptor
-(`ACC_zero_crossings`), followed by heart-rate level (`HRV_MedianNN`, `HRV_MeanNN`) and
-skin-conductance responses (`EDA_SCR_*`) — physiologically sensible for acute stress (vagal withdrawal
-raises heart rate; sympathetic arousal drives EDA). The prominence of the motion feature is exactly
-what motivated the ablation in §6.3, which shows the physiological signal stands on its own once motion
-is removed.
+SHAP values (Lundberg & Lee, 2017) for the best tree model rank the most influential features as a
+motion descriptor (`ACC_zero_crossings`), followed by heart-rate level (`HRV_MedianNN`, `HRV_MeanNN`),
+skin-conductance responses (`EDA_SCR_amplitude_max`, `EDA_SCR_recovery_time_mean`), and respiration
+rate (`RESP_rate`) — physiologically sensible for acute stress (vagal withdrawal raises heart rate;
+sympathetic arousal drives EDA). The prominence of the motion feature is exactly what motivated the
+ablation in §6.3, which shows the physiological signal stands on its own once motion is removed.
 
 ## 8. From acute stress to mental-health-crisis early warning
 
@@ -207,7 +213,7 @@ mental-health crises from continuous wearable data would have to be built.
 ## 9. Discussion and limitations
 
 - **Small N, lab-induced stress.** WESAD has 15 subjects and uses the TSST; per-subject LOSO accuracy
-  ranges 0.73–1.00. Generalization to real-world or chronic stress is not established.
+  ranges 0.71–1.00. Generalization to real-world or chronic stress is not established.
 - **Cross-dataset asymmetry.** Non-EEG→WESAD transfer is at chance while WESAD→Non-EEG is slightly
   above; the shared 18-feature space and differing stressors/label schemes limit what transfer can
   achieve. We report this as-is rather than tuning it away.
@@ -219,16 +225,20 @@ mental-health crises from continuous wearable data would have to be built.
 
 ```bash
 pip install -e .
-python scripts/run_experiment.py     # LOSO benchmark, optimism gap, SHAP, model
-python scripts/ablation.py           # motion-confound ablation
-python scripts/wrist.py              # wrist-only model
-python scripts/stats.py              # significance tests + CIs
-python scripts/cross_dataset.py      # WESAD <-> Non-EEG transfer
+# Download WESAD into data/raw/WESAD and Non-EEG into data/external/noneeg first
+# (see data/raw/README.md); neither is redistributed here.
+python scripts/run_experiment.py       # LOSO benchmark, optimism gap, SHAP, model
+python scripts/ablation.py             # motion-confound ablation
+python scripts/wrist.py                # wrist-only model
+python scripts/cross_dataset.py        # WESAD <-> Non-EEG transfer
+python scripts/stats.py                # Friedman + Holm-corrected tests, bootstrap CIs
+python scripts/export_onnx.py          # export the model for in-browser inference
+python scripts/build_dashboard_data.py # assemble the dashboard's results.json
 ```
 
 All randomness is seeded; every number and figure in this paper is regenerated by these scripts into
-`results/` and `outputs/figures/`. WESAD downloads on first run; the Non-EEG dataset is public on
-PhysioNet.
+`results/` and `outputs/figures/`. WESAD (UCI/PhysioNet) and Non-EEG (PhysioNet) are public datasets
+that must be downloaded separately; see `data/raw/README.md`.
 
 ## Ethics
 
