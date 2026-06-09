@@ -3,7 +3,6 @@ from .ml import (
     LightGBMClassifier,
     LogisticRegressionClassifier,
     RandomForestClassifier,
-    SVMClassifier,
     XGBoostClassifier,
     get_classifier,
 )
@@ -18,7 +17,6 @@ except ImportError:
 __all__ = [
     "BaseMLModel",
     "LogisticRegressionClassifier",
-    "SVMClassifier",
     "RandomForestClassifier",
     "XGBoostClassifier",
     "LightGBMClassifier",

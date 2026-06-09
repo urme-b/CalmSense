@@ -38,40 +38,6 @@ class LogisticRegressionClassifier(BaseMLModel):
         )
 
 
-class SVMClassifier(BaseMLModel):
-    def __init__(
-        self,
-        C: float = 10.0,
-        kernel: str = "rbf",
-        gamma: str = "scale",
-        probability: bool = True,
-        class_weight: Optional[str] = "balanced",
-        random_state: int = 42,
-        **kwargs,
-    ):
-
-        super().__init__("SVM", random_state, **kwargs)
-        self.C = C
-        self.kernel = kernel
-        self.gamma = gamma
-        self.probability = probability
-        self.class_weight = class_weight
-
-    def _create_model(self) -> Any:
-
-        from sklearn.svm import SVC
-
-        return SVC(
-            C=self.C,
-            kernel=self.kernel,
-            gamma=self.gamma,
-            probability=self.probability,
-            class_weight=self.class_weight,
-            random_state=self.random_state,
-            **self.kwargs,
-        )
-
-
 class RandomForestClassifier(BaseMLModel):
     def __init__(
         self,
@@ -143,34 +109,23 @@ class XGBoostClassifier(BaseMLModel):
 
     def _create_model(self) -> Any:
 
-        try:
-            import xgboost as xgb
+        import xgboost as xgb
 
-            return xgb.XGBClassifier(
-                n_estimators=self.n_estimators,
-                max_depth=self.max_depth,
-                learning_rate=self.learning_rate,
-                subsample=self.subsample,
-                colsample_bytree=self.colsample_bytree,
-                gamma=self.gamma,
-                reg_alpha=self.reg_alpha,
-                reg_lambda=self.reg_lambda,
-                scale_pos_weight=self.scale_pos_weight,
-                random_state=self.random_state,
-                n_jobs=self.n_jobs,
-                eval_metric="mlogloss",
-                **self.kwargs,
-            )
-        except ImportError:
-            self.logger.warning("XGBoost not installed, falling back to RandomForest")
-            from sklearn.ensemble import RandomForestClassifier as SklearnRF
-
-            return SklearnRF(
-                n_estimators=self.n_estimators,
-                max_depth=self.max_depth,
-                random_state=self.random_state,
-                n_jobs=self.n_jobs,
-            )
+        return xgb.XGBClassifier(
+            n_estimators=self.n_estimators,
+            max_depth=self.max_depth,
+            learning_rate=self.learning_rate,
+            subsample=self.subsample,
+            colsample_bytree=self.colsample_bytree,
+            gamma=self.gamma,
+            reg_alpha=self.reg_alpha,
+            reg_lambda=self.reg_lambda,
+            scale_pos_weight=self.scale_pos_weight,
+            random_state=self.random_state,
+            n_jobs=self.n_jobs,
+            eval_metric="mlogloss",
+            **self.kwargs,
+        )
 
 
 class LightGBMClassifier(BaseMLModel):
@@ -206,44 +161,32 @@ class LightGBMClassifier(BaseMLModel):
 
     def _create_model(self) -> Any:
 
-        try:
-            import lightgbm as lgb
+        import lightgbm as lgb
 
-            return lgb.LGBMClassifier(
-                num_leaves=self.num_leaves,
-                n_estimators=self.n_estimators,
-                learning_rate=self.learning_rate,
-                max_depth=self.max_depth,
-                subsample=self.subsample,
-                colsample_bytree=self.colsample_bytree,
-                reg_alpha=self.reg_alpha,
-                reg_lambda=self.reg_lambda,
-                min_child_samples=self.min_child_samples,
-                class_weight=self.class_weight,
-                random_state=self.random_state,
-                n_jobs=self.n_jobs,
-                verbose=-1,
-                **self.kwargs,
-            )
-        except ImportError:
-            self.logger.warning("LightGBM not installed, falling back to RandomForest")
-            from sklearn.ensemble import RandomForestClassifier as SklearnRF
-
-            return SklearnRF(
-                n_estimators=self.n_estimators,
-                max_depth=self.max_depth if self.max_depth > 0 else None,
-                random_state=self.random_state,
-                n_jobs=self.n_jobs,
-            )
+        return lgb.LGBMClassifier(
+            num_leaves=self.num_leaves,
+            n_estimators=self.n_estimators,
+            learning_rate=self.learning_rate,
+            max_depth=self.max_depth,
+            subsample=self.subsample,
+            colsample_bytree=self.colsample_bytree,
+            reg_alpha=self.reg_alpha,
+            reg_lambda=self.reg_lambda,
+            min_child_samples=self.min_child_samples,
+            class_weight=self.class_weight,
+            random_state=self.random_state,
+            n_jobs=self.n_jobs,
+            verbose=-1,
+            **self.kwargs,
+        )
 
 
-# Factory function to get
+# Factory by short name
 def get_classifier(name: str, **kwargs) -> BaseMLModel:
 
     classifiers = {
         "lr": LogisticRegressionClassifier,
         "logistic": LogisticRegressionClassifier,
-        "svm": SVMClassifier,
         "rf": RandomForestClassifier,
         "random_forest": RandomForestClassifier,
         "xgb": XGBoostClassifier,

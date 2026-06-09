@@ -3,7 +3,6 @@ from .classifiers import (
     LightGBMClassifier,
     LogisticRegressionClassifier,
     RandomForestClassifier,
-    SVMClassifier,
     XGBoostClassifier,
     get_classifier,
 )
@@ -11,7 +10,6 @@ from .classifiers import (
 __all__ = [
     "BaseMLModel",
     "LogisticRegressionClassifier",
-    "SVMClassifier",
     "RandomForestClassifier",
     "XGBoostClassifier",
     "LightGBMClassifier",
