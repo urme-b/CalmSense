@@ -55,14 +55,8 @@ MULTICLASS_LABELS: Dict[str, int] = {"baseline": 0, "stress": 1, "amusement": 2}
 
 @dataclass(frozen=True)
 class SamplingRates:
-    # Chest (RespiBAN)
+    # Chest (RespiBAN) — all channels at 700 Hz
     CHEST: float = 700.0
-    CHEST_ECG: float = 700.0
-    CHEST_EDA: float = 700.0
-    CHEST_EMG: float = 700.0
-    CHEST_TEMP: float = 700.0
-    CHEST_RESP: float = 700.0
-    CHEST_ACC: float = 700.0
 
     # Wrist (Empatica E4)
     WRIST_ACC: float = 32.0
