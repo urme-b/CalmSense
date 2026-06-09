@@ -83,38 +83,3 @@ class LoggerMixin:
         if not hasattr(self, "_logger"):
             self._logger = get_logger(self.__class__.__module__)
         return self._logger
-
-
-def log_function_call(func):
-    from functools import wraps
-
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        logger = get_logger(func.__module__)
-        logger.debug("entering", function=func.__name__)
-        try:
-            result = func(*args, **kwargs)
-            logger.debug("exiting", function=func.__name__)
-            return result
-        except Exception as e:
-            logger.error("error", function=func.__name__, error=str(e), exc_info=True)
-            raise
-
-    return wrapper
-
-
-def log_exception(logger):
-    def decorator(func):
-        from functools import wraps
-
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            try:
-                return func(*args, **kwargs)
-            except Exception as e:
-                logger.exception("exception", function=func.__name__, error=str(e))
-                raise
-
-        return wrapper
-
-    return decorator
