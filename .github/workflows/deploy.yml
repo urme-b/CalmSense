@@ -28,6 +28,10 @@ jobs:
           CI: false
         run: npm run build
 
+      # GitHub Pages has no server-side routing; serve the SPA shell on deep links
+      - name: SPA fallback
+        run: cp frontend/build/index.html frontend/build/404.html
+
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
