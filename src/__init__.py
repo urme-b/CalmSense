@@ -20,7 +20,6 @@ from .config import (
     get_project_root,
 )
 from .data import WESADLoader
-from .features import FeatureExtractor
 from .logging_config import (
     LoggerMixin,
     get_logger,
@@ -74,7 +73,6 @@ __all__ = [
     "get_timestamp",
     "WESADLoader",
     "SignalProcessor",
-    "FeatureExtractor",
 ]
 
 
