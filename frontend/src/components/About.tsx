@@ -167,19 +167,15 @@ const About: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {[
-                { model: 'Random Forest', acc: '91.2%', f1: '89.8%' },
-                { model: 'XGBoost', acc: '88.8%', f1: '85.8%' },
-                { model: 'LightGBM', acc: '87.5%', f1: '83.8%' },
-                { model: 'Logistic Regression', acc: '86.8%', f1: '85.3%' },
-                { model: '1D-CNN', acc: '64.7%', f1: '39.3%' },
-              ].map((row, i) => (
-                <tr key={row.model} className={`border-b border-gray-100 dark:border-gray-700 ${i === 0 ? 'bg-green-50 dark:bg-green-900/20' : ''}`}>
-                  <td className="px-4 py-2 text-gray-900 dark:text-white font-medium">{row.model}</td>
-                  <td className="px-4 py-2 text-gray-600 dark:text-gray-400">{row.acc}</td>
-                  <td className="px-4 py-2 text-gray-600 dark:text-gray-400">{row.f1}</td>
-                </tr>
-              ))}
+              {[...r.binary.models]
+                .sort((a: any, b: any) => b.accuracy_mean - a.accuracy_mean)
+                .map((row: any, i: number) => (
+                  <tr key={row.model} className={`border-b border-gray-100 dark:border-gray-700 ${i === 0 ? 'bg-green-50 dark:bg-green-900/20' : ''}`}>
+                    <td className="px-4 py-2 text-gray-900 dark:text-white font-medium">{row.model}</td>
+                    <td className="px-4 py-2 text-gray-600 dark:text-gray-400">{pct(row.accuracy_mean)}</td>
+                    <td className="px-4 py-2 text-gray-600 dark:text-gray-400">{pct(row.f1_macro_mean)}</td>
+                  </tr>
+                ))}
             </tbody>
           </table>
         </div>
