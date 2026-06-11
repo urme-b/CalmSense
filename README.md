@@ -1,113 +1,91 @@
+<div align="center">
+
 # CalmSense
 
-Honest, leakage-free stress detection from wearable physiology — and an accounting of the **three
-layers of optimism** that inflate published WESAD numbers.
+**Honest, leakage-free stress detection from wearable physiology.**
 
-Most WESAD papers report 95%+ accuracy, but much of it is an artefact of how it's measured. CalmSense
-strips that away layer by layer: it evaluates everything with strict **Leave-One-Subject-Out (LOSO)**
-cross-validation, shows the result isn't a **motion confound**, proves it works on a **wrist-only**
-consumer device — and then shows that even an honest within-dataset model **does not transfer to a
-second dataset**.
+[![CI](https://github.com/urme-b/CalmSense/actions/workflows/ci.yml/badge.svg)](https://github.com/urme-b/CalmSense/actions/workflows/ci.yml)
+[![Live Demo](https://img.shields.io/badge/demo-live-brightgreen)](https://urme-b.github.io/CalmSense/)
+[![Python](https://img.shields.io/badge/python-3.9%2B-blue)](pyproject.toml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-**[Live demo →](https://urme-b.github.io/CalmSense/)**
+[**Live demo**](https://urme-b.github.io/CalmSense/) · [**Paper**](PAPER.md) · [**Results**](results/)
 
-## Results (Leave-One-Subject-Out, 15 subjects)
+</div>
 
-**Binary — stress vs. non-stress** (869 windows)
+Most WESAD papers report 95–99% accuracy. Much of it is an artefact of how it's measured. CalmSense
+detects stress from wearable signals (ECG, EDA, temperature, respiration, motion) and — more
+importantly — **strips away three layers of evaluation optimism** to show what honestly survives
+when models are tested on people they never trained on.
+
+The contribution isn't a new architecture; it's a careful, fully reproducible accounting of what
+subject-independent wearable stress detection actually delivers.
+
+---
+
+## Results
+
+All numbers use strict **Leave-One-Subject-Out (LOSO)** cross-validation on WESAD (15 subjects) —
+imputation, scaling, and class balancing are fit *inside each fold*, so no subject crosses the
+train/test boundary.
+
+**Binary — stress vs. non-stress** (869 windows, 58 features)
 
 | Model | LOSO Accuracy | Macro-F1 |
 |-------|:-------------:|:--------:|
-| **Random Forest** | **0.913 ± 0.101** | **0.898** |
+| **Random Forest** | **0.913** | **0.898** |
 | XGBoost | 0.903 | 0.873 |
 | Logistic Regression | 0.902 | 0.883 |
 | LightGBM | 0.894 | 0.860 |
 | 1D-CNN (raw signals) | 0.718 | 0.648 |
 
-**Three-class — baseline / stress / amusement** (1032 windows)
+The four feature models are **statistically indistinguishable** (Friedman p=0.81), so we report the
+family rather than crown a winner. Three-class (baseline/stress/amusement) tops out at **0.67** — the
+honest ceiling for this task.
 
-| Model | LOSO Accuracy | Macro-F1 |
-|-------|:-------------:|:--------:|
-| **Logistic Regression** | **0.670** | **0.613** |
-| LightGBM | 0.658 | 0.568 |
-| Random Forest | 0.637 | 0.535 |
-| XGBoost | 0.633 | 0.552 |
-| 1D-CNN (raw signals) | 0.626 | 0.543 |
+## The three layers of optimism
 
-Random Forest is nominally the top binary model (95% CI [0.860, 0.960]), but the four feature models
-are **statistically indistinguishable** (Friedman omnibus p=0.81; no significant Holm-corrected pairwise
-difference), so we report the family rather than crown a winner. The same holds on the three-class task.
+| 1 · Subject leakage | 2 · Motion confound | 3 · Dataset shift |
+|:---:|:---:|:---:|
+| ![gap](outputs/figures/multiclass_optimism_gap.png) | ![ablation](outputs/figures/ablation.png) | ![cross](outputs/figures/cross_dataset.png) |
+| Within-subject CV inflates 3-class accuracy **0.67 → 0.79** | Remove motion entirely and accuracy holds (**0.913 → 0.901**) — it's physiology, not movement | Train on WESAD, test on PhysioNet Non-EEG → **near chance (0.50–0.57)** |
 
-### The three layers of optimism
+**Plus a practical win:** a wrist-only model (Empatica E4) reaches **0.893 vs 0.913** for the chest —
+a ~2-point drop, no chest strap needed.
 
-**1. Subject leakage.** For the best model on each task, switching from LOSO to within-subject 5-fold
-(on non-overlapping windows, pooled the same way) inflates accuracy from **0.913 → 0.964** (binary) and
-**0.671 → 0.792** (three-class, a 12-point gap). Allowing the overlapping windows many papers split at
-random inflates the within-subject figure further toward the 0.95–0.99 commonly reported.
+<div align="center">
+<img src="outputs/figures/chest_vs_wrist.png" width="45%"> <img src="outputs/figures/shap_beeswarm.png" width="45%">
+</div>
 
-**2. Motion confound.** Accelerometer features alone reach 0.885 (the stress task involves more
-movement than baseline) — but **removing motion entirely still gives 0.901 vs 0.913**, so physiology
-alone suffices, even though motion is independently informative.
-
-**3. Dataset shift.** Even leakage-free LOSO doesn't transfer: trained on WESAD, tested on the
-PhysioNet Non-EEG dataset (and vice versa) on a shared feature space, balanced accuracy **collapses to
-0.50–0.57 — near chance.** (Different stressors, devices, and label schemes contribute alongside true
-domain shift.) Within-dataset success is not real-world generalization.
-
-And a practical win — **wrist-only works**: with the same model (random forest), Empatica E4 wrist
-signals reach **0.893 vs 0.913** for the chest — a ~2-point drop, no chest strap needed.
-
-| Optimism gap (3-class) | Feature ablation | Cross-dataset collapse | Chest vs wrist |
-|---|---|---|---|
-| ![gap](outputs/figures/multiclass_optimism_gap.png) | ![ablation](outputs/figures/ablation.png) | ![cross](outputs/figures/cross_dataset.png) | ![wrist](outputs/figures/chest_vs_wrist.png) |
-
-Full methodology, results, and citations in [`PAPER.md`](PAPER.md). Every number and figure is
-regenerated by the scripts below.
-
-## How it works
-
-```
-raw WESAD signals  →  filtering + R-peak/EDA processing  →  60s windows (50% overlap)
-   →  58 HRV / EDA / temperature / respiration / motion features
-   →  leakage-free LOSO benchmark (impute + scale fit per fold)
-   →  metrics, confusion matrices, per-subject scores, SHAP, optimism gap
-```
-
-- **Signals (chest, 700 Hz):** ECG, electrodermal activity, temperature, respiration, accelerometer.
-- **Features:** HRV time/frequency/nonlinear (Task Force 1996), EDA tonic/phasic + SCR, temperature,
-  respiration, and motion descriptors.
-- **No leakage:** subjects never cross the train/test boundary; imputation and scaling are fit on the
-  training fold only; class imbalance is handled with balanced weights inside each fold.
-
-The most informative biomarkers (mean |SHAP|) lead with a motion descriptor (`ACC_zero_crossings`),
-then heart-rate level (`HRV_MedianNN`, `HRV_MeanNN`), skin-conductance responses (`EDA_SCR_*`), and
-respiration rate — consistent with the physiology of acute stress (and the reason for the motion
-ablation above).
+The most informative biomarkers (mean |SHAP|) are a motion descriptor, heart-rate level
+(`HRV_MedianNN`/`HRV_MeanNN`), skin-conductance responses, and respiration rate — consistent with the
+physiology of acute stress.
 
 ## Quick start
 
 ```bash
-git clone https://github.com/urme-b/CalmSense.git
-cd CalmSense
+git clone https://github.com/urme-b/CalmSense.git && cd CalmSense
 python -m venv .venv && source .venv/bin/activate
 pip install -e .
 # macOS only, for xgboost/lightgbm: brew install libomp
 
-# Download WESAD into data/raw/WESAD first (see data/raw/README.md), then:
-python scripts/run_experiment.py       # LOSO benchmark, optimism gap, SHAP, trained model
-python scripts/ablation.py             # motion-confound ablation
-python scripts/wrist.py                # wrist-only (Empatica E4) model
-python scripts/cross_dataset.py        # WESAD <-> PhysioNet Non-EEG transfer
-python scripts/stats.py                # Friedman + Holm-corrected tests, 95% CIs
-python scripts/export_onnx.py          # export model for the in-browser dashboard
-python scripts/build_dashboard_data.py # refresh the dashboard's results.json
-#   → results/*.json, results/*.csv, outputs/figures/*.png
-
-# Serve the trained model
-uvicorn api.main:app --reload        # http://localhost:8000/docs
+# Download WESAD into data/raw/WESAD/ first — see data/raw/README.md
+make reproduce          # regenerate every result, figure, model + dashboard data
+make api                # serve the model at http://localhost:8000/docs
+make test               # 19 tests
 ```
 
-`run_experiment.py` caches the windowed features, so re-runs and the analysis scripts are fast. Use
-`--no-cnn` to skip the deep model, or `--subjects S2 S3` for a quick subset.
+No data needed to *use* it — the trained model is committed, and the [live demo](https://urme-b.github.io/CalmSense/)
+runs it entirely in your browser (ONNX).
+
+## How it works
+
+```
+raw WESAD signals → filter · R-peak/EDA processing → 60s windows (50% overlap, ≥90% pure)
+   → 58 HRV / EDA / temperature / respiration / motion features
+   → leakage-free LOSO benchmark (impute + scale fit per fold)
+   → metrics · confusion matrices · per-subject scores · SHAP · optimism gap
+```
 
 ## API
 
@@ -123,42 +101,37 @@ curl -X POST localhost:8000/predict -H 'Content-Type: application/json' \
   -d '{"features": {"HRV_MeanNN": 650, "HRV_RMSSD": 18, "EDA_SCL_mean": 6.0}}'
 ```
 
-## Project layout
+## Project structure
 
 ```
-src/preprocessing/   ECG / EDA / respiration filtering, R-peak detection, windowing
+src/preprocessing/   ECG / EDA / respiration filtering, R-peak detection
 src/features/        HRV, EDA, temperature, respiration, accelerometer extractors
-src/dataset.py       windows raw signals → feature matrix + raw CNN tensors (cached)
-src/models/ml/       classical classifiers (LR, RF, XGBoost, LightGBM)
-src/models/dl/       residual 1D-CNN
+src/dataset.py       raw signals → feature matrix + raw CNN tensors (cached)
+src/models/          classical classifiers (LR/RF/XGB/LGBM) + residual 1D-CNN
 src/portable.py      shared feature space for cross-dataset transfer
-scripts/             run_experiment, ablation, wrist, cross_dataset, stats, export_onnx
+scripts/             run_experiment · ablation · wrist · cross_dataset · stats · export_onnx
 api/                 FastAPI prediction service
 frontend/            React dashboard (runs the model in-browser via ONNX)
 ```
 
 ## Dataset
 
-**WESAD** (Schmidt et al., ICMI 2018) — 15 subjects, chest (RespiBAN) + wrist (Empatica E4) sensors,
-four conditions (baseline, TSST stress, amusement, meditation). Download from the
+**WESAD** (Schmidt et al., ICMI 2018) — 15 subjects, chest (RespiBAN) + wrist (Empatica E4), four
+conditions. Download from the
 [UCI repository](https://archive.ics.uci.edu/dataset/465/wesad+wearable+stress+and+affect+detection)
-into `data/raw/WESAD/` — see [`data/raw/README.md`](data/raw/README.md). The dataset is not redistributed here.
+into `data/raw/WESAD/`; it is not redistributed here. Cross-dataset transfer uses the public
+[PhysioNet Non-EEG](https://physionet.org/content/noneeg/1.0.0/) dataset.
 
-## Notes and limitations
+## Limitations
 
-- 15 subjects is small; LOSO accuracy varies from 0.71 to 1.00 across held-out subjects (see
-  `outputs/figures/binary_per_subject.png`). Means are reported with across-subject standard deviation.
-- WESAD captures acute, lab-induced stress; this does not establish generalisation to real-world or
-  chronic stress.
-- The chest ECG gives cleaner HRV than a wrist device; the wrist-only model is more deployable and,
-  here, only ~2 points behind the chest.
+- **15 subjects, lab-induced (TSST) stress** — per-subject LOSO accuracy ranges 0.71–1.00; no claim to
+  real-world or chronic stress.
+- **No hyperparameter tuning** — fixed, sensible defaults; the goal is an honest baseline, not a
+  leaderboard score.
+- **Deep learning underperforms** at this data scale; reported rather than omitted.
 
-The methodology and full discussion are in [`PAPER.md`](PAPER.md).
+Full methodology, statistics, and references are in [`PAPER.md`](PAPER.md).
 
-## Tech stack
+## Citation
 
-Python · scikit-learn · XGBoost · LightGBM · PyTorch · SHAP · NeuroKit2 · FastAPI · React · Docker
-
-## License
-
-MIT — see [LICENSE](LICENSE). If you use this work, please cite via [`CITATION.cff`](CITATION.cff).
+If you use this work, please cite via [`CITATION.cff`](CITATION.cff). Licensed under [MIT](LICENSE).
