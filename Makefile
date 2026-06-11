@@ -1,11 +1,12 @@
-.PHONY: help install install-dev test lint format experiment api frontend frontend-build docker clean
+.PHONY: help install install-dev test lint format experiment reproduce api frontend frontend-build docker clean
 
 help:
 	@echo "CalmSense - subject-independent stress detection"
 	@echo ""
 	@echo "  install        Install the package"
 	@echo "  install-dev    Install with dev tools"
-	@echo "  experiment     Run the full LOSO benchmark from raw WESAD"
+	@echo "  experiment     Run the LOSO benchmark from raw WESAD"
+	@echo "  reproduce      Regenerate every result and figure (full pipeline)"
 	@echo "  api            Start the prediction API"
 	@echo "  frontend       Start the React dashboard"
 	@echo "  test           Run tests"
@@ -22,6 +23,16 @@ install-dev:
 
 experiment:
 	python scripts/run_experiment.py
+
+# Regenerate every number, figure, model, and the dashboard data in order
+reproduce:
+	python scripts/run_experiment.py
+	python scripts/ablation.py
+	python scripts/wrist.py
+	python scripts/cross_dataset.py
+	python scripts/stats.py
+	python scripts/export_onnx.py
+	python scripts/build_dashboard_data.py
 
 test:
 	pytest tests/ -q
