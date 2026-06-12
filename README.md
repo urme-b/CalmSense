@@ -6,7 +6,7 @@ actually holds up on people the model has never seen.
 Most published results on the WESAD benchmark claim 95–99% accuracy. CalmSense shows that much of
 that vanishes under honest, subject-independent testing, and traces exactly where it goes.
 
-[Live demo](https://urme-b.github.io/CalmSense/) · [Full write-up](PAPER.md)
+[Live demo](https://urme-b.github.io/CalmSense/) · [Paper](PAPER.md)
 
 ## Why it matters
 
@@ -51,11 +51,17 @@ expected under acute stress.
 
 ## How it works
 
-Raw signals are filtered and segmented into 60-second windows, each labelled only when 90% of it
-shares one condition. Every window becomes 58 features across five groups (heart-rate variability,
-electrodermal activity, temperature, respiration, motion). Models are trained and scored
-subject-by-subject, with all scaling and balancing fit inside each fold so no information leaks
-between train and test. The trained model also runs in the browser, so the live demo needs no server.
+1. **Clean the signals.** Per-channel Butterworth filtering, R-peak detection with NeuroKit2, and
+   tonic/phasic decomposition of the electrodermal signal, with ectopic-beat correction on the
+   heart-rate series.
+2. **Window.** Segment into 60-second windows at 50% overlap, keeping a window only when at least
+   90% of its samples share one condition.
+3. **Extract features.** 58 features per window across five groups: heart-rate variability (time,
+   frequency, nonlinear), electrodermal activity, temperature, respiration, and motion.
+4. **Evaluate honestly.** 15-fold Leave-One-Subject-Out, with median imputation, standardization,
+   and class balancing all fit inside each fold so nothing leaks from test to train.
+5. **Serve.** The trained model is exported to run directly in the browser, so the live demo needs
+   no backend.
 
 ## Tech stack
 
@@ -74,8 +80,16 @@ between train and test. The trained model also runs in the browser, so the live 
 - Hyperparameters are sensible defaults, not tuned.
 - The deep model underperforms at this data scale and is kept only as a baseline.
 
-Methodology, statistics, and references are in [PAPER.md](PAPER.md).
+Methodology, statistics, and references are in the [paper](PAPER.md).
+
+## Future scope
+
+- [ ] Validate across more datasets to test true cross-corpus generalization
+- [ ] Nested hyperparameter tuning instead of fixed defaults
+- [ ] Personalization to close the within- vs. cross-subject gap
+- [ ] Real-world, non-lab stress data beyond the 15-subject benchmark
+- [ ] Real-time streaming inference from a live wearable
 
 ## License
 
-MIT. See [LICENSE](LICENSE); citation details in [CITATION.cff](CITATION.cff).
+MIT — [LICENSE](LICENSE). Citation: [CITATION.cff](CITATION.cff).
