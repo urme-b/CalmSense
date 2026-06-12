@@ -58,7 +58,6 @@ cover/
 *.pot
 
 # Environments
-.env
 .venv
 env/
 venv/
@@ -215,9 +214,6 @@ temp/
 *.temp
 
 # API keys and secrets
-.env
-.env.local
-.env.*.local
 secrets.yaml
 credentials.json
 

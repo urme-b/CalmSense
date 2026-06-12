@@ -66,8 +66,6 @@ models/checkpoints/
 *.h5
 
 # Secrets
-.env
-.env.*
 *.pem
 *.key
 credentials.json
