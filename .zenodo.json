@@ -1,0 +1,20 @@
+{
+  "upload_type": "software",
+  "title": "CalmSense: Subject-Independent Stress Detection from Wearable Signals",
+  "description": "A reproducible, leakage-free benchmark of physiological stress detection on WESAD using Leave-One-Subject-Out validation, with SHAP-based interpretation and an in-browser demo.",
+  "creators": [
+    { "name": "Bose, Urme" }
+  ],
+  "license": "MIT",
+  "access_right": "open",
+  "keywords": [
+    "stress-detection",
+    "wearables",
+    "WESAD",
+    "physiological-signals",
+    "heart-rate-variability",
+    "electrodermal-activity",
+    "machine-learning",
+    "reproducible-research"
+  ]
+}
