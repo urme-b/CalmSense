@@ -1,5 +1,9 @@
 # CalmSense
 
+[![CI](https://github.com/urme-b/CalmSense/actions/workflows/ci.yml/badge.svg)](https://github.com/urme-b/CalmSense/actions/workflows/ci.yml)
+[![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue.svg)](pyproject.toml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 Detecting stress from wearable sensors, and measuring how much of the field's reported accuracy
 actually holds up on people the model has never seen.
 
