@@ -16,10 +16,13 @@ second dataset (near chance). **Calibration:** accuracy is not the whole story f
 trigger alerts — we show the same within-subject evaluation that inflates accuracy also makes
 probabilities look better calibrated than they are subject-independently, that this miscalibration
 erodes net benefit at realistic alert thresholds, and that a leakage-free recalibration recovers
-most of it. A wrist-only model reaches 0.89, about two points behind the chest sensor, and the four
-feature-based models are statistically indistinguishable (Friedman p = 0.81). The contribution is a
-reproducible account of what subject-independent stress detection actually delivers — in accuracy
-*and* in the calibrated confidence a safe alerting system needs — not a new model.
+most of it. We then show a cheap fix: **few-shot personalization** — a short labeled enrollment from
+the target subject closes the calibration gap further, beating global recalibration without retraining.
+A wrist-only model reaches 0.89, about two points behind the chest sensor, and the four feature-based
+models (tuned by nested CV) are statistically indistinguishable (Friedman p = 0.81). The contribution
+is a reproducible account of what subject-independent stress detection actually delivers — in accuracy
+*and* in the calibrated confidence a safe alerting system needs — plus a simple personalization recipe
+to recover it.
 
 ## 1. Background
 
@@ -52,17 +55,23 @@ Feature extraction never sees labels.
 
 Models are logistic regression, random forest, XGBoost, LightGBM, and a compact 1D-CNN on raw windows.
 All scoring is 15-fold LOSO; median imputation, standardization, and class balancing are fit inside
-each fold. We report accuracy and macro-F1 (mean over subjects), bootstrap 95% CIs, a Friedman omnibus
-test with Holm-corrected pairwise Wilcoxon tests, and a within-subject 5-fold baseline (non-overlapping
-windows) for the optimism gap.
+each fold. Hyperparameters are selected by nested cross-validation — an inner grouped CV over training
+subjects tunes each model while the held-out subject stays untouched, so tuning cannot leak. We report
+accuracy and macro-F1 (mean over subjects), bootstrap 95% CIs, a Friedman omnibus test with
+Holm-corrected pairwise Wilcoxon tests, and a within-subject 5-fold baseline (non-overlapping windows)
+for the optimism gap.
 
 For calibration we pool the out-of-fold LOSO probabilities and report expected and maximum calibration
 error (ECE, MCE; 15 confidence bins) and the Brier score (Guo et al., 2017), against the same
-within-subject 5-fold baseline. Recalibration is leakage-free: inside each LOSO fold an isotonic
-(and, for comparison, a sigmoid) map is fit only on out-of-fold probabilities of the *training*
-subjects, then applied to the held-out subject — the test subject never touches calibrator fitting.
-We close with a decision-curve analysis (Vickers & Elkin, 2006): net benefit across alert thresholds
-for the uncalibrated and recalibrated models versus the alert-everyone and alert-no-one policies.
+within-subject 5-fold baseline. The optimism gap is tested for significance on per-subject Brier scores
+(paired Wilcoxon across the 15 subjects, with a bootstrap 95% CI on the mean gap). Recalibration is
+leakage-free: inside each LOSO fold an isotonic (and, for comparison, a sigmoid) map is fit only on
+out-of-fold probabilities of the *training* subjects, then applied to the held-out subject. We also
+test **few-shot personalization**: each subject keeps a fixed evaluation half, and a small labeled
+enrollment (5/10/20 windows) drawn from the other half fits a per-subject calibrator — never the
+evaluation windows. We close with a decision-curve analysis (Vickers & Elkin, 2006): net benefit
+across alert thresholds for the uncalibrated and recalibrated models versus the alert-everyone and
+alert-no-one policies.
 
 ## 4. Results
 
@@ -139,7 +148,9 @@ out-of-fold *training*-subject probabilities — recovers most of the gap withou
 subject.
 
 The within-subject baseline uses the same non-overlapping 5-fold protocol as the accuracy optimism gap
-(§4.2), so it reflects subject mixing rather than near-duplicate-window leakage.
+(§4.2), so it reflects subject mixing rather than near-duplicate-window leakage. We test the gap on
+per-subject Brier scores (paired Wilcoxon over the 15 subjects; bootstrap 95% CI on the mean gap), so
+the claim rests on a significance test, not a single pooled number.
 
 > Numbers below regenerate into `results/calibration.json`; run `python scripts/calibration.py` to
 > populate this table and the two figures.
@@ -158,13 +169,30 @@ above the trivial alert-everyone and alert-no-one policies at clinically plausib
 
 ![Decision curve](outputs/figures/calibration_decision_curve.png)
 
+### 4.8 Few-shot personalization
+
+Global recalibration cannot adapt to a person it never saw. With a fixed evaluation half per subject and
+a short labeled enrollment (5/10/20 windows) drawn only from the other half, a per-subject calibrator
+closes the remaining gap further — turning the calibration diagnosis into a cheap fix that needs no
+retraining of the base model. Calibration improves monotonically with enrollment size and overtakes
+global recalibration within a handful of windows.
+
+> Regenerate with `python scripts/personalize.py` (table and `personalization.png`).
+
+| Recalibration              | ECE | Brier |
+| -------------------------- | :-: | :---: |
+| None (LOSO)                |  —  |   —   |
+| Global (training subjects) |  —  |   —   |
+| Few-shot, 5 windows        |  —  |   —   |
+| Few-shot, 20 windows       |  —  |   —   |
+
 ## 5. Limitations
 
 - 15 subjects and lab-induced (TSST) stress; per-subject accuracy ranges 0.71–1.00. No claim to
   real-world or chronic stress.
 - Cross-dataset transfer is confounded by differing label schemes; two datasets cannot separate domain
-  shift from label mismatch.
-- Hyperparameters are fixed defaults, not tuned; the deep model is a baseline, not a result.
+  shift from label mismatch, and a third corpus is needed for a robust leave-one-dataset-out claim.
+- Feature models are tuned by nested CV; the deep model uses fixed settings and is a baseline, not a result.
 - Calibration and decision-curve numbers are reported for the binary task on the chest random forest;
   isotonic recalibration can be unstable on small folds, so the sigmoid map is provided as a check.
 
