@@ -16,6 +16,7 @@ keywords:
   - machine-learning
   - deep-learning
   - explainable-ai
+  - model-calibration
   - heart-rate-variability
   - electrodermal-activity
   - wesad
@@ -25,7 +26,9 @@ abstract: >-
   wearable sensor data. It implements end-to-end signal processing,
   58-biomarker extraction, and a leakage-free Leave-One-Subject-Out
   benchmark of classical models and a 1D-CNN, with SHAP-based
-  biomarker interpretation.
+  biomarker interpretation and a calibration and decision-curve
+  analysis of how reliable the predicted probabilities are under
+  subject-independent evaluation.
 references:
   - type: article
     authors:
