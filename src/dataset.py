@@ -1,6 +1,7 @@
 """Window WESAD chest signals into features and raw CNN tensors."""
 
-from typing import Dict, List, Optional, Tuple
+from pathlib import Path
+from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -27,6 +28,7 @@ class WindowedDataset(LoggerMixin):
         purity: float = 0.9,
         cnn_length: int = 1024,
         fs: float = FS.CHEST,
+        data_path: Optional[Union[str, Path]] = None,
     ):
         self.fs = fs
         self.window_samples = int(window_sec * fs)
@@ -34,7 +36,7 @@ class WindowedDataset(LoggerMixin):
         self.purity = purity
         self.cnn_length = cnn_length
 
-        self.loader = WESADLoader()
+        self.loader = WESADLoader(data_path=data_path)
         self.ecg = ECGProcessor(sampling_rate=fs)
         self.eda = EDAProcessor(sampling_rate=fs)
         self.sig = SignalProcessor(fs=fs)
