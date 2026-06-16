@@ -51,6 +51,9 @@ Each `S*.pkl` is a pickle (load with `encoding="latin1"`) containing:
 - `signal.wrist`: `ACC` (32 Hz), `BVP` (64 Hz), `EDA` (4 Hz), `TEMP` (4 Hz)
 - `label` at 700 Hz
 
+> Security: unpickling runs arbitrary code. Only load `.pkl` files you downloaded from the official
+> WESAD source or generated yourself — never a `.pkl` from an untrusted third party.
+
 ## Label encoding
 
 | Label | Condition  | Used for                  |

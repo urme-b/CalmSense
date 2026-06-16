@@ -45,9 +45,10 @@ and heart rate, used for cross-dataset transfer (psychological stress vs. relaxa
 
 Signals are filtered, R-peaks detected (NeuroKit2) with ectopic correction, and EDA decomposed into
 tonic and phasic components. Recordings are segmented into 60-second windows at 50% overlap, kept only
-when at least 90% of a window shares one condition. Each window yields 58 features: 30 HRV
-(time/frequency/nonlinear; Task Force, 1996), 15 EDA, 5 temperature, 3 respiration, 5 motion. Feature
-extraction never sees labels.
+when at least 90% of a window shares one condition. The extractor emits 60 features; two respiration
+features that need per-breath segmentation are always empty on this pipeline and dropped, leaving 58:
+30 HRV (time/frequency/nonlinear; Task Force, 1996), 15 EDA, 5 temperature, 3 respiration, 5 motion.
+Feature extraction never sees labels.
 
 Models are logistic regression, random forest, XGBoost, LightGBM, and a compact 1D-CNN on raw windows.
 All scoring is 15-fold LOSO; median imputation, standardization, and class balancing are fit inside
@@ -136,6 +137,9 @@ seen each test subject's physiological baseline, so subject-independent deployme
 than within-subject evaluation suggests. A leakage-free recalibration — an isotonic map fit only on
 out-of-fold *training*-subject probabilities — recovers most of the gap without touching the held-out
 subject.
+
+The within-subject baseline uses the same non-overlapping 5-fold protocol as the accuracy optimism gap
+(§4.2), so it reflects subject mixing rather than near-duplicate-window leakage.
 
 > Numbers below regenerate into `results/calibration.json`; run `python scripts/calibration.py` to
 > populate this table and the two figures.
