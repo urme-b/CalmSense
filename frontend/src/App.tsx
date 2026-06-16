@@ -6,6 +6,7 @@ import {
   Brain,
   FileSearch,
   BarChart3,
+  Gauge,
   Info,
   Sun,
   Moon,
@@ -20,8 +21,13 @@ import SignalExplorer from './components/SignalExplorer';
 import PredictionPanel from './components/PredictionPanel';
 import ExplainabilityDashboard from './components/ExplainabilityDashboard';
 import ModelComparison from './components/ModelComparison';
+import CalibrationPanel from './components/CalibrationPanel';
 import About from './components/About';
 import ErrorBoundary from './components/ErrorBoundary';
+import results from './results.json';
+
+// The calibration section is optional; only show it once the experiment has produced it.
+const hasCalibration = Boolean((results as any).calibration);
 
 // Navigation items
 const navItems = [
@@ -30,6 +36,7 @@ const navItems = [
   { path: '/predict', icon: Brain, label: 'Prediction' },
   { path: '/explain', icon: FileSearch, label: 'Explainability' },
   { path: '/models', icon: BarChart3, label: 'Model Comparison' },
+  ...(hasCalibration ? [{ path: '/calibration', icon: Gauge, label: 'Calibration' }] : []),
   { path: '/about', icon: Info, label: 'About' },
 ];
 
@@ -195,6 +202,9 @@ const App: React.FC = () => {
                 <Route path="/predict" element={<ErrorBoundary><PredictionPanel /></ErrorBoundary>} />
                 <Route path="/explain" element={<ErrorBoundary><ExplainabilityDashboard /></ErrorBoundary>} />
                 <Route path="/models" element={<ErrorBoundary><ModelComparison /></ErrorBoundary>} />
+                {hasCalibration && (
+                  <Route path="/calibration" element={<ErrorBoundary><CalibrationPanel /></ErrorBoundary>} />
+                )}
                 <Route path="/about" element={<ErrorBoundary><About /></ErrorBoundary>} />
               </Routes>
             </main>
