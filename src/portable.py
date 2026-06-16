@@ -7,7 +7,7 @@ API and dashboard — cross-dataset transfer only works on features both devices
 share.
 """
 
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import numpy as np
 import pandas as pd
@@ -95,7 +95,9 @@ def wesad_portable(subjects: Optional[List[str]] = None) -> pd.DataFrame:
                 e0, e1 = int(t * FS.WRIST_EDA), int((t + WINDOW_SEC) * FS.WRIST_EDA)
                 a0, a1 = int(t * FS.WRIST_ACC), int((t + WINDOW_SEC) * FS.WRIST_ACC)
                 hr_win = beat_hr[(beat_t >= t) & (beat_t < t + WINDOW_SEC)]
-                row = portable_features(eda[e0:e1], temp[e0:e1], acc_mag[a0:a1], hr_win)
+                row: Dict[str, Any] = portable_features(
+                    eda[e0:e1], temp[e0:e1], acc_mag[a0:a1], hr_win
+                )
                 row["subject"] = sid
                 row["label"] = 0 if lab == 1 else 1  # baseline=0, stress=1
                 rows.append(row)

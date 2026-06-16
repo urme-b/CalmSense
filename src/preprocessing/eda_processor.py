@@ -1,4 +1,4 @@
-from typing import Dict, List, Tuple
+from typing import Any, Dict, List, Tuple
 
 import numpy as np
 from scipy import signal
@@ -250,9 +250,7 @@ class EDAProcessor(LoggerMixin):
         self.logger.debug(f"EDA quality score: {quality['quality_score']:.2f}")
         return quality
 
-    def process(
-        self, eda: np.ndarray, decomposition_method: str = "highpass"
-    ) -> Dict[str, np.ndarray]:
+    def process(self, eda: np.ndarray, decomposition_method: str = "highpass") -> Dict[str, Any]:
         self.logger.info(f"Processing EDA signal ({len(eda)} samples)")
 
         filtered = self.lowpass_filter(eda)

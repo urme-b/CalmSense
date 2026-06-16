@@ -22,6 +22,7 @@ class SignalProcessor(LoggerMixin):
     ) -> np.ndarray:
         nyq = 0.5 * self.fs
 
+        normalized_cutoff: Union[float, Tuple[float, float]]
         if isinstance(cutoff, tuple):
             normalized_cutoff = (cutoff[0] / nyq, cutoff[1] / nyq)
             if normalized_cutoff[0] >= 1.0 or normalized_cutoff[1] >= 1.0:

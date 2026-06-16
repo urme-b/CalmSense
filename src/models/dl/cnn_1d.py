@@ -1,6 +1,6 @@
 """Residual 1D-CNN for raw multichannel windows."""
 
-from typing import Optional
+from typing import Any, Optional
 
 import numpy as np
 import torch
@@ -86,10 +86,10 @@ class CNN1DClassifier(LoggerMixin):
         self.random_state = random_state
         self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
 
-        self.model = None
-        self.classes_ = None
-        self._mean = None
-        self._std = None
+        self.model: Any = None
+        self.classes_: Any = None
+        self._mean: Any = None
+        self._std: Any = None
 
     def _standardize(self, x: np.ndarray) -> np.ndarray:
         return (x - self._mean) / self._std

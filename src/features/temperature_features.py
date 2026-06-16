@@ -38,10 +38,11 @@ class TemperatureFeatureExtractor(LoggerMixin):
             "TEMP_max": np.nan,
         }
 
-        temp = self._validate_signal(temp)
-        if temp is None:
+        validated = self._validate_signal(temp)
+        if validated is None:
             self.logger.warning("Invalid temperature signal, returning NaN features")
             return features
+        temp = validated
 
         try:
             features["TEMP_mean"] = float(np.mean(temp))

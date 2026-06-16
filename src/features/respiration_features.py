@@ -39,10 +39,11 @@ class RespirationFeatureExtractor(LoggerMixin):
             "RESP_apnea_index": np.nan,
         }
 
-        resp = self._validate_signal(resp)
-        if resp is None:
+        validated = self._validate_signal(resp)
+        if validated is None:
             self.logger.warning("Invalid respiratory signal, returning NaN features")
             return features
+        resp = validated
 
         try:
             if breath_intervals is not None and len(breath_intervals) > 0:

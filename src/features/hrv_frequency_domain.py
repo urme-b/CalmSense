@@ -50,7 +50,7 @@ class HRVFrequencyDomainExtractor(LoggerMixin):
 
     def _interpolate_rr(
         self, rr: np.ndarray, method: str = "cubic"
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    ) -> Tuple[Optional[np.ndarray], Optional[np.ndarray]]:
         t_rr = np.cumsum(rr) / 1000.0
         t_rr = np.insert(t_rr, 0, 0)
         t_rr = t_rr[:-1]

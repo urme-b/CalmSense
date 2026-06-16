@@ -73,7 +73,7 @@ class HRVNonlinearExtractor(LoggerMixin):
                         counts[i] += 1
 
             probs = counts / n_patterns
-            return np.mean(np.log(probs + FEATURE_PARAMS.EPSILON))
+            return float(np.mean(np.log(probs + FEATURE_PARAMS.EPSILON)))
 
         phi_m = _phi(m)
         phi_m1 = _phi(m + 1)

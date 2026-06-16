@@ -1,7 +1,7 @@
 import logging
 import sys
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 import structlog
 
@@ -11,7 +11,7 @@ _logging_configured = False
 _configured_level: Optional[str] = None
 
 # Processors
-_shared_processors = [
+_shared_processors: list[Any] = [
     structlog.contextvars.merge_contextvars,
     structlog.stdlib.add_log_level,
     structlog.stdlib.add_logger_name,

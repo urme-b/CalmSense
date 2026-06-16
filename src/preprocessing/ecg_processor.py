@@ -1,4 +1,4 @@
-from typing import Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 import numpy as np
 from scipy import signal
@@ -265,7 +265,7 @@ class ECGProcessor(LoggerMixin):
         self.logger.debug(f"ECG quality metrics: SNR={quality['snr_db']:.1f} dB")
         return quality
 
-    def process(self, ecg: np.ndarray) -> Dict[str, np.ndarray]:
+    def process(self, ecg: np.ndarray) -> Dict[str, Any]:
         self.logger.info(f"Processing ECG signal ({len(ecg)} samples)")
 
         filtered = self.bandpass_filter(ecg)

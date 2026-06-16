@@ -37,7 +37,7 @@ class FeatureExtractionPipeline(LoggerMixin):
     ):
         self.feature_config = {**self.DEFAULT_CONFIG, **(feature_config or {})}
 
-        self.extractors = {
+        self.extractors: Dict[str, Any] = {
             "hrv_time": HRVTimeDomainExtractor(),
             "hrv_frequency": HRVFrequencyDomainExtractor(),
             "hrv_nonlinear": HRVNonlinearExtractor(),
@@ -49,7 +49,7 @@ class FeatureExtractionPipeline(LoggerMixin):
             "accelerometer": AccelerometerFeatureExtractor(sampling_rate=wrist_acc_fs),
         }
 
-        self._feature_names = None
+        self._feature_names: Optional[List[str]] = None
         self.logger.info(
             f"FeatureExtractionPipeline initialized with config: "
             f"{sum(self.feature_config.values())} feature groups enabled"
@@ -304,7 +304,7 @@ class FeatureExtractionPipeline(LoggerMixin):
     def get_feature_groups(self) -> Dict[str, List[str]]:
         all_features = self.get_feature_names()
 
-        groups = {
+        groups: Dict[str, List[str]] = {
             "HRV Time-Domain": [],
             "HRV Frequency-Domain": [],
             "HRV Nonlinear": [],

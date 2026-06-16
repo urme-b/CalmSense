@@ -11,7 +11,7 @@ class EDAFeatureExtractor(LoggerMixin):
         self.sampling_rate = sampling_rate
         self.logger.debug(f"EDAFeatureExtractor initialized, fs={sampling_rate} Hz")
 
-    def _validate_signal(self, signal: np.ndarray) -> Optional[np.ndarray]:
+    def _validate_signal(self, signal: Optional[np.ndarray]) -> Optional[np.ndarray]:
         if signal is None:
             return None
 
@@ -33,9 +33,10 @@ class EDAFeatureExtractor(LoggerMixin):
             "SCL_max": np.nan,
         }
 
-        scl = self._validate_signal(scl)
-        if scl is None:
+        validated = self._validate_signal(scl)
+        if validated is None:
             return features
+        scl = validated
 
         try:
             features["SCL_mean"] = float(np.mean(scl))
@@ -54,7 +55,7 @@ class EDAFeatureExtractor(LoggerMixin):
         return features
 
     def extract_phasic_features(
-        self, scr_peaks: List[Dict], signal_duration: float
+        self, scr_peaks: Optional[List[Dict]], signal_duration: float
     ) -> Dict[str, float]:
         features = {
             "SCR_count": np.nan,
@@ -115,16 +116,17 @@ class EDAFeatureExtractor(LoggerMixin):
 
         return features
 
-    def extract_statistical_features(self, eda: np.ndarray) -> Dict[str, float]:
+    def extract_statistical_features(self, eda: Optional[np.ndarray]) -> Dict[str, float]:
         features = {
             "EDA_mean": np.nan,
             "EDA_range": np.nan,
             "EDA_kurtosis": np.nan,
         }
 
-        eda = self._validate_signal(eda)
-        if eda is None:
+        validated = self._validate_signal(eda)
+        if validated is None:
             return features
+        eda = validated
 
         try:
             features["EDA_mean"] = float(np.mean(eda))
