@@ -98,43 +98,12 @@ FILTER_PARAMS = FilterParams()
 class FeatureParams:
     WINDOW_SIZE_SEC: float = 60.0
     WINDOW_OVERLAP: float = 0.5
-
-    # HRV freq bands (Hz)
-    HRV_VLF_LOW: float = 0.003
-    HRV_VLF_HIGH: float = 0.04
-    HRV_LF_LOW: float = 0.04
-    HRV_LF_HIGH: float = 0.15
-    HRV_HF_LOW: float = 0.15
-    HRV_HF_HIGH: float = 0.4
-
-    SAMPLE_ENTROPY_M: int = 2  # embedding dim
-    SAMPLE_ENTROPY_R: float = 0.2  # tolerance (std fraction)
-
-    PSD_NPERSEG: int = 256
-
     EPSILON: float = 1e-10
 
 
 FEATURE_PARAMS = FeatureParams()
 
 EPSILON: float = FEATURE_PARAMS.EPSILON
-
-
-@dataclass(frozen=True)
-class TrainingParams:
-    CV_FOLDS: int = 5
-    LOSO_ENABLED: bool = True
-
-    BATCH_SIZE: int = 32
-    MAX_EPOCHS: int = 100
-    EARLY_STOPPING_PATIENCE: int = 10
-    EARLY_STOPPING_MIN_DELTA: float = 0.001
-
-    RANDOM_STATE: int = 42
-    USE_CLASS_WEIGHTS: bool = True
-
-
-TRAINING_PARAMS = TrainingParams()
 
 CONDITION_COLORS: Dict[str, str] = {
     "baseline": "#2ecc71",
