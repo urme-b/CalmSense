@@ -1,4 +1,4 @@
-.PHONY: help install install-dev test lint format experiment reproduce api frontend frontend-build docker clean
+.PHONY: help install install-dev test lint format experiment reproduce demo data api frontend frontend-build docker clean
 
 help:
 	@echo "CalmSense - subject-independent stress detection"
@@ -7,6 +7,8 @@ help:
 	@echo "  install-dev    Install with dev tools"
 	@echo "  experiment     Run the LOSO benchmark from raw WESAD"
 	@echo "  reproduce      Regenerate every result and figure (full pipeline)"
+	@echo "  demo           Run the calibration pipeline on synthetic data (no download)"
+	@echo "  data           Download the PhysioNet Non-EEG dataset"
 	@echo "  api            Start the prediction API"
 	@echo "  frontend       Start the React dashboard"
 	@echo "  test           Run tests"
@@ -30,9 +32,18 @@ reproduce:
 	python scripts/ablation.py
 	python scripts/wrist.py
 	python scripts/cross_dataset.py
+	python scripts/calibration.py
 	python scripts/stats.py
 	python scripts/export_onnx.py
 	python scripts/build_dashboard_data.py
+
+# Run the calibration pipeline on synthetic data, no dataset required
+demo:
+	python scripts/calibration.py --synthetic
+
+# Download the PhysioNet Non-EEG dataset for cross-dataset transfer
+data:
+	python scripts/download_data.py
 
 test:
 	pytest tests/ -q

@@ -1,4 +1,4 @@
-# Three Layers of Optimism in Wearable Stress Detection on WESAD
+# Four Layers of Optimism in Wearable Stress Detection on WESAD: Subject Leakage, Motion, Dataset Shift, and Calibration
 
 **Urme B** · [github.com/urme-b/CalmSense](https://github.com/urme-b/CalmSense)
 
@@ -6,16 +6,20 @@
 
 Wearable stress-detection studies routinely report 95–99% accuracy on WESAD, but much of it comes
 from evaluation that leaks information about the test set. This work measures how much performance
-survives honest evaluation, peeling back three layers of optimism. **Subject leakage:** moving from
+survives honest evaluation, peeling back four layers of optimism. **Subject leakage:** moving from
 within-subject to Leave-One-Subject-Out (LOSO) cross-validation drops three-class accuracy from 0.79
 to 0.67 and binary from 0.96 to 0.91; allowing overlapping windows inflates it further toward the
 reported 0.95–0.99. **Motion confound:** an ablation shows accelerometer features alone reach 0.88,
 yet removing motion entirely still gives 0.90, so the signal is autonomic, not just movement.
 **Dataset shift:** a leakage-free model trained on WESAD falls to 0.50–0.57 balanced accuracy on a
-second dataset (near chance). A wrist-only model reaches 0.89, about two points behind the chest
-sensor, and the four feature-based models are statistically indistinguishable (Friedman p = 0.81).
-The contribution is a reproducible account of what subject-independent stress detection actually
-delivers, not a new model.
+second dataset (near chance). **Calibration:** accuracy is not the whole story for a model meant to
+trigger alerts — we show the same within-subject evaluation that inflates accuracy also makes
+probabilities look better calibrated than they are subject-independently, that this miscalibration
+erodes net benefit at realistic alert thresholds, and that a leakage-free recalibration recovers
+most of it. A wrist-only model reaches 0.89, about two points behind the chest sensor, and the four
+feature-based models are statistically indistinguishable (Friedman p = 0.81). The contribution is a
+reproducible account of what subject-independent stress detection actually delivers — in accuracy
+*and* in the calibrated confidence a safe alerting system needs — not a new model.
 
 ## 1. Background
 
@@ -27,6 +31,8 @@ appear in both train and test, and the model learns person-specific signatures r
 separate subjects (Oliver & Dakshit, 2025). Models also degrade sharply across corpora, with stressor
 type driving most of the drop (Benchekroun et al., 2023; Prajod et al., 2024). Under proper LOSO the
 original WESAD authors reported roughly 93% binary and 80% three-class — the realistic reference points.
+Almost all of this work reports accuracy or F1 alone; the *calibration* of the predicted probabilities,
+which is what an alerting system actually thresholds, is rarely examined under subject-independent evaluation.
 
 ## 2. Data
 
@@ -39,15 +45,24 @@ and heart rate, used for cross-dataset transfer (psychological stress vs. relaxa
 
 Signals are filtered, R-peaks detected (NeuroKit2) with ectopic correction, and EDA decomposed into
 tonic and phasic components. Recordings are segmented into 60-second windows at 50% overlap, kept only
-when at least 90% of a window shares one condition. Each window yields 58 features: 30 HRV
-(time/frequency/nonlinear; Task Force, 1996), 15 EDA, 5 temperature, 3 respiration, 5 motion. Feature
-extraction never sees labels.
+when at least 90% of a window shares one condition. The extractor emits 60 features; two respiration
+features that need per-breath segmentation are always empty on this pipeline and dropped, leaving 58:
+30 HRV (time/frequency/nonlinear; Task Force, 1996), 15 EDA, 5 temperature, 3 respiration, 5 motion.
+Feature extraction never sees labels.
 
 Models are logistic regression, random forest, XGBoost, LightGBM, and a compact 1D-CNN on raw windows.
 All scoring is 15-fold LOSO; median imputation, standardization, and class balancing are fit inside
 each fold. We report accuracy and macro-F1 (mean over subjects), bootstrap 95% CIs, a Friedman omnibus
 test with Holm-corrected pairwise Wilcoxon tests, and a within-subject 5-fold baseline (non-overlapping
 windows) for the optimism gap.
+
+For calibration we pool the out-of-fold LOSO probabilities and report expected and maximum calibration
+error (ECE, MCE; 15 confidence bins) and the Brier score (Guo et al., 2017), against the same
+within-subject 5-fold baseline. Recalibration is leakage-free: inside each LOSO fold an isotonic
+(and, for comparison, a sigmoid) map is fit only on out-of-fold probabilities of the *training*
+subjects, then applied to the held-out subject — the test subject never touches calibrator fitting.
+We close with a decision-curve analysis (Vickers & Elkin, 2006): net benefit across alert thresholds
+for the uncalibrated and recalibrated models versus the alert-everyone and alert-no-one policies.
 
 ## 4. Results
 
@@ -112,6 +127,37 @@ SHAP values (Lundberg & Lee, 2017) rank a motion descriptor (`ACC_zero_crossings
 heart-rate level (`HRV_MedianNN`, `HRV_MeanNN`), skin-conductance responses, and respiration rate —
 physiologically sensible for acute stress, and the motivation for the §4.3 ablation.
 
+### 4.7 Calibration: a fourth layer of optimism
+
+Accuracy says nothing about whether a predicted probability of 0.8 means roughly 80% of such windows
+are truly stress — yet that calibrated confidence is exactly what an alerting system acts on. We measure
+it on the pooled out-of-fold probabilities of the binary random forest. The pattern mirrors accuracy:
+the within-subject baseline understates the expected calibration error because the model has already
+seen each test subject's physiological baseline, so subject-independent deployment is less calibrated
+than within-subject evaluation suggests. A leakage-free recalibration — an isotonic map fit only on
+out-of-fold *training*-subject probabilities — recovers most of the gap without touching the held-out
+subject.
+
+The within-subject baseline uses the same non-overlapping 5-fold protocol as the accuracy optimism gap
+(§4.2), so it reflects subject mixing rather than near-duplicate-window leakage.
+
+> Numbers below regenerate into `results/calibration.json`; run `python scripts/calibration.py` to
+> populate this table and the two figures.
+
+| Evaluation                       | ECE | MCE | Brier |
+| -------------------------------- | :-: | :-: | :---: |
+| Within-subject 5-fold            |  —  |  —  |   —   |
+| LOSO (subject-independent)       |  —  |  —  |   —   |
+| LOSO + leak-free recalibration   |  —  |  —  |   —   |
+
+![Reliability diagram](outputs/figures/calibration_reliability.png)
+
+A decision-curve analysis turns this into deployment terms: across alert thresholds, net benefit for
+the uncalibrated LOSO model trails the recalibrated one, and recalibration is what keeps the model
+above the trivial alert-everyone and alert-no-one policies at clinically plausible thresholds.
+
+![Decision curve](outputs/figures/calibration_decision_curve.png)
+
 ## 5. Limitations
 
 - 15 subjects and lab-induced (TSST) stress; per-subject accuracy ranges 0.71–1.00. No claim to
@@ -119,15 +165,21 @@ physiologically sensible for acute stress, and the motivation for the §4.3 abla
 - Cross-dataset transfer is confounded by differing label schemes; two datasets cannot separate domain
   shift from label mismatch.
 - Hyperparameters are fixed defaults, not tuned; the deep model is a baseline, not a result.
+- Calibration and decision-curve numbers are reported for the binary task on the chest random forest;
+  isotonic recalibration can be unstable on small folds, so the sigmoid map is provided as a check.
 
 ## 6. Reproducibility
 
 ```bash
-pip install -e .          # download WESAD into data/raw/WESAD first (see data/raw/README.md)
+pip install -e .
+make demo                 # full calibration pipeline on synthetic data, no download
+make data                 # PhysioNet Non-EEG (WESAD: see data/raw/README.md)
 make reproduce            # regenerates every number and figure into results/ and outputs/figures/
 ```
 
-All randomness is seeded. WESAD and PhysioNet Non-EEG are public and must be downloaded separately.
+All randomness is seeded. A synthetic generator (`src/synthetic.py`) runs the entire pipeline without
+the real data, so the code path is exercised in CI and in a one-click Colab notebook. WESAD and
+PhysioNet Non-EEG are public and downloaded separately.
 
 ## Ethics
 
@@ -156,3 +208,6 @@ only within-subject or within-dataset overstates its reliability for the people 
 - Task Force of the ESC/NASPE. *Heart Rate Variability: Standards of Measurement, Physiological
   Interpretation, and Clinical Use.* Circulation, 1996.
 - Lundberg, Lee. *A Unified Approach to Interpreting Model Predictions.* NeurIPS 2017.
+- Guo, Pleiss, Sun, Weinberger. *On Calibration of Modern Neural Networks.* ICML 2017.
+- Vickers, Elkin. *Decision Curve Analysis: A Novel Method for Evaluating Prediction Models.*
+  Medical Decision Making, 2006.

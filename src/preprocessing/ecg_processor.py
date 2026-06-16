@@ -1,10 +1,10 @@
-from typing import Any, Dict, Optional, Tuple
+from typing import Optional, Tuple
 
 import numpy as np
 from scipy import signal
 from scipy.interpolate import interp1d
 
-from ..config import FEATURE_PARAMS, FILTER_PARAMS, FS
+from ..config import FILTER_PARAMS, FS
 from ..logging_config import LoggerMixin
 
 
@@ -212,85 +212,3 @@ class ECGProcessor(LoggerMixin):
         self.logger.debug(f"Interpolated {n_interpolated} RR intervals using {method}")
 
         return interpolated
-
-    def compute_signal_quality(self, ecg: np.ndarray) -> Dict[str, float]:
-        ecg = np.asarray(ecg).flatten()
-
-        quality = {}
-
-        # SNR estimation
-        nyq = 0.5 * self.sampling_rate
-
-        try:
-            signal_low = min(5 / nyq, 0.99)
-            signal_high = min(15 / nyq, 0.99)
-            b, a = signal.butter(2, [signal_low, signal_high], btype="band")
-            ecg_signal = signal.filtfilt(b, a, ecg)
-            signal_power = np.var(ecg_signal)
-
-            noise_low = min(50 / nyq, 0.99)
-            if noise_low < 0.99:
-                b, a = signal.butter(2, noise_low, btype="high")
-                ecg_noise = signal.filtfilt(b, a, ecg)
-                noise_power = np.var(ecg_noise) + FEATURE_PARAMS.EPSILON
-            else:
-                noise_power = FEATURE_PARAMS.EPSILON
-
-            quality["snr_db"] = float(10 * np.log10(signal_power / noise_power))
-        except Exception as e:
-            self.logger.warning(f"SNR computation failed: {e}")
-            quality["snr_db"] = 0.0
-
-        from scipy.stats import kurtosis
-
-        quality["kurtosis"] = float(kurtosis(ecg))
-
-        # Baseline stability
-        try:
-            baseline_cutoff = min(0.5 / nyq, 0.99)
-            b, a = signal.butter(2, baseline_cutoff, btype="low")
-            baseline = signal.filtfilt(b, a, ecg)
-            quality["baseline_variance"] = float(np.var(baseline))
-        except Exception:
-            quality["baseline_variance"] = float(np.var(ecg))
-
-        try:
-            r_peaks = self.detect_r_peaks(self.bandpass_filter(ecg))
-            rr = self.extract_rr_intervals(r_peaks)
-            _, valid_mask = self.remove_ectopic_beats(rr)
-            quality["valid_beat_ratio"] = float(np.mean(valid_mask))
-        except Exception:
-            quality["valid_beat_ratio"] = 0.0
-
-        self.logger.debug(f"ECG quality metrics: SNR={quality['snr_db']:.1f} dB")
-        return quality
-
-    def process(self, ecg: np.ndarray) -> Dict[str, Any]:
-        self.logger.info(f"Processing ECG signal ({len(ecg)} samples)")
-
-        filtered = self.bandpass_filter(ecg)
-        r_peaks = self.detect_r_peaks(filtered)
-        rr_ms = self.extract_rr_intervals(r_peaks, unit="ms")
-
-        rr_clean, valid_mask = self.remove_ectopic_beats(rr_ms)
-        rr_interpolated = self.interpolate_artifacts(rr_ms, valid_mask)
-        quality = self.compute_signal_quality(ecg)
-
-        results = {
-            "filtered_ecg": filtered,
-            "r_peaks": r_peaks,
-            "rr_intervals_ms": rr_ms,
-            "rr_clean": rr_clean,
-            "rr_interpolated": rr_interpolated,
-            "valid_beat_mask": valid_mask,
-            "quality": quality,
-        }
-
-        if len(rr_ms) > 0:
-            self.logger.info(
-                f"ECG processed: {len(r_peaks)} R-peaks, mean HR={60000 / np.mean(rr_ms):.1f} BPM"
-            )
-        else:
-            self.logger.info("ECG processed")
-
-        return results

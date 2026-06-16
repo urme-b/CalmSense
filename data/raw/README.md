@@ -9,15 +9,24 @@ Affect Detection," ICMI 2018.
 
 ## Download
 
-1. Request the dataset from the UCI Machine Learning Repository:
-   https://archive.ics.uci.edu/dataset/465/wesad+wearable+stress+and+affect+detection
-2. Agree to the research-only terms and download the archive (~4 GB).
-3. Extract it into this directory so the layout matches the structure below.
+The cross-dataset PhysioNet Non-EEG set downloads directly; WESAD is behind a
+one-time research agreement.
+
+```bash
+make data                                 # PhysioNet Non-EEG -> data/external/noneeg
+python scripts/download_data.py --wesad   # WESAD (~2 GB) -> data/raw/WESAD
+```
+
+Prefer to fetch WESAD manually? Request it from the UCI Machine Learning Repository
+(https://archive.ics.uci.edu/dataset/465/wesad+wearable+stress+and+affect+detection),
+agree to the research-only terms, and extract it here:
 
 ```bash
 cd data/raw
 unzip WESAD.zip   # produces WESAD/S2 ... WESAD/S17
 ```
+
+No download at all? `make demo` runs the full calibration pipeline on synthetic data.
 
 ## Expected layout
 
@@ -41,6 +50,9 @@ Each `S*.pkl` is a pickle (load with `encoding="latin1"`) containing:
 - `signal.chest` at 700 Hz: `ACC`, `ECG`, `EMG`, `EDA`, `Temp`, `Resp`
 - `signal.wrist`: `ACC` (32 Hz), `BVP` (64 Hz), `EDA` (4 Hz), `TEMP` (4 Hz)
 - `label` at 700 Hz
+
+> Security: unpickling runs arbitrary code. Only load `.pkl` files you downloaded from the official
+> WESAD source or generated yourself — never a `.pkl` from an untrusted third party.
 
 ## Label encoding
 

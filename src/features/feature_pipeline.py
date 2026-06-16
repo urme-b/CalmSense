@@ -56,117 +56,62 @@ class FeatureExtractionPipeline(LoggerMixin):
         )
 
     def extract_window_features(self, window_data: Dict[str, Any]) -> Dict[str, float]:
-        features = {}
+        rr = window_data.get("rr_intervals")
 
-        if self.feature_config.get("hrv_time", True):
-            rr = window_data.get("rr_intervals")
-            if rr is not None:
-                hrv_time = self.extractors["hrv_time"].extract_all(rr)
-                features.update({f"HRV_{k}": v for k, v in hrv_time.items()})
-            else:
-                for k in self.extractors["hrv_time"].get_feature_descriptions().keys():
-                    features[f"HRV_{k}"] = np.nan
-
-        if self.feature_config.get("hrv_frequency", True):
-            rr = window_data.get("rr_intervals")
-            if rr is not None:
-                hrv_freq = self.extractors["hrv_frequency"].extract_all(rr)
-                features.update({f"HRV_{k}": v for k, v in hrv_freq.items()})
-            else:
-                for k in self.extractors["hrv_frequency"].get_feature_descriptions().keys():
-                    features[f"HRV_{k}"] = np.nan
-
-        if self.feature_config.get("hrv_nonlinear", True):
-            rr = window_data.get("rr_intervals")
-            if rr is not None:
-                hrv_nl = self.extractors["hrv_nonlinear"].extract_all(rr)
-                features.update({f"HRV_{k}": v for k, v in hrv_nl.items()})
-            else:
-                for k in self.extractors["hrv_nonlinear"].get_feature_descriptions().keys():
-                    features[f"HRV_{k}"] = np.nan
-
-        if self.feature_config.get("eda", True):
-            eda_decomposed = {
-                "tonic": window_data.get("eda_tonic"),
-                "phasic": window_data.get("eda_phasic"),
-            }
-            scr_peaks = window_data.get("scr_peaks")
-            raw_eda = window_data.get("eda_raw")
-
-            if eda_decomposed["tonic"] is not None or raw_eda is not None:
-                eda_features = self.extractors["eda"].extract_all(
-                    eda_decomposed, scr_peaks, raw_eda
-                )
-                features.update(
-                    {
-                        f"EDA_{k}" if not k.startswith("EDA_") else k: v
-                        for k, v in eda_features.items()
-                    }
-                )
-            else:
-                for k in self.extractors["eda"].get_feature_descriptions().keys():
-                    features[f"EDA_{k}" if not k.startswith("EDA_") else k] = np.nan
-
-        if self.feature_config.get("temperature", True):
-            temp = window_data.get("temperature")
-            if temp is not None:
-                temp_features = self.extractors["temperature"].extract_all(temp)
-                features.update(
-                    {
-                        f"TEMP_{k}" if not k.startswith("TEMP_") else k: v
-                        for k, v in temp_features.items()
-                    }
-                )
-            else:
-                for k in self.extractors["temperature"].get_feature_descriptions().keys():
-                    features[f"TEMP_{k}" if not k.startswith("TEMP_") else k] = np.nan
-
-        if self.feature_config.get("respiration", True):
-            resp = window_data.get("respiration")
-            if resp is not None:
-                resp_features = self.extractors["respiration"].extract_all(
-                    resp,
-                    breath_peaks=window_data.get("breath_peaks"),
-                    breath_troughs=window_data.get("breath_troughs"),
-                    breath_intervals=window_data.get("breath_intervals"),
-                )
-                features.update(
-                    {
-                        f"RESP_{k}" if not k.startswith("RESP_") else k: v
-                        for k, v in resp_features.items()
-                    }
-                )
-            else:
-                for k in self.extractors["respiration"].get_feature_descriptions().keys():
-                    features[f"RESP_{k}" if not k.startswith("RESP_") else k] = np.nan
-
-        if self.feature_config.get("accelerometer", True):
-            acc_data = window_data.get("accelerometer")
-            if acc_data is not None:
-                if isinstance(acc_data, dict):
-                    if "magnitude" in acc_data:
-                        acc_features = self.extractors["accelerometer"].extract_from_magnitude(
-                            acc_data["magnitude"]
-                        )
-                    else:
-                        acc_features = self.extractors["accelerometer"].extract_all(
-                            acc_data.get("x", np.array([])),
-                            acc_data.get("y", np.array([])),
-                            acc_data.get("z", np.array([])),
-                        )
-                else:
-                    acc_features = self.extractors["accelerometer"].extract_from_magnitude(acc_data)
-                features.update(
-                    {
-                        f"ACC_{k}" if not k.startswith("ACC_") else k: v
-                        for k, v in acc_features.items()
-                    }
-                )
-            else:
-                for k in self.extractors["accelerometer"].get_feature_descriptions().keys():
-                    features[f"ACC_{k}" if not k.startswith("ACC_") else k] = np.nan
-
+        features: Dict[str, float] = {}
+        self._add(features, "hrv_time", "HRV_", lambda: self._hrv(rr, "hrv_time"))
+        self._add(features, "hrv_frequency", "HRV_", lambda: self._hrv(rr, "hrv_frequency"))
+        self._add(features, "hrv_nonlinear", "HRV_", lambda: self._hrv(rr, "hrv_nonlinear"))
+        self._add(features, "eda", "EDA_", lambda: self._eda(window_data))
+        self._add(features, "temperature", "TEMP_", lambda: self._temperature(window_data))
+        self._add(features, "respiration", "RESP_", lambda: self._respiration(window_data))
+        self._add(features, "accelerometer", "ACC_", lambda: self._accelerometer(window_data))
         return features
+
+    def _add(self, features, group, prefix, compute) -> None:
+        if not self.feature_config.get(group, True):
+            return
+        result = compute()
+        if result is None:
+            result = dict.fromkeys(self.extractors[group].get_feature_descriptions(), np.nan)
+        features.update({k if k.startswith(prefix) else prefix + k: v for k, v in result.items()})
+
+    def _hrv(self, rr, group):
+        return None if rr is None else self.extractors[group].extract_all(rr)
+
+    def _eda(self, w):
+        tonic, raw = w.get("eda_tonic"), w.get("eda_raw")
+        if tonic is None and raw is None:
+            return None
+        decomposed = {"tonic": tonic, "phasic": w.get("eda_phasic")}
+        return self.extractors["eda"].extract_all(decomposed, w.get("scr_peaks"), raw)
+
+    def _temperature(self, w):
+        temp = w.get("temperature")
+        return None if temp is None else self.extractors["temperature"].extract_all(temp)
+
+    def _respiration(self, w):
+        resp = w.get("respiration")
+        if resp is None:
+            return None
+        return self.extractors["respiration"].extract_all(
+            resp,
+            breath_peaks=w.get("breath_peaks"),
+            breath_troughs=w.get("breath_troughs"),
+            breath_intervals=w.get("breath_intervals"),
+        )
+
+    def _accelerometer(self, w):
+        acc = w.get("accelerometer")
+        if acc is None:
+            return None
+        extractor = self.extractors["accelerometer"]
+        if not isinstance(acc, dict):
+            return extractor.extract_from_magnitude(acc)
+        if "magnitude" in acc:
+            return extractor.extract_from_magnitude(acc["magnitude"])
+        empty = np.array([])
+        return extractor.extract_all(acc.get("x", empty), acc.get("y", empty), acc.get("z", empty))
 
     def extract_all_features(
         self,

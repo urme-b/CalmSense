@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
 PROJECT_ROOT = Path(__file__).parent.parent.absolute()
 
@@ -48,9 +48,6 @@ LABEL_NAMES: Dict[int, str] = {
     6: "ignore",
     7: "ignore",
 }
-
-BINARY_LABELS: Dict[str, int] = {"baseline": 0, "stress": 1}
-MULTICLASS_LABELS: Dict[str, int] = {"baseline": 0, "stress": 1, "amusement": 2}
 
 
 @dataclass(frozen=True)
@@ -148,18 +145,10 @@ CONDITION_COLORS: Dict[str, str] = {
     "ignore": "#bdc3c7",
 }
 
-FIGURE_DPI: int = 100
-FIGURE_SIZE_DEFAULT: Tuple[int, int] = (14, 6)
-FONT_SIZE: int = 11
-
 LOG_FORMAT: str = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 LOG_DATE_FORMAT: str = "%Y-%m-%d %H:%M:%S"
 LOG_LEVEL: str = "INFO"
 LOG_FILE: Path = LOGS_DIR / "calmsense.log"
-
-API_HOST: str = "0.0.0.0"
-API_PORT: int = 8000
-API_RELOAD: bool = False
 
 
 def get_project_root() -> Path:
