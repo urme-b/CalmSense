@@ -103,7 +103,9 @@ def _plot(tuned, defaults, path):
     x = np.arange(len(names))
     plt.figure(figsize=(7, 4))
     plt.bar(x - 0.2, [defaults.get(n, 0) for n in names], 0.4, label="default", color="#95a5a6")
-    plt.bar(x + 0.2, [tuned[n]["accuracy_mean"] for n in names], 0.4, label="tuned", color="#3498db")
+    plt.bar(
+        x + 0.2, [tuned[n]["accuracy_mean"] for n in names], 0.4, label="tuned", color="#3498db"
+    )
     plt.xticks(x, names, rotation=20, ha="right")
     plt.ylabel("LOSO accuracy")
     plt.ylim(0, 1)
