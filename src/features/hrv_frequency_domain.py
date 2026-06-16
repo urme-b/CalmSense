@@ -6,6 +6,9 @@ from scipy.interpolate import interp1d
 
 from ..logging_config import LoggerMixin
 
+# numpy>=2 renamed trapz to trapezoid
+_trapz = getattr(np, "trapezoid", getattr(np, "trapz"))
+
 
 class HRVFrequencyDomainExtractor(LoggerMixin):
     # Task Force 1996 bands
@@ -143,7 +146,7 @@ class HRVFrequencyDomainExtractor(LoggerMixin):
         if not np.any(mask):
             return 0.0
 
-        return float(np.trapezoid(psd[mask], freqs[mask]))
+        return float(_trapz(psd[mask], freqs[mask]))
 
     def compute_vlf_power(self, freqs: np.ndarray, psd: np.ndarray) -> float:
         return self._compute_band_power(freqs, psd, self.vlf_band)
