@@ -73,24 +73,38 @@ def _apply_calibrator(model, raw, method):
     return model.predict_proba(raw.reshape(-1, 1))[:, 1]
 
 
+def _pos_proba(estimator, X):
+    """P(class==1), robust to single-class folds where proba has one column."""
+    proba = estimator.predict_proba(X)
+    classes = list(estimator.classes_)
+    if 1 in classes:
+        return proba[:, classes.index(1)]
+    return np.zeros(len(X))
+
+
 def loso_recalibrated_proba(factory, X, y, groups, method="isotonic"):
     """LOSO with a calibrator fit on out-of-fold training probabilities only."""
     logo = LeaveOneGroupOut()
     yt, pp = [], []
     for train_idx, test_idx in logo.split(X, y, groups):
         Xtr, ytr, gtr = X[train_idx], y[train_idx], groups[train_idx]
-
-        oof = np.zeros(len(ytr))
-        inner = GroupKFold(n_splits=min(5, len(np.unique(gtr))))
-        for itr, ical in inner.split(Xtr, ytr, gtr):
-            p = factory()
-            p.fit(Xtr[itr], ytr[itr], **_fit_params(p, ytr[itr]))
-            oof[ical] = p.predict_proba(Xtr[ical])[:, 1]
-        calibrator = _fit_calibrator(oof, ytr, method)
-
         base = factory()
         base.fit(Xtr, ytr, **_fit_params(base, ytr))
-        cal_pos = _apply_calibrator(calibrator, base.predict_proba(X[test_idx])[:, 1], method)
+        raw_te = _pos_proba(base, X[test_idx])
+
+        n_groups = len(np.unique(gtr))
+        if n_groups < 2:
+            cal_pos = raw_te  # too few subjects to fit a calibrator
+        else:
+            oof = np.zeros(len(ytr))
+            inner = GroupKFold(n_splits=min(5, n_groups))
+            for itr, ical in inner.split(Xtr, ytr, gtr):
+                p = factory()
+                p.fit(Xtr[itr], ytr[itr], **_fit_params(p, ytr[itr]))
+                oof[ical] = _pos_proba(p, Xtr[ical])
+            calibrator = _fit_calibrator(oof, ytr, method)
+            cal_pos = _apply_calibrator(calibrator, raw_te, method)
+
         pp.append(np.column_stack([1.0 - cal_pos, cal_pos]))
         yt.append(y[test_idx])
     return np.concatenate(yt), np.concatenate(pp)
@@ -109,12 +123,14 @@ def compute(X, y, groups, model="rf", n_bins=N_BINS):
     iso = cal.summary(y_iso, p_iso, n_bins)
     sig = cal.summary(y_sig, p_sig, n_bins)
 
+    # All LOSO passes iterate identical splits, so labels line up; enforce it.
+    assert np.array_equal(y_loso, y_iso), "LOSO label order diverged across passes"
     thresholds = np.round(np.arange(0.05, 0.61, 0.05), 2)
     prevalence = float(np.mean(y_loso == 1))
     decision = {
         "thresholds": thresholds.tolist(),
         "net_benefit_uncalibrated": cal.net_benefit(y_loso, p_loso[:, 1], thresholds).tolist(),
-        "net_benefit_recalibrated": cal.net_benefit(y_iso, p_iso[:, 1], thresholds).tolist(),
+        "net_benefit_recalibrated": cal.net_benefit(y_loso, p_iso[:, 1], thresholds).tolist(),
         "treat_all": [prevalence - (1 - prevalence) * (t / (1 - t)) for t in thresholds],
     }
 
@@ -224,6 +240,11 @@ def run(synthetic=False, model="rf", n_bins=N_BINS):
         f"Calibration optimism gap {out['calibration_optimism_gap_ece']:+.3f} ECE | "
         f"recalibration cuts ECE by {out['recalibration_reduction_ece']:+.3f}"
     )
+    if synthetic:
+        print(
+            "Note: synthetic stress is near-separable, so ECE is ~0 and the optimism gap is not "
+            "meaningful. Run `make reproduce` on real WESAD for the paper's numbers."
+        )
     print(f"Wrote {RESULTS_DIR / 'calibration.json'} and 3 figures.")
 
 

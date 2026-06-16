@@ -89,6 +89,8 @@ def net_benefit(y: Array, p_pos: Array, thresholds: np.ndarray) -> np.ndarray:
     y = np.asarray(y)
     p_pos = np.asarray(p_pos, dtype=float)
     n = len(y)
+    if n == 0:
+        raise ValueError("net_benefit needs at least one sample")
     out = []
     for pt in thresholds:
         flagged = p_pos >= pt
