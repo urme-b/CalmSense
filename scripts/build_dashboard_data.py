@@ -55,6 +55,8 @@ def run():
         ("wrist", "wrist.json"),
         ("cross_dataset", "cross_dataset.json"),
         ("calibration", "calibration.json"),
+        ("personalization", "personalization.json"),
+        ("tuning", "tuning.json"),
     ]:
         data = _load_json(fname)
         if data is not None:

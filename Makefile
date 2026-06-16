@@ -33,6 +33,8 @@ reproduce:
 	python scripts/wrist.py
 	python scripts/cross_dataset.py
 	python scripts/calibration.py
+	python scripts/personalize.py
+	python scripts/tuning.py
 	python scripts/stats.py
 	python scripts/export_onnx.py
 	python scripts/build_dashboard_data.py
