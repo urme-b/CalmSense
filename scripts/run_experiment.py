@@ -29,7 +29,6 @@ from sklearn.utils.class_weight import compute_sample_weight
 
 from src.config import FIGURES_DIR, MODELS_DIR, PROJECT_ROOT
 from src.dataset import WindowedDataset, load_cached
-from src.models.dl.cnn_1d import CNN1DClassifier
 from src.models.ml.classifiers import get_classifier
 
 RESULTS_DIR = PROJECT_ROOT / "results"
@@ -108,6 +107,8 @@ def loso_evaluate(pipeline_factory, X, y, groups):
 
 
 def cnn_loso(x_raw, y, groups):
+    from src.models.dl.cnn_1d import CNN1DClassifier
+
     logo = LeaveOneGroupOut()
     pooled_true, pooled_pred, per_subject = [], [], []
     n_folds = len(np.unique(groups))
@@ -294,19 +295,26 @@ def run():
     parser.add_argument("--subjects", nargs="+", default=None)
     parser.add_argument("--rebuild", action="store_true")
     parser.add_argument("--no-cnn", action="store_true")
+    parser.add_argument("--synthetic", action="store_true", help="run on generated data, no WESAD")
     args = parser.parse_args()
 
     RESULTS_DIR.mkdir(exist_ok=True)
     FIGURES_DIR.mkdir(parents=True, exist_ok=True)
     MODELS_DIR.mkdir(parents=True, exist_ok=True)
 
-    cached = None if (args.rebuild or args.subjects) else load_cached()
-    if cached is None:
-        print("Building dataset from raw WESAD...")
-        features_df, x_raw, _ = WindowedDataset().build(subjects=args.subjects)
+    if args.synthetic:
+        from src.synthetic import features as synth_features
+
+        print("Building synthetic dataset (demo only)...")
+        features_df, x_raw, _ = synth_features(n_subjects=8, block_sec=150, cache=True)
     else:
-        print("Loaded cached dataset.")
-        features_df, x_raw = cached
+        cached = None if (args.rebuild or args.subjects) else load_cached()
+        if cached is None:
+            print("Building dataset from raw WESAD...")
+            features_df, x_raw, _ = WindowedDataset().build(subjects=args.subjects)
+        else:
+            print("Loaded cached dataset.")
+            features_df, x_raw = cached
 
     print(f"Windows: {len(features_df)} | subjects: {features_df['subject_id'].nunique()}")
     summary = {}
