@@ -29,7 +29,6 @@ from sklearn.utils.class_weight import compute_sample_weight
 
 from src.config import FIGURES_DIR, MODELS_DIR, PROJECT_ROOT
 from src.dataset import WindowedDataset, load_cached
-from src.models.dl.cnn_1d import CNN1DClassifier
 from src.models.ml.classifiers import get_classifier
 
 RESULTS_DIR = PROJECT_ROOT / "results"
@@ -108,6 +107,8 @@ def loso_evaluate(pipeline_factory, X, y, groups):
 
 
 def cnn_loso(x_raw, y, groups):
+    from src.models.dl.cnn_1d import CNN1DClassifier
+
     logo = LeaveOneGroupOut()
     pooled_true, pooled_pred, per_subject = [], [], []
     n_folds = len(np.unique(groups))
