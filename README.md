@@ -50,9 +50,12 @@ number is honest: it was measured on people the model never trained on.
 An alerting system acts on the probability, not the label. The same within-subject evaluation that
 inflates accuracy also makes the model look better calibrated than it is on a new person, and that
 miscalibration costs real net benefit at deployment thresholds. CalmSense measures this (ECE, MCE,
-Brier, reliability diagrams, decision-curve analysis) and applies a leakage-free recalibration that
-recovers most of the gap — fit only on held-out training subjects, never on the test subject.
-See [paper §4.7](PAPER.md). Regenerate with `make reproduce`, or try it with no data via `make demo`.
+Brier, reliability diagrams, decision-curve analysis), tests the gap for significance (paired Wilcoxon
+on per-subject Brier), and applies a leakage-free recalibration that recovers most of the gap — fit
+only on held-out training subjects, never on the test subject. A **few-shot personalization** step then
+closes the rest: a short labeled enrollment from the target subject beats global recalibration with no
+retraining. All models are tuned by nested CV (inner grouped search, outer LOSO), so the comparison is
+fair. See [paper §4.7–4.8](PAPER.md). Regenerate with `make reproduce`, or try it with no data via `make demo`.
 
 ## What the model relies on
 
@@ -102,17 +105,14 @@ synthetic generator, so nothing is gated on the 2 GB WESAD download. Everything 
 
 ## Limitations
 - 15 subjects and lab-induced stress; per-subject accuracy ranges from 0.71 to 1.00.
-- Hyperparameters are sensible defaults, not tuned.
 - The deep model underperforms at this data scale and is kept only as a baseline.
+- Cross-corpus generalization rests on a single transfer pair; a third dataset is needed.
 
 Methodology, statistics, and references are in the [paper](PAPER.md).
 
 ## Future scope
 
-- [ ] Validate across more datasets to test true cross-corpus generalization
-- [ ] Nested hyperparameter tuning instead of fixed defaults
-- [ ] Personalization to close the within- vs. cross-subject gap
-- [ ] Per-subject online recalibration from a short enrollment window
+- [ ] A third corpus (SWELL / AffectiveROAD) for leave-one-dataset-out generalization
 - [ ] Real-world, non-lab stress data beyond the 15-subject benchmark
 - [ ] Real-time streaming inference from a live wearable
 
