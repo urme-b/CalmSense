@@ -7,7 +7,7 @@ from scipy.interpolate import interp1d
 from ..logging_config import LoggerMixin
 
 # numpy>=2 renamed trapz to trapezoid
-_trapz = getattr(np, "trapezoid", getattr(np, "trapz"))
+_trapz = np.trapezoid if hasattr(np, "trapezoid") else np.trapz
 
 
 class HRVFrequencyDomainExtractor(LoggerMixin):
