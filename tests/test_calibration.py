@@ -58,3 +58,15 @@ def test_net_benefit_treat_none_baseline():
     y = np.array([1, 0, 1, 0])
     nb = net_benefit(y, np.zeros(4), np.array([0.2, 0.5]))
     assert np.allclose(nb, 0.0)
+
+
+def test_gap_significance_detects_consistent_gap():
+    from scripts.calibration import gap_significance
+
+    loso = {f"S{i}": 0.20 for i in range(12)}
+    within = {f"S{i}": 0.10 for i in range(12)}
+    sig = gap_significance(loso, within)
+    assert sig["n_subjects"] == 12
+    assert abs(sig["mean_brier_gap"] - 0.10) < 1e-9
+    assert sig["ci95"][0] > 0  # gap is consistently positive
+    assert sig["wilcoxon_p"] < 0.05

@@ -13,6 +13,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy.stats import wilcoxon
 from sklearn.isotonic import IsotonicRegression
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import GroupKFold, LeaveOneGroupOut, StratifiedKFold
@@ -34,13 +35,14 @@ N_BINS = 15
 
 def loso_proba(factory, X, y, groups):
     logo = LeaveOneGroupOut()
-    yt, pp = [], []
+    yt, pp, gg = [], [], []
     for train_idx, test_idx in logo.split(X, y, groups):
         pipe = factory()
         pipe.fit(X[train_idx], y[train_idx], **_fit_params(pipe, y[train_idx]))
         pp.append(pipe.predict_proba(X[test_idx]))
         yt.append(y[test_idx])
-    return np.concatenate(yt), np.concatenate(pp)
+        gg.append(groups[test_idx])
+    return np.concatenate(yt), np.concatenate(pp), np.concatenate(gg)
 
 
 def within_subject_proba(factory, X, y, groups):
@@ -49,16 +51,39 @@ def within_subject_proba(factory, X, y, groups):
     for g in np.unique(groups):
         idx = np.where(groups == g)[0]
         keep[idx[::2]] = True
-    Xk, yk = X[keep], y[keep]
+    Xk, yk, gk = X[keep], y[keep], groups[keep]
 
     skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=SEED)
-    yt, pp = [], []
+    yt, pp, gg = [], [], []
     for train_idx, test_idx in skf.split(Xk, yk):
         pipe = factory()
         pipe.fit(Xk[train_idx], yk[train_idx], **_fit_params(pipe, yk[train_idx]))
         pp.append(pipe.predict_proba(Xk[test_idx]))
         yt.append(yk[test_idx])
-    return np.concatenate(yt), np.concatenate(pp)
+        gg.append(gk[test_idx])
+    return np.concatenate(yt), np.concatenate(pp), np.concatenate(gg)
+
+
+def _subject_brier(y, proba, g):
+    return {s: cal.brier_score(y[g == s], proba[g == s]) for s in np.unique(g)}
+
+
+def gap_significance(loso, within):
+    """Paired test of per-subject Brier: is LOSO worse-calibrated than within-subject?"""
+    subjects = sorted(set(loso) & set(within))
+    a = np.array([loso[s] for s in subjects])
+    b = np.array([within[s] for s in subjects])
+    gap = a - b
+    pval = 1.0 if np.allclose(a, b) else float(wilcoxon(a, b).pvalue)
+    rng = np.random.RandomState(SEED)
+    means = [rng.choice(gap, len(gap), replace=True).mean() for _ in range(10000)]
+    return {
+        "n_subjects": len(subjects),
+        "mean_brier_gap": float(gap.mean()),
+        "ci95": [float(np.percentile(means, 2.5)), float(np.percentile(means, 97.5))],
+        "wilcoxon_p": pval,
+        "per_subject": {s: {"loso": loso[s], "within": within[s]} for s in subjects},
+    }
 
 
 def _fit_calibrator(raw, y, method):
@@ -113,8 +138,8 @@ def loso_recalibrated_proba(factory, X, y, groups, method="isotonic"):
 def compute(X, y, groups, model="rf", n_bins=N_BINS):
     factory = lambda: build_pipeline(model)  # noqa: E731
 
-    y_loso, p_loso = loso_proba(factory, X, y, groups)
-    y_within, p_within = within_subject_proba(factory, X, y, groups)
+    y_loso, p_loso, g_loso = loso_proba(factory, X, y, groups)
+    y_within, p_within, g_within = within_subject_proba(factory, X, y, groups)
     y_iso, p_iso = loso_recalibrated_proba(factory, X, y, groups, "isotonic")
     y_sig, p_sig = loso_recalibrated_proba(factory, X, y, groups, "sigmoid")
 
@@ -122,6 +147,10 @@ def compute(X, y, groups, model="rf", n_bins=N_BINS):
     within = cal.summary(y_within, p_within, n_bins)
     iso = cal.summary(y_iso, p_iso, n_bins)
     sig = cal.summary(y_sig, p_sig, n_bins)
+    significance = gap_significance(
+        _subject_brier(y_loso, p_loso, g_loso),
+        _subject_brier(y_within, p_within, g_within),
+    )
 
     # All LOSO passes iterate identical splits, so labels line up; enforce it.
     assert np.array_equal(y_loso, y_iso), "LOSO label order diverged across passes"
@@ -145,6 +174,7 @@ def compute(X, y, groups, model="rf", n_bins=N_BINS):
         "recalibrated_sigmoid": sig,
         "calibration_optimism_gap_ece": round(loso["ece"] - within["ece"], 4),
         "recalibration_reduction_ece": round(loso["ece"] - iso["ece"], 4),
+        "gap_significance": significance,
         "decision_curve": decision,
     }
 
@@ -239,6 +269,11 @@ def run(synthetic=False, model="rf", n_bins=N_BINS):
     print(
         f"Calibration optimism gap {out['calibration_optimism_gap_ece']:+.3f} ECE | "
         f"recalibration cuts ECE by {out['recalibration_reduction_ece']:+.3f}"
+    )
+    sig = out["gap_significance"]
+    print(
+        f"Per-subject Brier gap {sig['mean_brier_gap']:+.4f} "
+        f"95% CI [{sig['ci95'][0]:.4f}, {sig['ci95'][1]:.4f}] Wilcoxon p={sig['wilcoxon_p']:.3f}"
     )
     if synthetic:
         print(
