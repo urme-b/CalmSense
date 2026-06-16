@@ -1,9 +1,5 @@
 # CalmSense
 
-[![CI](https://github.com/urme-b/CalmSense/actions/workflows/ci.yml/badge.svg)](https://github.com/urme-b/CalmSense/actions/workflows/ci.yml)
-[![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue.svg)](pyproject.toml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-
 Detecting stress from wearable sensors, and measuring how much of the field's reported accuracy
 actually holds up on people the model has never seen.
 
@@ -78,8 +74,7 @@ expected under acute stress.
 | Dashboard | React, TypeScript, Plotly |
 | Tooling | Docker, GitHub Actions, ruff, pytest |
 
-## Honest limitations
-
+## Limitations
 - 15 subjects and lab-induced stress; per-subject accuracy ranges from 0.71 to 1.00.
 - Hyperparameters are sensible defaults, not tuned.
 - The deep model underperforms at this data scale and is kept only as a baseline.
