@@ -1,19 +1,22 @@
 # CalmSense
 
-Detecting stress from wearable sensors, and measuring how much of the field's reported accuracy
-actually holds up on people the model has never seen.
+Detecting stress from wearable sensors, and measuring how much of the field's reported accuracy —
+and confidence — actually holds up on people the model has never seen.
 
 Most published results on the WESAD benchmark claim 95–99% accuracy. CalmSense shows that much of
-that vanishes under honest, subject-independent testing, and traces exactly where it goes.
+that vanishes under honest, subject-independent testing, traces exactly where it goes, and adds the
+part accuracy hides: whether the model's probabilities are calibrated enough to trigger an alert.
 
-[Live demo](https://urme-b.github.io/CalmSense/) · [Paper](PAPER.md)
+[Live demo](https://urme-b.github.io/CalmSense/) · [Run in Colab](https://colab.research.google.com/github/urme-b/CalmSense/blob/main/notebooks/CalmSense.ipynb) · [Paper](PAPER.md)
 
 ## Why it matters
 
-A stress model is only useful if it works on a new person. CalmSense evaluates everything with
-Leave-One-Subject-Out validation (train on 14 people, test on the 15th) and quantifies three ways the
-usual numbers get inflated: subject leakage, motion confounds, and dataset shift. The result is a
-realistic picture of what wearable stress detection can and cannot do today.
+A stress model is only useful if it works on a new person — and an alerting system is only safe if a
+"0.8 chance of stress" really means 0.8. CalmSense evaluates everything with Leave-One-Subject-Out
+validation (train on 14 people, test on the 15th) and quantifies four ways the usual numbers get
+inflated: subject leakage, motion confounds, dataset shift, and **calibration** — the same
+within-subject testing that inflates accuracy also makes the model look better calibrated than it is.
+The result is a realistic picture of what wearable stress detection can and cannot do today.
 
 ## Results
 
@@ -42,6 +45,15 @@ number is honest: it was measured on people the model never trained on.
 | ![Chest vs wrist](outputs/figures/chest_vs_wrist.png) | ![Cross-dataset](outputs/figures/cross_dataset.png) |
 | A wrist-only model reaches 0.893, about two points behind a research-grade chest strap. | Train on WESAD, test on a second dataset, and accuracy collapses to near chance. Within-dataset success is not generalization. |
 
+### Accuracy isn't the whole story: calibration
+
+An alerting system acts on the probability, not the label. The same within-subject evaluation that
+inflates accuracy also makes the model look better calibrated than it is on a new person, and that
+miscalibration costs real net benefit at deployment thresholds. CalmSense measures this (ECE, MCE,
+Brier, reliability diagrams, decision-curve analysis) and applies a leakage-free recalibration that
+recovers most of the gap — fit only on held-out training subjects, never on the test subject.
+See [paper §4.7](PAPER.md). Regenerate with `make reproduce`, or try it with no data via `make demo`.
+
 ## What the model relies on
 
 ![Feature importance](outputs/figures/shap_beeswarm.png)
@@ -60,7 +72,9 @@ expected under acute stress.
    frequency, nonlinear), electrodermal activity, temperature, respiration, and motion.
 4. **Evaluate honestly.** 15-fold Leave-One-Subject-Out, with median imputation, standardization,
    and class balancing all fit inside each fold so nothing leaks from test to train.
-5. **Serve.** The trained model is exported to run directly in the browser, so the live demo needs
+5. **Check calibration.** Measure ECE/MCE/Brier on the pooled out-of-fold probabilities, compare to
+   the within-subject baseline, and recalibrate inside each fold without touching the test subject.
+6. **Serve.** The trained model is exported to run directly in the browser, so the live demo needs
    no backend.
 
 ## Tech stack
@@ -74,6 +88,18 @@ expected under acute stress.
 | Dashboard | React, TypeScript, Plotly |
 | Tooling | Docker, GitHub Actions, ruff, pytest |
 
+## Reproduce
+
+```bash
+pip install -e .
+make demo         # full calibration pipeline on synthetic data — no download
+make data         # PhysioNet Non-EEG (WESAD: see data/raw/README.md)
+make reproduce    # regenerate every number, figure, model, and the dashboard
+```
+
+`make demo` and the [Colab notebook](notebooks/CalmSense.ipynb) run the entire pipeline on a built-in
+synthetic generator, so nothing is gated on the 2 GB WESAD download. Everything is seeded.
+
 ## Limitations
 - 15 subjects and lab-induced stress; per-subject accuracy ranges from 0.71 to 1.00.
 - Hyperparameters are sensible defaults, not tuned.
@@ -86,6 +112,7 @@ Methodology, statistics, and references are in the [paper](PAPER.md).
 - [ ] Validate across more datasets to test true cross-corpus generalization
 - [ ] Nested hyperparameter tuning instead of fixed defaults
 - [ ] Personalization to close the within- vs. cross-subject gap
+- [ ] Per-subject online recalibration from a short enrollment window
 - [ ] Real-world, non-lab stress data beyond the 15-subject benchmark
 - [ ] Real-time streaming inference from a live wearable
 
