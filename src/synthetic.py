@@ -80,7 +80,9 @@ def _chest_block(cond: str, seconds: int, rng: np.random.RandomState, seed: int)
     }
 
 
-def _wrist_block(cond: str, seconds: float, chest: Dict, rng: np.random.RandomState, seed: int) -> Dict:
+def _wrist_block(
+    cond: str, seconds: float, chest: Dict, rng: np.random.RandomState, seed: int
+) -> Dict:
     import neurokit2 as nk
 
     bvp = nk.ppg_simulate(
@@ -123,7 +125,9 @@ def _subject(seed: int, block_sec: float) -> Dict:
     }
 
 
-def write_dataset(out_dir: Path, n_subjects: int = 4, block_sec: float = 120.0, seed: int = 0) -> Path:
+def write_dataset(
+    out_dir: Path, n_subjects: int = 4, block_sec: float = 120.0, seed: int = 0
+) -> Path:
     """Write S2..S(n+1) pickles in WESAD layout under out_dir/WESAD."""
     root = Path(out_dir) / "WESAD"
     for i in range(n_subjects):

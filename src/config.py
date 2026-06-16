@@ -49,6 +49,7 @@ LABEL_NAMES: Dict[int, str] = {
     7: "ignore",
 }
 
+
 @dataclass(frozen=True)
 class SamplingRates:
     # Chest (RespiBAN) — all channels at 700 Hz
