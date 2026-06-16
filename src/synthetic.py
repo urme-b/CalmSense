@@ -80,16 +80,14 @@ def _chest_block(cond: str, seconds: int, rng: np.random.RandomState, seed: int)
     }
 
 
-def _wrist_block(
-    cond: str, seconds: float, chest: Dict, rng: np.random.RandomState, seed: int
-) -> Dict:
-    import neurokit2 as nk
-
-    bvp = nk.ppg_simulate(
-        duration=int(seconds), sampling_rate=WRIST["BVP"], heart_rate=HR[cond], random_state=seed
-    )
+def _wrist_block(cond: str, seconds: int, chest: Dict, rng: np.random.RandomState) -> Dict:
+    """Mirror WESAD's signal.wrist layout. The chest pipeline never reads it, so the
+    BVP is a cheap placeholder rather than a full PPG simulation."""
+    bvp_n = int(seconds * WRIST["BVP"])
     eda_n = int(seconds * WRIST["EDA"])
     acc_n = int(seconds * WRIST["ACC"])
+    t = np.arange(bvp_n) / WRIST["BVP"]
+    bvp = np.sin(2 * np.pi * (HR[cond] / 60.0) * t) + rng.normal(0, 0.05, bvp_n)
     return {
         "BVP": bvp.reshape(-1, 1),
         "EDA": _resample(chest["EDA"].ravel(), eda_n).reshape(-1, 1),
@@ -98,9 +96,8 @@ def _wrist_block(
     }
 
 
-def _subject(seed: int, block_sec: float) -> Dict:
+def _subject(seed: int, block_sec: int) -> Dict:
     rng = np.random.RandomState(seed)
-    block_sec = int(block_sec)
     order = ["baseline", "stress", "amusement", "baseline", "stress"]
 
     chest_parts: Dict[str, list] = {k: [] for k in ["ECG", "EDA", "Temp", "Resp", "EMG", "ACC"]}
@@ -109,7 +106,7 @@ def _subject(seed: int, block_sec: float) -> Dict:
 
     for i, cond in enumerate(order):
         chest = _chest_block(cond, block_sec, rng, seed + i)
-        wrist = _wrist_block(cond, block_sec, chest, rng, seed + i)
+        wrist = _wrist_block(cond, block_sec, chest, rng)
         for k in chest_parts:
             chest_parts[k].append(chest[k])
         for k in wrist_parts:
@@ -125,14 +122,12 @@ def _subject(seed: int, block_sec: float) -> Dict:
     }
 
 
-def write_dataset(
-    out_dir: Path, n_subjects: int = 4, block_sec: float = 120.0, seed: int = 0
-) -> Path:
+def write_dataset(out_dir: Path, n_subjects: int = 4, block_sec: int = 120, seed: int = 0) -> Path:
     """Write S2..S(n+1) pickles in WESAD layout under out_dir/WESAD."""
     root = Path(out_dir) / "WESAD"
     for i in range(n_subjects):
         sid = f"S{i + 2}"
-        data = _subject(seed + i * 100, block_sec)
+        data = _subject(seed + i * 100, int(block_sec))
         subj_dir = root / sid
         subj_dir.mkdir(parents=True, exist_ok=True)
         with open(subj_dir / f"{sid}.pkl", "wb") as f:
@@ -140,14 +135,17 @@ def write_dataset(
     return root
 
 
-def features(n_subjects: int = 4, block_sec: float = 120.0, seed: int = 0) -> Tuple:
+def features(n_subjects: int = 4, block_sec: int = 120, seed: int = 0) -> Tuple:
     """Build a small feature matrix from freshly generated synthetic subjects."""
+    import shutil
     import tempfile
 
     from .dataset import WindowedDataset
 
     tmp = Path(tempfile.mkdtemp(prefix="calmsense_synth_"))
-    root = write_dataset(tmp, n_subjects=n_subjects, block_sec=block_sec, seed=seed)
-
-    ds = WindowedDataset(data_path=root)
-    return ds.build(subjects=ds.loader.subjects, cache=False)
+    try:
+        root = write_dataset(tmp, n_subjects=n_subjects, block_sec=block_sec, seed=seed)
+        ds = WindowedDataset(data_path=root)
+        return ds.build(subjects=ds.loader.subjects, cache=False)
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
