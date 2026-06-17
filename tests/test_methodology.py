@@ -66,3 +66,39 @@ def test_window_label_rejects_impure_and_out_of_set_windows():
     assert ds._window_label(np.concatenate([np.full(95, 2), np.full(5, 1)])) == 2
     # dominant label outside {baseline, stress, amusement} -> rejected
     assert ds._window_label(np.full(100, 4)) is None
+
+
+def test_scaler_imputer_fit_per_fold_never_on_held_out_subject():
+    """Leakage regression: per fold the scaler/imputer must be fit on the training
+    subjects only, so their statistics differ fold-to-fold and never equal the
+    global (all-subject) statistics."""
+    from sklearn.model_selection import LeaveOneGroupOut
+
+    rng = np.random.RandomState(0)
+    subjects = ["S0", "S1", "S2"]
+    shifts = {"S0": 0.0, "S1": 50.0, "S2": 200.0}  # asymmetric so no fold mean == global
+    groups = np.repeat(subjects, 30)
+    X = np.vstack([rng.randn(30, 4) + shifts[s] for s in subjects])
+    y = np.tile([0, 1], 45)  # both classes present in every subject block
+
+    logo = LeaveOneGroupOut()
+    fold_scaler_means = {}
+    global_mean = X.mean(axis=0)
+    for train_idx, test_idx in logo.split(X, y, groups):
+        held = groups[test_idx][0]
+        pipe = build_pipeline("lr")
+        pipe.fit(X[train_idx], y[train_idx])
+        scaler_mean = pipe.named_steps["scale"].mean_
+        imputer_stats = pipe.named_steps["impute"].statistics_
+        # fit on the TRAIN rows only ...
+        np.testing.assert_allclose(scaler_mean, X[train_idx].mean(axis=0), rtol=1e-6, atol=1e-6)
+        np.testing.assert_allclose(
+            imputer_stats, np.median(X[train_idx], axis=0), rtol=1e-6, atol=1e-6
+        )
+        # ... so the held-out subject's shift never enters the global stats
+        assert not np.allclose(scaler_mean, global_mean, atol=1.0)
+        fold_scaler_means[held] = scaler_mean
+
+    # statistics genuinely change when a different subject is held out
+    assert not np.allclose(fold_scaler_means["S0"], fold_scaler_means["S1"], atol=1.0)
+    assert not np.allclose(fold_scaler_means["S1"], fold_scaler_means["S2"], atol=1.0)
