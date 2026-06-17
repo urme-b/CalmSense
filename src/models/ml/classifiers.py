@@ -1,202 +1,102 @@
-from typing import Any, Optional
+"""Configured classifier factory.
 
-from .base_model import BaseMLModel
+Each builder returns a ready-to-fit scikit-learn-compatible estimator with the
+hyperparameters used throughout the benchmark. A flat registry keeps the family
+in one place; `get_classifier("rf")` is the only entry point callers need.
+"""
+
+from typing import Any, Callable, Dict
+
+SEED = 42
 
 
-class LogisticRegressionClassifier(BaseMLModel):
-    def __init__(
-        self,
-        C: float = 1.0,
-        penalty: str = "l2",
-        solver: str = "lbfgs",
-        max_iter: int = 1000,
-        class_weight: Optional[str] = "balanced",
-        random_state: int = 42,
+def _logistic_regression(random_state: int = SEED, **kwargs: Any) -> Any:
+    from sklearn.linear_model import LogisticRegression
+
+    return LogisticRegression(
+        C=1.0,
+        penalty="l2",
+        solver="lbfgs",
+        max_iter=1000,
+        class_weight="balanced",
+        random_state=random_state,
+        n_jobs=-1,
         **kwargs,
-    ):
-
-        super().__init__("LogisticRegression", random_state, **kwargs)
-        self.C = C
-        self.penalty = penalty
-        self.solver = solver
-        self.max_iter = max_iter
-        self.class_weight = class_weight
-
-    def _create_model(self) -> Any:
-
-        from sklearn.linear_model import LogisticRegression
-
-        return LogisticRegression(
-            C=self.C,
-            penalty=self.penalty,
-            solver=self.solver,
-            max_iter=self.max_iter,
-            class_weight=self.class_weight,
-            random_state=self.random_state,
-            n_jobs=-1,
-            **self.kwargs,
-        )
+    )
 
 
-class RandomForestClassifier(BaseMLModel):
-    def __init__(
-        self,
-        n_estimators: int = 200,
-        max_depth: int = 10,
-        min_samples_leaf: int = 5,
-        min_samples_split: int = 5,
-        max_features: str = "sqrt",
-        class_weight: Optional[str] = "balanced",
-        random_state: int = 42,
-        n_jobs: int = -1,
+def _random_forest(random_state: int = SEED, **kwargs: Any) -> Any:
+    from sklearn.ensemble import RandomForestClassifier
+
+    return RandomForestClassifier(
+        n_estimators=200,
+        max_depth=10,
+        min_samples_leaf=5,
+        min_samples_split=5,
+        max_features="sqrt",
+        class_weight="balanced",
+        random_state=random_state,
+        n_jobs=-1,
         **kwargs,
-    ):
-
-        super().__init__("RandomForest", random_state, **kwargs)
-        self.n_estimators = n_estimators
-        self.max_depth = max_depth
-        self.min_samples_leaf = min_samples_leaf
-        self.min_samples_split = min_samples_split
-        self.max_features = max_features
-        self.class_weight = class_weight
-        self.n_jobs = n_jobs
-
-    def _create_model(self) -> Any:
-
-        from sklearn.ensemble import RandomForestClassifier as SklearnRF
-
-        return SklearnRF(
-            n_estimators=self.n_estimators,
-            max_depth=self.max_depth,
-            min_samples_leaf=self.min_samples_leaf,
-            min_samples_split=self.min_samples_split,
-            max_features=self.max_features,
-            class_weight=self.class_weight,
-            random_state=self.random_state,
-            n_jobs=self.n_jobs,
-            **self.kwargs,
-        )
+    )
 
 
-class XGBoostClassifier(BaseMLModel):
-    def __init__(
-        self,
-        n_estimators: int = 200,
-        max_depth: int = 7,
-        learning_rate: float = 0.1,
-        subsample: float = 0.8,
-        colsample_bytree: float = 0.8,
-        gamma: float = 0,
-        reg_alpha: float = 0,
-        reg_lambda: float = 1,
-        scale_pos_weight: float = 1,
-        random_state: int = 42,
-        n_jobs: int = -1,
+def _xgboost(random_state: int = SEED, **kwargs: Any) -> Any:
+    import xgboost as xgb
+
+    return xgb.XGBClassifier(
+        n_estimators=200,
+        max_depth=7,
+        learning_rate=0.1,
+        subsample=0.8,
+        colsample_bytree=0.8,
+        gamma=0,
+        reg_alpha=0,
+        reg_lambda=1,
+        scale_pos_weight=1,
+        random_state=random_state,
+        n_jobs=-1,
+        eval_metric="mlogloss",
         **kwargs,
-    ):
-
-        super().__init__("XGBoost", random_state, **kwargs)
-        self.n_estimators = n_estimators
-        self.max_depth = max_depth
-        self.learning_rate = learning_rate
-        self.subsample = subsample
-        self.colsample_bytree = colsample_bytree
-        self.gamma = gamma
-        self.reg_alpha = reg_alpha
-        self.reg_lambda = reg_lambda
-        self.scale_pos_weight = scale_pos_weight
-        self.n_jobs = n_jobs
-
-    def _create_model(self) -> Any:
-
-        import xgboost as xgb
-
-        return xgb.XGBClassifier(
-            n_estimators=self.n_estimators,
-            max_depth=self.max_depth,
-            learning_rate=self.learning_rate,
-            subsample=self.subsample,
-            colsample_bytree=self.colsample_bytree,
-            gamma=self.gamma,
-            reg_alpha=self.reg_alpha,
-            reg_lambda=self.reg_lambda,
-            scale_pos_weight=self.scale_pos_weight,
-            random_state=self.random_state,
-            n_jobs=self.n_jobs,
-            eval_metric="mlogloss",
-            **self.kwargs,
-        )
+    )
 
 
-class LightGBMClassifier(BaseMLModel):
-    def __init__(
-        self,
-        num_leaves: int = 50,
-        n_estimators: int = 200,
-        learning_rate: float = 0.1,
-        max_depth: int = -1,
-        subsample: float = 0.8,
-        colsample_bytree: float = 0.8,
-        reg_alpha: float = 0,
-        reg_lambda: float = 0,
-        min_child_samples: int = 20,
-        class_weight: Optional[str] = "balanced",
-        random_state: int = 42,
-        n_jobs: int = -1,
+def _lightgbm(random_state: int = SEED, **kwargs: Any) -> Any:
+    import lightgbm as lgb
+
+    return lgb.LGBMClassifier(
+        num_leaves=50,
+        n_estimators=200,
+        learning_rate=0.1,
+        max_depth=-1,
+        subsample=0.8,
+        colsample_bytree=0.8,
+        reg_alpha=0,
+        reg_lambda=0,
+        min_child_samples=20,
+        class_weight="balanced",
+        random_state=random_state,
+        n_jobs=-1,
+        verbose=-1,
         **kwargs,
-    ):
-
-        super().__init__("LightGBM", random_state, **kwargs)
-        self.num_leaves = num_leaves
-        self.n_estimators = n_estimators
-        self.learning_rate = learning_rate
-        self.max_depth = max_depth
-        self.subsample = subsample
-        self.colsample_bytree = colsample_bytree
-        self.reg_alpha = reg_alpha
-        self.reg_lambda = reg_lambda
-        self.min_child_samples = min_child_samples
-        self.class_weight = class_weight
-        self.n_jobs = n_jobs
-
-    def _create_model(self) -> Any:
-
-        import lightgbm as lgb
-
-        return lgb.LGBMClassifier(
-            num_leaves=self.num_leaves,
-            n_estimators=self.n_estimators,
-            learning_rate=self.learning_rate,
-            max_depth=self.max_depth,
-            subsample=self.subsample,
-            colsample_bytree=self.colsample_bytree,
-            reg_alpha=self.reg_alpha,
-            reg_lambda=self.reg_lambda,
-            min_child_samples=self.min_child_samples,
-            class_weight=self.class_weight,
-            random_state=self.random_state,
-            n_jobs=self.n_jobs,
-            verbose=-1,
-            **self.kwargs,
-        )
+    )
 
 
-# Factory by short name
-def get_classifier(name: str, **kwargs) -> BaseMLModel:
+_REGISTRY: Dict[str, Callable[..., Any]] = {
+    "lr": _logistic_regression,
+    "logistic": _logistic_regression,
+    "rf": _random_forest,
+    "random_forest": _random_forest,
+    "xgb": _xgboost,
+    "xgboost": _xgboost,
+    "lgbm": _lightgbm,
+    "lightgbm": _lightgbm,
+}
 
-    classifiers = {
-        "lr": LogisticRegressionClassifier,
-        "logistic": LogisticRegressionClassifier,
-        "rf": RandomForestClassifier,
-        "random_forest": RandomForestClassifier,
-        "xgb": XGBoostClassifier,
-        "xgboost": XGBoostClassifier,
-        "lgbm": LightGBMClassifier,
-        "lightgbm": LightGBMClassifier,
-    }
 
-    name_lower = name.lower()
-    if name_lower not in classifiers:
-        raise ValueError(f"Unknown classifier: {name}. Available: {list(classifiers.keys())}")
-
-    return classifiers[name_lower](**kwargs)
+def get_classifier(name: str, **kwargs: Any) -> Any:
+    """Build a configured estimator by short name (e.g. ``"rf"``, ``"xgb"``)."""
+    key = name.lower()
+    if key not in _REGISTRY:
+        raise ValueError(f"Unknown classifier: {name}. Available: {sorted(_REGISTRY)}")
+    return _REGISTRY[key](**kwargs)

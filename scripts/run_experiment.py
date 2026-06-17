@@ -49,7 +49,7 @@ CLF_NAMES = {
 
 
 def build_pipeline(clf_key: str) -> Pipeline:
-    estimator = get_classifier(clf_key)._create_model()
+    estimator = get_classifier(clf_key)
     return Pipeline(
         [
             ("impute", SimpleImputer(strategy="median", keep_empty_features=True)),
@@ -312,7 +312,8 @@ def run():
         from src.synthetic import features as synth_features
 
         print("Building synthetic dataset (demo only)...")
-        features_df, x_raw, _ = synth_features(n_subjects=8, block_sec=150, cache=True)
+        # Never cache: synthetic features must not overwrite a real WESAD cache.
+        features_df, x_raw, _ = synth_features(n_subjects=8, block_sec=150, cache=False)
     else:
         cached = None if (args.rebuild or args.subjects) else load_cached()
         if cached is None:
