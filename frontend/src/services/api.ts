@@ -1,6 +1,14 @@
 // Client-side CSV parsing for the prediction panel. The dashboard runs the
 // model in-browser (see services/onnx.ts), so no backend calls are needed.
 
+// parseFloat("1.2x") returns 1.2 (silent truncation), so validate the whole token
+// is numeric; anything else becomes NaN and is imputed downstream like a missing value.
+const NUMERIC = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/;
+const toNumber = (s: string): number => {
+  const t = s.trim();
+  return NUMERIC.test(t) ? parseFloat(t) : NaN;
+};
+
 export const parseCSV = async (file: File): Promise<Record<string, number>[]> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -17,7 +25,7 @@ export const parseCSV = async (file: File): Promise<Record<string, number>[]> =>
           const values = lines[i].split(',');
           const row: Record<string, number> = {};
           headers.forEach((header, index) => {
-            row[header] = parseFloat((values[index] ?? '').trim());
+            row[header] = toNumber(values[index] ?? '');
           });
           data.push(row);
         }

@@ -49,7 +49,10 @@ export async function predictLocal(features: Record<string, number>): Promise<Pr
   const output = await sess.run({ input });
 
   // The probabilities output is the 2-D tensor
-  const probaKey = Object.keys(output).find((k) => output[k].dims.length === 2)!;
+  const probaKey = Object.keys(output).find((k) => output[k].dims.length === 2);
+  if (!probaKey) {
+    throw new Error('ONNX output has no 2-D probability tensor; the model export may be malformed.');
+  }
   const proba = Array.from(output[probaKey].data as Float32Array);
 
   let best = 0;
