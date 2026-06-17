@@ -1,5 +1,10 @@
 # CalmSense
 
+[![CI](https://github.com/urme-b/CalmSense/actions/workflows/ci.yml/badge.svg)](https://github.com/urme-b/CalmSense/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue.svg)](pyproject.toml)
+[![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-261230.svg)](https://github.com/astral-sh/ruff)
+
 Detecting stress from wearable sensors, and measuring how much of the field's reported accuracy —
 and confidence — actually holds up on people the model has never seen.
 
@@ -33,7 +38,10 @@ Binary stress detection on held-out subjects (15 participants, 58 physiological 
 ![Model comparison](outputs/figures/binary_model_comparison.png)
 
 The four feature-based models land within noise of one another. The real contribution is that the
-number is honest: it was measured on people the model never trained on.
+number is honest: it was measured on people the model never trained on. These headline numbers use
+fixed, sensible hyperparameters (not per-fold tuned); `scripts/tuning.py` runs a separate leak-free
+nested-CV sweep (inner grouped search, outer LOSO) as a robustness check — its output regenerates on
+WESAD and is not committed.
 
 ## Key findings
 
@@ -48,14 +56,19 @@ number is honest: it was measured on people the model never trained on.
 ### Accuracy isn't the whole story: calibration
 
 An alerting system acts on the probability, not the label. The same within-subject evaluation that
-inflates accuracy also makes the model look better calibrated than it is on a new person, and that
-miscalibration costs real net benefit at deployment thresholds. CalmSense measures this (ECE, MCE,
-Brier, reliability diagrams, decision-curve analysis), tests the gap for significance (paired Wilcoxon
-on per-subject Brier), and applies a leakage-free recalibration that recovers most of the gap — fit
-only on held-out training subjects, never on the test subject. A **few-shot personalization** step then
-closes the rest: a short labeled enrollment from the target subject beats global recalibration with no
-retraining. All models are tuned by nested CV (inner grouped search, outer LOSO), so the comparison is
-fair. See [paper §4.7–4.8](PAPER.md). Regenerate with `make reproduce`, or try it with no data via `make demo`.
+inflates accuracy also makes the model look better calibrated than it is on a new person. CalmSense
+implements a full subject-independent calibration analysis — ECE, MCE, Brier, reliability diagrams,
+and decision-curve net benefit — tests the optimism gap for significance (paired Wilcoxon on
+per-subject Brier), and applies a **leakage-free recalibration**: an isotonic map fit only on
+out-of-fold *training* subjects, never the test subject. A **few-shot personalization** variant fits a
+per-subject calibrator from a short labeled enrollment, drawn only from non-overlapping windows the
+evaluation never sees.
+
+> **Status:** these calibration and personalization numbers are computed on WESAD, which is not
+> redistributed, so they are **not committed** to the repo — the [paper](PAPER.md) §4.7–4.8 tables are
+> placeholders until you run them. Generate them with `make reproduce` (needs the WESAD download);
+> `make demo` exercises the identical pipeline end-to-end on synthetic data (where, by design, stress
+> is near-separable and the gap is not meaningful — see `data/raw/README.md`).
 
 ## What the model relies on
 
@@ -95,13 +108,15 @@ expected under acute stress.
 
 ```bash
 pip install -e .
-make demo         # full calibration pipeline on synthetic data — no download
-make data         # PhysioNet Non-EEG (WESAD: see data/raw/README.md)
-make reproduce    # regenerate every number, figure, model, and the dashboard
+make demo         # full pipeline (features → LOSO → calibration → personalization) on synthetic data
+make data         # PhysioNet Non-EEG for the cross-dataset transfer (downloads on run)
+make reproduce    # regenerate every WESAD number, figure, and model — requires the WESAD download
 ```
 
-`make demo` and the [Colab notebook](notebooks/CalmSense.ipynb) run the entire pipeline on a built-in
-synthetic generator, so nothing is gated on the 2 GB WESAD download. Everything is seeded.
+From a clean clone, **`make demo` is what runs offline** — it exercises the entire pipeline on a
+seeded synthetic generator, like the [Colab notebook](notebooks/CalmSense.ipynb). The headline WESAD
+results in [`results/`](results/) are a **committed snapshot**; regenerating them needs the ~2 GB WESAD
+dataset (see [data/raw/README.md](data/raw/README.md)), which is not redistributed. Everything is seeded.
 
 ## Limitations
 - 15 subjects and lab-induced stress; every subject-level result is preliminary and underpowered, with
