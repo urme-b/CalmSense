@@ -49,11 +49,12 @@ const About: React.FC = () => {
           About the Project
         </h2>
         <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-          CalmSense is a comprehensive stress detection system that analyzes physiological signals
-          to identify stress states in real-time. Using the WESAD dataset, we developed a complete
-          machine learning pipeline that includes signal preprocessing, feature extraction,
-          model training with cross-validation, and deployment via a FastAPI backend with
-          React dashboard.
+          CalmSense is a stress-detection benchmark that measures how much of the field's reported
+          accuracy survives honest, subject-independent evaluation. Using the WESAD dataset, it runs a
+          complete pipeline — signal preprocessing, feature extraction, and a leakage-free
+          Leave-One-Subject-Out comparison of classical models and a 1D-CNN — and exports the trained
+          model to run entirely in the browser via ONNX, with an optional FastAPI service for
+          server-side prediction.
         </p>
         <p className="mt-4 text-gray-600 dark:text-gray-400 leading-relaxed">
           Every result uses <strong>Leave-One-Subject-Out</strong> cross-validation, so models are always tested
@@ -126,28 +127,22 @@ const About: React.FC = () => {
         </h2>
         <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 font-mono text-sm overflow-x-auto">
           <pre className="text-gray-700 dark:text-gray-300">
-{`┌─────────────────────────────────────────────────────────────┐
-│                    CalmSense Architecture                    │
-├─────────────────────────────────────────────────────────────┤
-│                                                              │
-│  ┌──────────┐    ┌──────────┐    ┌──────────┐              │
-│  │  WESAD   │───▶│  Signal  │───▶│ Feature  │              │
-│  │ Dataset  │    │Processing│    │Extraction│              │
-│  └──────────┘    └──────────┘    └──────────┘              │
-│                                       │                      │
-│                                       ▼                      │
-│  ┌──────────┐    ┌──────────┐    ┌──────────┐              │
-│  │  React   │◀───│ FastAPI  │◀───│  ML/DL   │              │
-│  │Dashboard │    │ Backend  │    │  Models  │              │
-│  └──────────┘    └──────────┘    └──────────┘              │
-│       │               │                                      │
-│       ▼               ▼                                      │
-│  ┌──────────┐    ┌──────────┐    ┌──────────┐              │
-│  │Prediction│    │WebSocket │    │  SHAP/   │              │
-│  │   UI     │    │Streaming │    │  LIME    │              │
-│  └──────────┘    └──────────┘    └──────────┘              │
-│                                                              │
-└─────────────────────────────────────────────────────────────┘`}
+{`CalmSense pipeline
+
+  WESAD signals
+      │   per-channel filtering · R-peak detection · EDA decomposition
+      ▼
+  Feature extraction  —  58 HRV / EDA / TEMP / RESP / motion features
+      │
+      ▼
+  Leakage-free LOSO benchmark
+      │   Logistic Regression · Random Forest · XGBoost · LightGBM · 1D-CNN
+      ▼
+  SHAP interpretation  +  calibration & decision-curve analysis
+      │
+      ▼
+  ONNX export  ──▶  React dashboard (runs in the browser, no backend)
+                    FastAPI service (optional, for server-side prediction)`}
           </pre>
         </div>
       </div>
