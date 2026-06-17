@@ -10,7 +10,7 @@ scikit-learn==1.6.1  # pinned: the saved model pickle is version-coupled
 
 # Biosignal processing
 neurokit2==0.2.7
-wfdb>=4.1,<5.0  # read the PhysioNet Non-EEG dataset
+wfdb>=4.1,<5.0  # reads the PhysioNet Non-EEG dataset only (WESAD ships as pickle, loaded separately)
 
 # Models
 xgboost>=2.0,<3.0
