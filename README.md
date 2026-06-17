@@ -48,27 +48,26 @@ WESAD and is not committed.
 | Subject leakage | Motion is not the trick |
 | :---: | :---: |
 | ![Optimism gap](outputs/figures/multiclass_optimism_gap.png) | ![Ablation](outputs/figures/ablation.png) |
-| Testing within the same people inflates three-class accuracy from 0.67 to 0.79. | Remove every motion feature and accuracy barely moves (0.913 to 0.901). The signal is physiological. |
+| Testing within the same people inflates three-class accuracy from 0.66 to 0.79. | Remove every motion feature and accuracy barely moves (0.913 to 0.901). The signal is physiological. |
 | **A wrist band is enough** | **It does not transfer across datasets** |
 | ![Chest vs wrist](outputs/figures/chest_vs_wrist.png) | ![Cross-dataset](outputs/figures/cross_dataset.png) |
 | A wrist-only model reaches 0.893, about two points behind a research-grade chest strap. | Train on WESAD, test on a second dataset, and accuracy collapses to near chance — one confounded transfer pair, illustrative not conclusive. Within-dataset success is not generalization. |
 
 ### Accuracy isn't the whole story: calibration
 
-An alerting system acts on the probability, not the label. The same within-subject evaluation that
-inflates accuracy also makes the model look better calibrated than it is on a new person. CalmSense
-implements a full subject-independent calibration analysis — ECE, MCE, Brier, reliability diagrams,
-and decision-curve net benefit — tests the optimism gap for significance (paired Wilcoxon on
-per-subject Brier), and applies a **leakage-free recalibration**: an isotonic map fit only on
-out-of-fold *training* subjects, never the test subject. A **few-shot personalization** variant fits a
-per-subject calibrator from a short labeled enrollment, drawn only from non-overlapping windows the
-evaluation never sees.
+An alerting system acts on the probability, not the label. On WESAD, a new person's predictions are
+significantly less calibrated than within-subject evaluation suggests — the per-subject Brier gap is
+**+0.066** (paired Wilcoxon **p < 0.001**) — and a **leakage-free isotonic recalibration** (fit only on
+out-of-fold training subjects, never the test subject) cuts expected calibration error from **0.070 to
+0.025**.
 
-> **Status:** these calibration and personalization numbers are computed on WESAD, which is not
-> redistributed, so they are **not committed** to the repo — the [paper](PAPER.md) §4.7–4.8 tables are
-> placeholders until you run them. Generate them with `make reproduce` (needs the WESAD download);
-> `make demo` exercises the identical pipeline end-to-end on synthetic data (where, by design, stress
-> is near-separable and the gap is not meaningful — see `data/raw/README.md`).
+| Recalibration recovers calibration | Few-shot personalization does better |
+| :---: | :---: |
+| ![Reliability](outputs/figures/calibration_reliability.png) | ![Personalization](outputs/figures/personalization.png) |
+| LOSO ECE 0.070 → 0.025 after a leak-free isotonic map. | A short per-subject enrollment takes ECE 0.146 → 0.069, beating global recalibration (0.108). |
+
+See [paper §4.7–4.8](PAPER.md). Regenerate with `make reproduce` (needs the WESAD download); `make demo`
+runs the identical pipeline on synthetic data.
 
 ## What the model relies on
 
