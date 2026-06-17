@@ -1,7 +1,7 @@
 cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
 type: software
-title: "CalmSense: Multimodal Physiological Stress Detection"
+title: "CalmSense: Subject-Independent Stress Detection and Calibration on WESAD"
 version: 0.1.0
 date-released: 2026-06-18
 url: "https://github.com/urme-b/CalmSense"
@@ -15,25 +15,32 @@ license: MIT
 authors:
   - family-names: "Bose"
     given-names: "Urme"
+    # orcid: "https://orcid.org/0000-0000-0000-0000"  # add the author's ORCID
 keywords:
   - stress-detection
+  - wearables
   - physiological-signals
-  - machine-learning
-  - deep-learning
-  - explainable-ai
-  - model-calibration
   - heart-rate-variability
   - electrodermal-activity
+  - leave-one-subject-out
+  - model-calibration
+  - reproducible-research
   - wesad
 abstract: >-
-  CalmSense is a multimodal physiological stress detection system
-  that classifies baseline, stress, and amusement states from
-  wearable sensor data. It implements end-to-end signal processing,
-  58-biomarker extraction, and a leakage-free Leave-One-Subject-Out
-  benchmark of classical models and a 1D-CNN, with SHAP-based
-  biomarker interpretation and a calibration and decision-curve
-  analysis of how reliable the predicted probabilities are under
-  subject-independent evaluation.
+  CalmSense measures how much of the accuracy reported on the WESAD wearable
+  stress benchmark survives honest, subject-independent (Leave-One-Subject-Out)
+  evaluation. It implements end-to-end signal processing, 58-feature extraction,
+  a leakage-free LOSO benchmark of classical models and a 1D-CNN, SHAP-based
+  interpretation, and a calibration, decision-curve, and few-shot personalization
+  analysis of how reliable the predicted probabilities are on unseen subjects.
+preferred-citation:
+  type: article
+  title: "Four Layers of Optimism in Wearable Stress Detection on WESAD: Subject Leakage, Motion, Dataset Shift, and Calibration"
+  authors:
+    - family-names: "Bose"
+      given-names: "Urme"
+  year: 2026
+  url: "https://github.com/urme-b/CalmSense/blob/main/PAPER.md"
 references:
   - type: article
     authors:
