@@ -1,29 +1,10 @@
 # =============================================================================
-# CalmSense Dockerfile - Multi-stage
+# CalmSense Dockerfile - FastAPI prediction service
+# =============================================================================
+# The dashboard is a static, backend-less SPA deployed to GitHub Pages
+# (.github/workflows/deploy.yml); this image serves only the prediction API.
 # =============================================================================
 
-# -----------------------------------------------------------------------------
-# Stage 1: Build Frontend
-# -----------------------------------------------------------------------------
-FROM node:18-alpine AS frontend-build
-
-WORKDIR /app/frontend
-
-# Copy package files
-COPY frontend/package*.json ./
-
-# Install dependencies
-RUN npm ci --silent
-
-# Copy frontend source
-COPY frontend/ ./
-
-# Build production bundle
-RUN npm run build
-
-# -----------------------------------------------------------------------------
-# Stage 2: Python Backend
-# -----------------------------------------------------------------------------
 FROM python:3.11-slim-bookworm AS production
 
 # Set environment variables
@@ -50,9 +31,6 @@ RUN pip install --no-cache-dir --upgrade pip && \
 COPY src/ ./src/
 COPY api/ ./api/
 COPY outputs/ ./outputs/
-
-# Copy frontend build
-COPY --from=frontend-build /app/frontend/build ./static
 
 # Create non-root user
 RUN adduser --disabled-password --gecos '' appuser && \
