@@ -2,7 +2,7 @@
 
 ## Reporting a vulnerability
 
-Please report security issues privately to **urme.emma@gmail.com** rather than opening a public issue.
+Please report security issues privately to **urme.bose1@gmail.com** rather than opening a public issue.
 Include steps to reproduce and the affected version/commit. You can expect an acknowledgement within a
 few days.
 

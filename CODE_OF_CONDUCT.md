@@ -21,7 +21,7 @@ attacks, and publishing others' private information without permission.
 ## Enforcement
 
 Instances of abusive or otherwise unacceptable behavior may be reported to the maintainer at
-**urme.emma@gmail.com**. All complaints will be reviewed and investigated promptly and fairly.
+**urme.bose1@gmail.com**. All complaints will be reviewed and investigated promptly and fairly.
 
 This Code of Conduct is adapted from the [Contributor Covenant](https://www.contributor-covenant.org),
 version 2.1.
