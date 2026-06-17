@@ -4,6 +4,14 @@ NeuroKit2 simulators generate physiologically plausible chest and wrist signals.
 Stress blocks carry higher heart rate, more skin-conductance responses, faster
 breathing, and more motion, so the models learn a real (if easy) signal. This is
 for smoke tests and demos only — never for reported results.
+
+Statistical fidelity (important): the per-condition means above are well separated
+and each subject is drawn i.i.d. from the same distribution, so the synthetic task
+is close to linearly separable and has almost no between-subject shift. Two
+consequences the demo must NOT be read as evidence for: accuracy is near-ceiling,
+and the model looks *better* calibrated than it ever would on real subjects (ECE
+~0, optimism gap ~0). The synthetic generator exercises the code path; the calibration
+and optimism-gap findings only hold on real WESAD (see `scripts/calibration.py`).
 """
 
 import pickle
