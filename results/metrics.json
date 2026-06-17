@@ -46,8 +46,9 @@
     "best_model": "Random Forest",
     "loso_accuracy": 0.9132857382783859,
     "loso_pooled_accuracy": 0.9125431530494822,
+    "loso_matched_accuracy": 0.9066059225512528,
     "within_subject_accuracy": 0.9635535307517085,
-    "optimism_gap_pts": 5.1,
+    "optimism_gap_pts": 5.7,
     "per_subject": [
       {
         "subject": "S10",
@@ -189,8 +190,9 @@
     "best_model": "Logistic Regression",
     "loso_accuracy": 0.6703704077878144,
     "loso_pooled_accuracy": 0.6705426356589147,
+    "loso_matched_accuracy": 0.6583011583011583,
     "within_subject_accuracy": 0.7915057915057915,
-    "optimism_gap_pts": 12.1,
+    "optimism_gap_pts": 13.3,
     "per_subject": [
       {
         "subject": "S10",
