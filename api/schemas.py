@@ -6,9 +6,13 @@ from pydantic import BaseModel, Field
 
 
 class PredictionRequest(BaseModel):
+    # Bounded to reject malformed payloads before inference. Unknown names are
+    # ignored and missing ones imputed by the pipeline, so the cap only guards
+    # against oversized requests, not feature identity (there are 58 real ones).
     features: Dict[str, float] = Field(
         ...,
         min_length=1,
+        max_length=512,
         description="Feature name -> value (e.g. HRV_RMSSD, EDA_SCR_count)",
     )
 
