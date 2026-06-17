@@ -133,6 +133,18 @@ Methodology, statistics, and references are in the [paper](PAPER.md).
 - [ ] Real-world, non-lab stress data beyond the 15-subject benchmark
 - [ ] Real-time streaming inference from a live wearable
 
+## Ethics & data use
+
+Physiological signals are sensitive personal data, and CalmSense is a research benchmark, not a product:
+it should support people, not surveil them. We endorse **data minimization** (collect and keep only what
+an analysis needs) and a **no-surveillance** stance — stress inference must not be used to monitor or
+penalize individuals without informed consent. Honest, subject-independent evaluation is itself part of
+this: a model validated only within-subject overstates its reliability for the people it is meant to help.
+
+The **code is MIT-licensed** ([LICENSE](LICENSE)), but the **datasets carry their own terms** — WESAD is
+research-only under its provider's agreement and PhysioNet Non-EEG under the PhysioNet license; neither is
+redistributed here (see [data/raw/README.md](data/raw/README.md)).
+
 ## Citation
 
 If you use CalmSense, please cite it via [CITATION.cff](CITATION.cff). A versioned DOI is minted by
