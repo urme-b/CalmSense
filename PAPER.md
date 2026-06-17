@@ -13,13 +13,15 @@ reported 0.95–0.99. **Motion confound:** an ablation shows accelerometer featu
 yet removing motion entirely still gives 0.90, so the signal is autonomic, not just movement.
 **Dataset shift:** a leakage-free model trained on WESAD falls to 0.50–0.57 balanced accuracy on a
 second dataset (near chance). **Calibration:** accuracy is not the whole story for a model meant to
-trigger alerts — we show the same within-subject evaluation that inflates accuracy also makes
-probabilities look better calibrated than they are subject-independently, that this miscalibration
-erodes net benefit at realistic alert thresholds, and that a leakage-free recalibration recovers
-most of it. We then show a cheap fix: **few-shot personalization** — a short labeled enrollment from
-the target subject closes the calibration gap further, beating global recalibration without retraining.
+trigger alerts. We quantify whether the same within-subject evaluation that inflates accuracy also
+makes probabilities look better calibrated than they are subject-independently (ECE, MCE, Brier,
+decision-curve net benefit), test the gap for significance, and apply a leakage-free recalibration fit
+only on held-out training subjects. We also evaluate **few-shot personalization** — a per-subject
+calibrator from a short labeled enrollment — as a cheap alternative to global recalibration. The
+calibration and personalization tables (§4.7–4.8) are regenerated on WESAD via `scripts/calibration.py`
+and `scripts/personalize.py` and are not committed with the repository.
 A wrist-only model reaches 0.89, about two points behind the chest sensor, and the four feature-based
-models (tuned by nested CV) are statistically indistinguishable (Friedman p = 0.81). The contribution
+models are statistically indistinguishable (Friedman p = 0.81). The contribution
 is a reproducible account of what subject-independent stress detection actually delivers — in accuracy
 *and* in calibrated confidence — plus a simple personalization recipe to recover it. All results are on
 15 lab subjects and should be read as preliminary; we make no real-world or clinical claim.
@@ -55,8 +57,10 @@ Feature extraction never sees labels.
 
 Models are logistic regression, random forest, XGBoost, LightGBM, and a compact 1D-CNN on raw windows.
 All scoring is 15-fold LOSO; median imputation, standardization, and class balancing are fit inside
-each fold. Hyperparameters are selected by nested cross-validation — an inner grouped CV over training
-subjects tunes each model while the held-out subject stays untouched, so tuning cannot leak. We report
+each fold. The headline benchmark uses fixed, sensible hyperparameters (not per-fold tuned); a separate
+nested-CV analysis (`scripts/tuning.py`) selects hyperparameters with an inner grouped CV over training
+subjects while the held-out subject stays untouched — so tuning cannot leak — and is reported as a
+robustness check. We report
 accuracy and macro-F1 (mean over subjects), bootstrap 95% CIs, a Friedman omnibus test with
 Holm-corrected pairwise Wilcoxon tests, and a within-subject 5-fold baseline for the optimism gap. The
 gap is measured on a matched set of non-overlapping windows: LOSO is recomputed on the same windows the
@@ -144,31 +148,36 @@ physiologically sensible for acute stress, and the motivation for the §4.3 abla
 
 Accuracy says nothing about whether a predicted probability of 0.8 means roughly 80% of such windows
 are truly stress — yet that calibrated confidence is exactly what an alerting system acts on. We measure
-it on the pooled out-of-fold probabilities of the binary random forest. The pattern mirrors accuracy:
-the within-subject baseline understates the expected calibration error because the model has already
-seen each test subject's physiological baseline, so subject-independent deployment is less calibrated
-than within-subject evaluation suggests. A leakage-free recalibration — an isotonic map fit only on
-out-of-fold *training*-subject probabilities — recovers most of the gap without touching the held-out
-subject.
+it on the pooled out-of-fold probabilities of the binary random forest. The hypothesis mirrors the
+accuracy story: the within-subject baseline should understate the expected calibration error because
+the model has already seen each test subject's physiological baseline, so subject-independent
+deployment is expected to be less calibrated than within-subject evaluation suggests. We then apply a
+leakage-free recalibration — an isotonic map fit only on out-of-fold *training*-subject probabilities,
+never touching the held-out subject — and report how much of the gap it closes. The figures above
+populate when the pipeline is run on WESAD.
 
 The within-subject baseline uses the same non-overlapping 5-fold protocol as the accuracy optimism gap
 (§4.2), so it reflects subject mixing rather than near-duplicate-window leakage. We test the gap on
 per-subject Brier scores (paired Wilcoxon over the 15 subjects; bootstrap 95% CI on the mean gap), so
 the claim rests on a significance test, not a single pooled number.
 
-> Numbers below regenerate into `results/calibration.json`; run `python scripts/calibration.py` to
-> populate this table and the two figures.
+> **Placeholder:** the table and figures below are computed on WESAD and are **not committed** (WESAD
+> is not redistributed). Run `python scripts/calibration.py` on the downloaded dataset to regenerate
+> `results/calibration.json` and the two figures; `make demo` runs the same code on synthetic data
+> (where the gap is not meaningful by construction).
 
-| Evaluation                       | ECE | MCE | Brier |
-| -------------------------------- | :-: | :-: | :---: |
-| Within-subject 5-fold            |  —  |  —  |   —   |
-| LOSO (subject-independent)       |  —  |  —  |   —   |
-| LOSO + leak-free recalibration   |  —  |  —  |   —   |
+<!-- AUTOGEN:calibration START -->
+| Evaluation | ECE | MCE | Brier |
+| --- | :-: | :-: | :-: |
+| Within-subject 5-fold | — | — | — |
+| LOSO (subject-independent) | — | — | — |
+| LOSO + leak-free recalibration | — | — | — |
+<!-- AUTOGEN:calibration END -->
 
 ![Reliability diagram](outputs/figures/calibration_reliability.png)
 
-A decision-curve analysis illustrates why calibration matters for any thresholded use: across alert
-thresholds, net benefit for the uncalibrated LOSO model trails the recalibrated one. This is a
+A decision-curve analysis illustrates why calibration matters for any thresholded use: we compare net
+benefit across alert thresholds for the uncalibrated versus recalibrated LOSO model. This is a
 methodological illustration on lab data, not a clinical claim — WESAD is acute induced stress in 15
 people, so the curve shows the *shape* of the cost of miscalibration, not a deployable operating point.
 
@@ -176,20 +185,23 @@ people, so the curve shows the *shape* of the cost of miscalibration, not a depl
 
 ### 4.8 Few-shot personalization
 
-Global recalibration cannot adapt to a person it never saw. With a fixed evaluation half per subject and
-a short labeled enrollment (5/10/20 windows) drawn only from the other half, a per-subject calibrator
-closes the remaining gap further — turning the calibration diagnosis into a cheap fix that needs no
-retraining of the base model. Calibration improves monotonically with enrollment size and overtakes
-global recalibration within a handful of windows.
+Global recalibration cannot adapt to a person it never saw. We test whether a per-subject calibrator
+can: each subject keeps a fixed evaluation half, with a short labeled enrollment (5/10/20 windows)
+drawn only from non-overlapping windows in the other half, so enrollment never overlaps the evaluation
+set. This turns the calibration diagnosis into a candidate cheap fix that needs no retraining of the
+base model; the table reports ECE and Brier versus enrollment size when run on WESAD.
 
-> Regenerate with `python scripts/personalize.py` (table and `personalization.png`).
+> **Placeholder:** computed on WESAD and **not committed**. Regenerate with
+> `python scripts/personalize.py` on the downloaded dataset (table and `personalization.png`).
 
-| Recalibration              | ECE | Brier |
-| -------------------------- | :-: | :---: |
-| None (LOSO)                |  —  |   —   |
-| Global (training subjects) |  —  |   —   |
-| Few-shot, 5 windows        |  —  |   —   |
-| Few-shot, 20 windows       |  —  |   —   |
+<!-- AUTOGEN:personalization START -->
+| Recalibration | ECE | Brier |
+| --- | :-: | :-: |
+| None (LOSO) | — | — |
+| Global (training subjects) | — | — |
+| Few-shot, 5 windows | — | — |
+| Few-shot, 20 windows | — | — |
+<!-- AUTOGEN:personalization END -->
 
 ## 5. Limitations
 
@@ -211,14 +223,15 @@ global recalibration within a handful of windows.
 
 ```bash
 pip install -e .
-make demo                 # full calibration pipeline on synthetic data, no download
-make data                 # PhysioNet Non-EEG (WESAD: see data/raw/README.md)
-make reproduce            # regenerates every number and figure into results/ and outputs/figures/
+make demo                 # full pipeline on synthetic data, no download (runs offline from a clone)
+make data                 # PhysioNet Non-EEG for cross-dataset transfer (WESAD: see data/raw/README.md)
+make reproduce            # regenerates every WESAD number and figure — requires the WESAD download
 ```
 
-All randomness is seeded. A synthetic generator (`src/synthetic.py`) runs the entire pipeline without
-the real data, so the code path is exercised in CI and in a one-click Colab notebook. WESAD and
-PhysioNet Non-EEG are public and downloaded separately.
+All randomness is seeded. The headline WESAD results in `results/` are a committed snapshot; a clean
+clone reproduces the full pipeline only on synthetic data via `make demo` (also the one-click Colab
+notebook and CI path), since WESAD is not redistributed. WESAD and PhysioNet Non-EEG are public and
+downloaded separately.
 
 ## Ethics
 
