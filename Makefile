@@ -34,6 +34,7 @@ reproduce:
 	python scripts/cross_dataset.py
 	python scripts/calibration.py
 	python scripts/personalize.py
+	python scripts/fill_paper_tables.py
 	python scripts/tuning.py
 	python scripts/stats.py
 	python scripts/export_onnx.py
