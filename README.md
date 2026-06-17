@@ -133,6 +133,14 @@ Methodology, statistics, and references are in the [paper](PAPER.md).
 - [ ] Real-world, non-lab stress data beyond the 15-subject benchmark
 - [ ] Real-time streaming inference from a live wearable
 
+## Citation
+
+If you use CalmSense, please cite it via [CITATION.cff](CITATION.cff). A versioned DOI is minted by
+Zenodo on each tagged GitHub release. Once you enable Zenodo for the repo and publish the `v0.1.0`
+release, paste the minted DOI into `CITATION.cff` and add the badge below to the top of this README:
+
+<!-- [![DOI](https://zenodo.org/badge/1152348155.svg)](https://zenodo.org/badge/latestdoi/1152348155) -->
+
 ## License
 
-MIT — [LICENSE](LICENSE). Citation: [CITATION.cff](CITATION.cff).
+MIT — [LICENSE](LICENSE).

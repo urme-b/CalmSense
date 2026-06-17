@@ -3,10 +3,15 @@ message: "If you use this software, please cite it as below."
 type: software
 title: "CalmSense: Multimodal Physiological Stress Detection"
 version: 0.1.0
-date-released: 2026-06-14
+date-released: 2026-06-18
 url: "https://github.com/urme-b/CalmSense"
 repository-code: "https://github.com/urme-b/CalmSense"
 license: MIT
+# After publishing the v0.1.0 GitHub release with Zenodo enabled, paste the minted DOI here:
+# identifiers:
+#   - type: doi
+#     value: 10.5281/zenodo.XXXXXXX
+#     description: "Concept DOI (all versions)"
 authors:
   - family-names: "Bose"
     given-names: "Urme"
