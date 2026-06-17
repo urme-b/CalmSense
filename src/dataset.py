@@ -20,6 +20,17 @@ CONDITION_LABELS = {1: "baseline", 2: "stress", 3: "amusement"}
 CNN_CHANNELS = ["ECG", "EDA", "Temp", "Resp", "ACC"]
 
 
+def window_label(labels: np.ndarray, purity: float) -> Optional[int]:
+    """Dominant condition of a window, or None if out-of-set or below `purity`."""
+    values, counts = np.unique(labels, return_counts=True)
+    dominant = values[counts.argmax()]
+    if dominant not in CONDITION_LABELS:
+        return None
+    if counts.max() / counts.sum() < purity:
+        return None
+    return int(dominant)
+
+
 class WindowedDataset(LoggerMixin):
     def __init__(
         self,
@@ -44,13 +55,7 @@ class WindowedDataset(LoggerMixin):
         self.features = FeatureExtractionPipeline(chest_fs=fs, wrist_eda_fs=fs, wrist_acc_fs=fs)
 
     def _window_label(self, labels: np.ndarray) -> Optional[int]:
-        values, counts = np.unique(labels, return_counts=True)
-        dominant = values[counts.argmax()]
-        if dominant not in CONDITION_LABELS:
-            return None
-        if counts.max() / counts.sum() < self.purity:
-            return None
-        return int(dominant)
+        return window_label(labels, self.purity)
 
     def _process_subject(self, subject_id: str) -> Tuple[List[Dict], List[np.ndarray], List[int]]:
         data = self.loader.load_subject(subject_id)

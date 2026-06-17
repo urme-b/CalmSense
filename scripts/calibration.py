@@ -23,6 +23,7 @@ from scripts.run_experiment import (
     _fit_params,
     build_pipeline,
     load_cached,
+    nonoverlap_mask,
     prepare_task,
 )
 from src import calibration as cal
@@ -43,15 +44,6 @@ def loso_proba(factory, X, y, groups):
         yt.append(y[test_idx])
         gg.append(groups[test_idx])
     return np.concatenate(yt), np.concatenate(pp), np.concatenate(gg)
-
-
-def nonoverlap_mask(groups):
-    """Keep every other window per subject so the gap isn't a sample-size artifact."""
-    keep = np.zeros(len(groups), dtype=bool)
-    for g in np.unique(groups):
-        idx = np.where(groups == g)[0]
-        keep[idx[::2]] = True
-    return keep
 
 
 def within_subject_proba(factory, X, y, groups):

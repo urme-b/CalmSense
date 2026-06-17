@@ -8,7 +8,7 @@ import pandas as pd
 
 from .config import FS, PROCESSED_DATA_DIR
 from .data.loader import WESADLoader
-from .dataset import CONDITION_LABELS
+from .dataset import CONDITION_LABELS, window_label
 from .features.feature_pipeline import FeatureExtractionPipeline
 from .logging_config import LoggerMixin
 from .preprocessing.ecg_processor import ECGProcessor
@@ -29,13 +29,7 @@ class WristDataset(LoggerMixin):
         )
 
     def _window_label(self, labels: np.ndarray) -> Optional[int]:
-        values, counts = np.unique(labels, return_counts=True)
-        dominant = values[counts.argmax()]
-        if dominant not in CONDITION_LABELS:
-            return None
-        if counts.max() / counts.sum() < self.purity:
-            return None
-        return int(dominant)
+        return window_label(labels, self.purity)
 
     def _bvp_peaks(self, bvp: np.ndarray) -> np.ndarray:
         import neurokit2 as nk
