@@ -74,3 +74,20 @@ jobs:
       - name: Audit installed dependencies
         run: pip-audit --desc
         continue-on-error: true  # advisory-only rollout; remove this line to make CVEs block the build
+
+  frontend:
+    name: Frontend build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm install --legacy-peer-deps  # switch to `npm ci` once package-lock.json is committed
+      - name: Build
+        working-directory: frontend
+        env:
+          CI: false  # CRA treats warnings as errors under CI; match the Pages deploy
+        run: npm run build
