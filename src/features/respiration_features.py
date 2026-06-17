@@ -68,17 +68,15 @@ class RespirationFeatureExtractor(LoggerMixin):
 
                 amplitudes = []
                 for peak_idx in breath_peaks:
-                    if peak_idx < len(resp):
+                    pi = int(peak_idx)
+                    if 0 <= pi < len(resp):
                         troughs_before = breath_troughs[breath_troughs < peak_idx]
                         troughs_after = breath_troughs[breath_troughs > peak_idx]
 
                         if len(troughs_before) > 0 and len(troughs_after) > 0:
-                            trough_before = troughs_before[-1]
-                            trough_after = troughs_after[0]
-                            if trough_before < len(resp) and trough_after < len(resp):
-                                amp = resp[peak_idx] - 0.5 * (
-                                    resp[trough_before] + resp[trough_after]
-                                )
+                            tb, ta = int(troughs_before[-1]), int(troughs_after[0])
+                            if 0 <= tb < len(resp) and 0 <= ta < len(resp):
+                                amp = resp[pi] - 0.5 * (resp[tb] + resp[ta])
                                 amplitudes.append(amp)
 
                 if len(amplitudes) > 0:
