@@ -28,6 +28,7 @@ ALLOWED_ORIGINS = [
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
+    allow_credentials=False,  # no cookies/auth; never pair credentials with a wildcard origin
     allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
