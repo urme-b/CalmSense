@@ -94,7 +94,8 @@ def _defaults():
     path = RESULTS_DIR / "metrics.json"
     if not path.exists():
         return {}
-    models = json.load(open(path)).get("binary", {}).get("models", [])
+    with open(path) as f:
+        models = json.load(f).get("binary", {}).get("models", [])
     return {m["model"]: m["accuracy_mean"] for m in models}
 
 
@@ -135,7 +136,8 @@ def run(synthetic=False, inner_splits=3):
     tuned = compute(X, y, groups, inner_splits)
     defaults = _defaults()
 
-    json.dump(tuned, open(RESULTS_DIR / "tuning.json", "w"), indent=2)
+    with open(RESULTS_DIR / "tuning.json", "w") as f:
+        json.dump(tuned, f, indent=2)
     if defaults:
         _plot(tuned, defaults, FIGURES_DIR / "tuning.png")
 

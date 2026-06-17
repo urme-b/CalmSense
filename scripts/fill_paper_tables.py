@@ -27,7 +27,8 @@ def _replace(text: str, name: str, body: str) -> str:
 
 
 def _calibration_table() -> str:
-    d = json.load(open(RESULTS / "calibration.json"))
+    with open(RESULTS / "calibration.json") as fh:
+        d = json.load(fh)
     head = "| Evaluation | ECE | MCE | Brier |\n| --- | :-: | :-: | :-: |"
     rows = [
         ("Within-subject 5-fold", "within_subject"),
@@ -39,14 +40,13 @@ def _calibration_table() -> str:
 
 
 def _personalization_table() -> str:
-    d = json.load(open(RESULTS / "personalization.json"))
+    with open(RESULTS / "personalization.json") as fh:
+        d = json.load(fh)
     head = "| Recalibration | ECE | Brier |\n| --- | :-: | :-: |"
-    rows = [
-        ("None (LOSO)", d["uncalibrated"]),
-        ("Global (training subjects)", d["global"]),
-        ("Few-shot, 5 windows", d["fewshot"]["5"]),
-        ("Few-shot, 20 windows", d["fewshot"]["20"]),
-    ]
+    rows = [("None (LOSO)", d["uncalibrated"]), ("Global (training subjects)", d["global"])]
+    # k values are whatever personalize.py used (K_VALUES), not hard-coded
+    for k in sorted(d["fewshot"], key=int):
+        rows.append((f"Few-shot, {k} windows", d["fewshot"][k]))
     lines = [f"| {label} | {_f(s['ece'])} | {_f(s['brier'])} |" for label, s in rows]
     return "\n".join([head] + lines)
 

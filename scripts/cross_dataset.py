@@ -77,7 +77,8 @@ def run():
         "wesad_to_noneeg": transfer(wesad, noneeg, feature_cols),
         "noneeg_to_wesad": transfer(noneeg, wesad, feature_cols),
     }
-    json.dump(out, open(RESULTS_DIR / "cross_dataset.json", "w"), indent=2)
+    with open(RESULTS_DIR / "cross_dataset.json", "w") as f:
+        json.dump(out, f, indent=2)
 
     print("\n              within-LOSO   cross-dataset")
     print(

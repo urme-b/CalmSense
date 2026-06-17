@@ -43,7 +43,8 @@ def run():
         "scale": scaler.scale_.tolist(),
         "classes": classes,
     }
-    json.dump(meta, open(FRONTEND / "src" / "model_meta.json", "w"), indent=2)
+    with open(FRONTEND / "src" / "model_meta.json", "w") as f:
+        json.dump(meta, f, indent=2)
 
     # Verify ONNX matches the sklearn pipeline
     rng = np.random.RandomState(0)

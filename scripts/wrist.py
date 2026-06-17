@@ -60,7 +60,8 @@ def run():
         )
 
     best = max(rows, key=lambda r: r["accuracy_mean"])
-    chest = json.load(open(RESULTS_DIR / "metrics.json"))["binary"]
+    with open(RESULTS_DIR / "metrics.json") as f:
+        chest = json.load(f)["binary"]
     chest_best = max(chest["models"], key=lambda r: r["accuracy_mean"])
     # Same-model (RF) comparison is the honest headline
     chest_rf = next(m["accuracy_mean"] for m in chest["models"] if m["model"] == "Random Forest")
@@ -77,7 +78,8 @@ def run():
         },
         "best_per_arm_drop_pts": (chest_best["accuracy_mean"] - best["accuracy_mean"]) * 100,
     }
-    json.dump(out, open(RESULTS_DIR / "wrist.json", "w"), indent=2)
+    with open(RESULTS_DIR / "wrist.json", "w") as f:
+        json.dump(out, f, indent=2)
 
     plt.figure(figsize=(4.5, 4))
     bars = plt.bar(

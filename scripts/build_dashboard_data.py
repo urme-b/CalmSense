@@ -29,7 +29,10 @@ TASK_KEYS = [
 
 def _load_json(name):
     path = RESULTS_DIR / name
-    return json.load(open(path)) if path.exists() else None
+    if not path.exists():
+        return None
+    with open(path) as f:
+        return json.load(f)
 
 
 def _load_csv(name):
@@ -67,7 +70,8 @@ def run():
 
     if not FRONTEND.parent.exists():
         raise SystemExit(f"{FRONTEND.parent} missing")
-    json.dump(out, open(FRONTEND, "w"), indent=2)
+    with open(FRONTEND, "w") as f:
+        json.dump(out, f, indent=2)
     print(f"Wrote {FRONTEND} with sections: {sorted(out)}")
 
 

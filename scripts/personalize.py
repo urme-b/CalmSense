@@ -155,7 +155,8 @@ def run(synthetic=False, model="rf"):
     X, y, groups, _, _ = prepare_task(features_df, x_raw, [1, 2])
     out = compute(X, y, groups, model=model)
 
-    json.dump(out, open(RESULTS_DIR / "personalization.json", "w"), indent=2)
+    with open(RESULTS_DIR / "personalization.json", "w") as f:
+        json.dump(out, f, indent=2)
     _plot(out, FIGURES_DIR / "personalization.png")
 
     print(f"\n{'condition':18s} {'ECE':>7s} {'Brier':>7s}")
