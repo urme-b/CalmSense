@@ -8,18 +8,16 @@ Wearable stress-detection studies routinely report 95–99% accuracy on WESAD, b
 from evaluation that leaks information about the test set. This work measures how much performance
 survives honest evaluation, peeling back four layers of optimism. **Subject leakage:** moving from
 within-subject to Leave-One-Subject-Out (LOSO) cross-validation drops three-class accuracy from 0.79
-to 0.67 and binary from 0.96 to 0.91; allowing overlapping windows inflates it further toward the
+to 0.66 and binary from 0.96 to 0.91; allowing overlapping windows inflates it further toward the
 reported 0.95–0.99. **Motion confound:** an ablation shows accelerometer features alone reach 0.88,
 yet removing motion entirely still gives 0.90, so the signal is autonomic, not just movement.
 **Dataset shift:** a leakage-free model trained on WESAD falls to 0.50–0.57 balanced accuracy on a
 second dataset (near chance). **Calibration:** accuracy is not the whole story for a model meant to
-trigger alerts. We quantify whether the same within-subject evaluation that inflates accuracy also
-makes probabilities look better calibrated than they are subject-independently (ECE, MCE, Brier,
-decision-curve net benefit), test the gap for significance, and apply a leakage-free recalibration fit
-only on held-out training subjects. We also evaluate **few-shot personalization** — a per-subject
-calibrator from a short labeled enrollment — as a cheap alternative to global recalibration. The
-calibration and personalization tables (§4.7–4.8) are regenerated on WESAD via `scripts/calibration.py`
-and `scripts/personalize.py` and are not committed with the repository.
+trigger alerts. Per subject, LOSO probabilities are significantly less calibrated than under
+within-subject evaluation (Brier gap +0.066, paired Wilcoxon p < 0.001), and a leakage-free
+recalibration cuts expected calibration error from 0.070 to 0.025. A **few-shot personalization** step —
+a per-subject calibrator from a short labeled enrollment — improves further (ECE 0.146 → 0.069 at 20
+windows), beating global recalibration without retraining.
 A wrist-only model reaches 0.89, about two points behind the chest sensor, and the four feature-based
 models are statistically indistinguishable (Friedman p = 0.81). The contribution
 is a reproducible account of what subject-independent stress detection actually delivers — in accuracy
@@ -99,21 +97,52 @@ alert-no-one policies.
 | XGBoost             | 0.903      | 0.873     | 0.633       | 0.552      |
 | LightGBM            | 0.894      | 0.860     | 0.658       | 0.568      |
 | 1D-CNN              | 0.718      | 0.648     | 0.626       | 0.543      |
+| _Majority class_    | _0.647_    | —         | _0.545_     | —          |
+| _Chance_            | _0.500_    | —         | _0.333_     | —          |
 
-Random Forest is nominally best on binary (0.913, 95% CI [0.860, 0.960]), but the four feature models
-are statistically indistinguishable (Friedman p = 0.81; no significant Holm-corrected pair), so we
-report the family rather than a winner. All beat the from-scratch 1D-CNN, which underperforms at this
-data scale. Three-class accuracy is far lower (0.63–0.67), matching the original WESAD LOSO results.
+Context: the binary task is imbalanced (562 baseline / 307 stress windows; 64.7% majority), and the
+three-class task is 562 / 307 / 163 (54.5% majority). So the 0.913 binary result is ~27 points above the
+majority-class baseline and the 0.67 three-class result ~13 points above it — both well clear of chance,
+but the three-class margin is modest. Random Forest is nominally best on binary (0.913, 95% CI
+[0.860, 0.960]), but the four feature models are statistically indistinguishable (Friedman p = 0.81; no
+significant Holm-corrected pair), so we report the family rather than a winner. All beat the from-scratch
+1D-CNN, which underperforms at this data scale. Three-class accuracy is far lower (0.63–0.67), matching
+the original WESAD LOSO results.
 
 ### 4.2 Subject-leakage optimism gap
 
 For the best model per task, replacing LOSO with within-subject 5-fold (non-overlapping windows,
-pooled identically, so only subject mixing changes) raises binary accuracy from 0.913 to 0.964
-(+5.1 pts) and three-class from 0.671 to 0.792 (+12.1 pts). Both bars use the same non-overlapping
+pooled identically, so only subject mixing changes) raises binary accuracy from 0.907 to 0.964
+(+5.7 pts) and three-class from 0.658 to 0.792 (+13.3 pts). Both bars use the same non-overlapping
 windows (every other window per subject), so the gap reflects subject mixing, not near-duplicate
 overlapping windows. This is conservative: in prior work, *additionally* splitting overlapping windows
 at random pushes the within-subject figure toward the reported 0.95–0.99 (Bhanushali et al., 2021;
 Oliver & Dakshit, 2025) — we cite that as the mechanism rather than reproducing the inflated setting.
+
+Per-subject LOSO accuracy varies widely — the headline mean hides subjects the model handles poorly
+(binary 0.71–1.00; three-class 0.43–0.96), which is why every subject-level statistic carries wide
+intervals (§5).
+
+| Subject | Binary acc | 3-class acc |
+| --- | :-: | :-: |
+| S2 | 0.84 | 0.59 |
+| S3 | 0.98 | 0.67 |
+| S4 | 1.00 | 0.84 |
+| S5 | 0.97 | 0.43 |
+| S6 | 0.96 | 0.87 |
+| S7 | 0.93 | 0.44 |
+| S8 | 1.00 | 0.72 |
+| S9 | 0.88 | 0.56 |
+| S10 | 0.77 | 0.51 |
+| S11 | 0.97 | 0.96 |
+| S13 | 0.71 | 0.73 |
+| S14 | 1.00 | 0.90 |
+| S15 | 0.75 | 0.61 |
+| S16 | 1.00 | 0.59 |
+| S17 | 0.95 | 0.64 |
+| **Mean** | **0.91** | **0.67** |
+
+![Per-subject binary](outputs/figures/binary_per_subject.png)
 
 ### 4.3 Motion-confound ablation
 
@@ -162,31 +191,22 @@ physiologically sensible for acute stress, and the motivation for the §4.3 abla
 ### 4.7 Calibration: a fourth layer of optimism
 
 Accuracy says nothing about whether a predicted probability of 0.8 means roughly 80% of such windows
-are truly stress — yet that calibrated confidence is exactly what an alerting system acts on. We measure
-it on the pooled out-of-fold probabilities of the binary random forest. The hypothesis mirrors the
-accuracy story: the within-subject baseline should understate the expected calibration error because
-the model has already seen each test subject's physiological baseline, so subject-independent
-deployment is expected to be less calibrated than within-subject evaluation suggests. We then apply a
-leakage-free recalibration — an isotonic map fit only on out-of-fold *training*-subject probabilities,
-never touching the held-out subject — and report how much of the gap it closes. The figures above
-populate when the pipeline is run on WESAD.
-
-The within-subject baseline uses the same non-overlapping 5-fold protocol as the accuracy optimism gap
-(§4.2), so it reflects subject mixing rather than near-duplicate-window leakage. We test the gap on
-per-subject Brier scores (paired Wilcoxon over the 15 subjects; bootstrap 95% CI on the mean gap), so
-the claim rests on a significance test, not a single pooled number.
-
-> **Placeholder:** the table and figures below are computed on WESAD and are **not committed** (WESAD
-> is not redistributed). Run `python scripts/calibration.py` on the downloaded dataset to regenerate
-> `results/calibration.json` and the two figures; `make demo` runs the same code on synthetic data
-> (where the gap is not meaningful by construction).
+are truly stress — yet that calibrated confidence is what an alerting system acts on. We measure it on
+the pooled out-of-fold probabilities of the binary random forest. The optimism is clearest in the
+**Brier score**: per subject, LOSO is significantly less calibrated than the within-subject 5-fold
+baseline (mean Brier gap **+0.066**, 95% CI [0.035, 0.106], paired Wilcoxon **p < 0.001**, on matched
+non-overlapping windows). Pooled ECE tells a softer story — within-subject 0.085 vs LOSO 0.070 — so the
+effect is a per-subject Brier phenomenon rather than a large pooled-ECE gap, which is why we rest the
+claim on the significance test, not a single pooled number. A leakage-free isotonic recalibration, fit
+only on out-of-fold *training*-subject probabilities and never touching the held-out subject, cuts LOSO
+ECE from **0.070 to 0.025** (sigmoid: 0.035, the robustness check).
 
 <!-- AUTOGEN:calibration START -->
 | Evaluation | ECE | MCE | Brier |
 | --- | :-: | :-: | :-: |
-| Within-subject 5-fold | — | — | — |
-| LOSO (subject-independent) | — | — | — |
-| LOSO + leak-free recalibration | — | — | — |
+| Within-subject 5-fold | 0.085 | 0.290 | 0.077 |
+| LOSO (subject-independent) | 0.070 | 0.160 | 0.136 |
+| LOSO + leak-free recalibration | 0.025 | 0.271 | 0.129 |
 <!-- AUTOGEN:calibration END -->
 
 ![Reliability diagram](outputs/figures/calibration_reliability.png)
@@ -203,19 +223,19 @@ people, so the curve shows the *shape* of the cost of miscalibration, not a depl
 Global recalibration cannot adapt to a person it never saw. We test whether a per-subject calibrator
 can: each subject keeps a fixed evaluation half, with a short labeled enrollment (5/10/20 windows)
 drawn only from non-overlapping windows in the other half, so enrollment never overlaps the evaluation
-set. This turns the calibration diagnosis into a candidate cheap fix that needs no retraining of the
-base model; the table reports ECE and Brier versus enrollment size when run on WESAD.
-
-> **Placeholder:** computed on WESAD and **not committed**. Regenerate with
-> `python scripts/personalize.py` on the downloaded dataset (table and `personalization.png`).
+set. It works: ECE falls from **0.146** (uncalibrated) to **0.108** with global recalibration and to
+**0.069** with a 20-window few-shot calibrator — improving monotonically with enrollment size and
+overtaking global recalibration within ~10 windows. This turns the calibration diagnosis into a cheap
+per-subject fix that needs no retraining of the base model.
 
 <!-- AUTOGEN:personalization START -->
 | Recalibration | ECE | Brier |
 | --- | :-: | :-: |
-| None (LOSO) | — | — |
-| Global (training subjects) | — | — |
-| Few-shot, 5 windows | — | — |
-| Few-shot, 20 windows | — | — |
+| None (LOSO) | 0.146 | 0.073 |
+| Global (training subjects) | 0.108 | 0.074 |
+| Few-shot, 5 windows | 0.097 | 0.061 |
+| Few-shot, 10 windows | 0.071 | 0.059 |
+| Few-shot, 20 windows | 0.069 | 0.058 |
 <!-- AUTOGEN:personalization END -->
 
 ## 5. Limitations
