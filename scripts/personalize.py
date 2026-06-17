@@ -1,6 +1,7 @@
 """Few-shot per-subject recalibration. A short labeled enrollment from the target
-subject should beat global recalibration at no extra modeling cost. Leak-free: each
-subject keeps a fixed eval half, enrollment is drawn only from the other half."""
+subject should beat global recalibration at no extra modeling cost. Leak-free: per
+subject we keep only non-overlapping windows, then hold out a fixed evaluation half
+and draw enrollment from the other half, so enrollment never overlaps an eval window."""
 
 import argparse
 import json
@@ -81,6 +82,11 @@ def compute(X, y, groups, model="rf", k_values=K_VALUES):
         base.fit(Xtr, ytr, **_fit_params(base, ytr))
         raw = _pos_proba(base, X[test_idx])
         y_s = y[test_idx]
+        # Windows overlap 50%, so adjacent ones share half their signal. Keep every
+        # other window for this subject so enrollment can never overlap an eval window.
+        nov = np.zeros(len(y_s), dtype=bool)
+        nov[::2] = True
+        raw, y_s = raw[nov], y_s[nov]
         if len(np.unique(y_s)) < 2:
             continue
 

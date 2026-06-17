@@ -2,7 +2,12 @@
 
 import numpy as np
 
-from scripts.run_experiment import build_pipeline, kfold_accuracy, loso_evaluate
+from scripts.run_experiment import (
+    build_pipeline,
+    kfold_accuracy,
+    loso_evaluate,
+    nonoverlap_mask,
+)
 from src.dataset import WindowedDataset
 
 
@@ -25,6 +30,18 @@ def test_loso_evaluate_holds_out_each_subject():
     assert set(res["per_subject"]["subject"]) == set(groups)
 
 
+def test_nonoverlap_mask_keeps_every_other_window_per_subject():
+    # uneven per-subject block sizes (5 and 4) to catch off-by-one slicing
+    groups = np.array(["S0", "S0", "S0", "S0", "S0", "S1", "S1", "S1", "S1"])
+    mask = nonoverlap_mask(groups)
+    # S0 -> indices {0,2,4}, S1 -> indices {5,7}
+    assert list(np.where(mask)[0]) == [0, 2, 4, 5, 7]
+    # within each subject the kept windows are exactly idx[::2]
+    for g in np.unique(groups):
+        idx = np.where(groups == g)[0]
+        assert list(idx[mask[idx]]) == list(idx[::2])
+
+
 def test_kfold_gap_uses_non_overlapping_windows():
     # the gap baseline must drop every other (overlapping) window per subject
     rng = np.random.RandomState(0)
@@ -32,6 +49,8 @@ def test_kfold_gap_uses_non_overlapping_windows():
     X = rng.randn(len(groups), 5)
     # class blocks per subject so both classes survive the every-other-window subset
     y = np.tile(np.concatenate([np.zeros(20), np.ones(20)]).astype(int), 2)
+    # kfold_accuracy fits on the non-overlapping subset; check it consumes exactly that
+    assert int(nonoverlap_mask(groups).sum()) == 40
     acc = kfold_accuracy(lambda: build_pipeline("lr"), X, y, groups)
     assert 0.0 <= acc <= 1.0
 
