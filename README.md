@@ -43,7 +43,7 @@ number is honest: it was measured on people the model never trained on.
 | Testing within the same people inflates three-class accuracy from 0.67 to 0.79. | Remove every motion feature and accuracy barely moves (0.913 to 0.901). The signal is physiological. |
 | **A wrist band is enough** | **It does not transfer across datasets** |
 | ![Chest vs wrist](outputs/figures/chest_vs_wrist.png) | ![Cross-dataset](outputs/figures/cross_dataset.png) |
-| A wrist-only model reaches 0.893, about two points behind a research-grade chest strap. | Train on WESAD, test on a second dataset, and accuracy collapses to near chance. Within-dataset success is not generalization. |
+| A wrist-only model reaches 0.893, about two points behind a research-grade chest strap. | Train on WESAD, test on a second dataset, and accuracy collapses to near chance — one confounded transfer pair, illustrative not conclusive. Within-dataset success is not generalization. |
 
 ### Accuracy isn't the whole story: calibration
 
@@ -104,9 +104,11 @@ make reproduce    # regenerate every number, figure, model, and the dashboard
 synthetic generator, so nothing is gated on the 2 GB WESAD download. Everything is seeded.
 
 ## Limitations
-- 15 subjects and lab-induced stress; per-subject accuracy ranges from 0.71 to 1.00.
-- The deep model underperforms at this data scale and is kept only as a baseline.
-- Cross-corpus generalization rests on a single transfer pair; a third dataset is needed.
+- 15 subjects and lab-induced stress; every subject-level result is preliminary and underpowered, with
+  wide confidence intervals. No real-world or clinical claim.
+- Secondary analyses (ablation, calibration, personalization) are exploratory, not multiplicity-corrected.
+- The 1D-CNN is a small-scale baseline, not a fair test of deep learning (no pretraining/transfer).
+- Cross-corpus generalization rests on a single confounded transfer pair; ≥3 matched corpora are needed.
 
 Methodology, statistics, and references are in the [paper](PAPER.md).
 
