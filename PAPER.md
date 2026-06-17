@@ -21,8 +21,8 @@ the target subject closes the calibration gap further, beating global recalibrat
 A wrist-only model reaches 0.89, about two points behind the chest sensor, and the four feature-based
 models (tuned by nested CV) are statistically indistinguishable (Friedman p = 0.81). The contribution
 is a reproducible account of what subject-independent stress detection actually delivers — in accuracy
-*and* in the calibrated confidence a safe alerting system needs — plus a simple personalization recipe
-to recover it.
+*and* in calibrated confidence — plus a simple personalization recipe to recover it. All results are on
+15 lab subjects and should be read as preliminary; we make no real-world or clinical claim.
 
 ## 1. Background
 
@@ -58,8 +58,9 @@ All scoring is 15-fold LOSO; median imputation, standardization, and class balan
 each fold. Hyperparameters are selected by nested cross-validation — an inner grouped CV over training
 subjects tunes each model while the held-out subject stays untouched, so tuning cannot leak. We report
 accuracy and macro-F1 (mean over subjects), bootstrap 95% CIs, a Friedman omnibus test with
-Holm-corrected pairwise Wilcoxon tests, and a within-subject 5-fold baseline (non-overlapping windows)
-for the optimism gap.
+Holm-corrected pairwise Wilcoxon tests, and a within-subject 5-fold baseline for the optimism gap. The
+gap is measured on a matched set of non-overlapping windows: LOSO is recomputed on the same windows the
+within-subject baseline uses, so only the validation scheme differs, not the sample size.
 
 For calibration we pool the out-of-fold LOSO probabilities and report expected and maximum calibration
 error (ECE, MCE; 15 confidence bins) and the Brier score (Guo et al., 2017), against the same
@@ -126,9 +127,12 @@ of the best chest model. A research-grade chest strap is not required.
 | Non-EEG | 0.70                      | → WESAD: **0.50**        |
 
 On an 18-feature device-agnostic space, within-dataset accuracy is healthy but cross-dataset transfer
-collapses to near chance. The drop mixes genuine domain shift with differing label constructs and
-reduced features, consistent with the cross-corpus literature (Vos et al., 2023; Benchekroun et al.,
-2023; Prajod et al., 2024). Within-dataset success does not imply generalization.
+collapses to near chance. This is a single, confounded transfer pair: the drop mixes genuine domain
+shift with differing label constructs (TSST vs. cognitive/emotional stress) and a reduced feature
+space, and one pair cannot separate these causes. We therefore read it as illustrative, not as
+evidence of a specific domain-shift magnitude — a robust claim needs ≥3 corpora with matched stress
+constructs (Vos et al., 2023; Benchekroun et al., 2023; Prajod et al., 2024). Within-dataset success
+does not imply generalization.
 
 ### 4.6 Interpretability
 
@@ -163,9 +167,10 @@ the claim rests on a significance test, not a single pooled number.
 
 ![Reliability diagram](outputs/figures/calibration_reliability.png)
 
-A decision-curve analysis turns this into deployment terms: across alert thresholds, net benefit for
-the uncalibrated LOSO model trails the recalibrated one, and recalibration is what keeps the model
-above the trivial alert-everyone and alert-no-one policies at clinically plausible thresholds.
+A decision-curve analysis illustrates why calibration matters for any thresholded use: across alert
+thresholds, net benefit for the uncalibrated LOSO model trails the recalibrated one. This is a
+methodological illustration on lab data, not a clinical claim — WESAD is acute induced stress in 15
+people, so the curve shows the *shape* of the cost of miscalibration, not a deployable operating point.
 
 ![Decision curve](outputs/figures/calibration_decision_curve.png)
 
@@ -188,13 +193,19 @@ global recalibration within a handful of windows.
 
 ## 5. Limitations
 
-- 15 subjects and lab-induced (TSST) stress; per-subject accuracy ranges 0.71–1.00. No claim to
-  real-world or chronic stress.
-- Cross-dataset transfer is confounded by differing label schemes; two datasets cannot separate domain
-  shift from label mismatch, and a third corpus is needed for a robust leave-one-dataset-out claim.
-- Feature models are tuned by nested CV; the deep model uses fixed settings and is a baseline, not a result.
-- Calibration and decision-curve numbers are reported for the binary task on the chest random forest;
-  isotonic recalibration can be unstable on small folds, so the sigmoid map is provided as a check.
+- **Sample size.** 15 subjects and lab-induced (TSST) stress; per-subject accuracy ranges 0.71–1.00.
+  Every subject-level statistic (optimism gaps, calibration gap, personalization curve) rests on 15
+  points, so confidence intervals are wide and tests are low-powered. All findings are preliminary and
+  carry no claim to real-world or chronic stress.
+- **Multiplicity.** Beyond the primary model comparison (Friedman + Holm-corrected), the ablation,
+  calibration, and personalization analyses are exploratory and not corrected for multiple comparisons;
+  with N=15 some secondary effects may be noise.
+- **Cross-dataset.** A single confounded transfer pair cannot separate domain shift from label mismatch;
+  a robust leave-one-dataset-out claim needs ≥3 corpora with matched stress constructs.
+- **Deep model.** A from-scratch 1D-CNN on 15 subjects is not a fair test of deep learning (no
+  pretraining or transfer); it is a small-scale baseline only — no verdict on deep methods is implied.
+- **Calibration scope.** Calibration, decision-curve, and personalization numbers are binary, chest,
+  random forest; isotonic recalibration can be unstable on small folds, so a sigmoid map is the check.
 
 ## 6. Reproducibility
 
