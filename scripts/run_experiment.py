@@ -259,7 +259,7 @@ def shap_analysis(X, y, feature_names, names, fig_dir):
     explainer = shap.TreeExplainer(pipe.named_steps["clf"])
     values = explainer.shap_values(Xt)
     if isinstance(values, list):
-        values = values[1] if len(values) == 2 else values[0]
+        values = values[-1]  # last (positive) class; for binary values[-1] == values[1]
     shap_vals = np.asarray(values)
     if shap_vals.ndim == 3:  # (samples, features, classes)
         shap_vals = shap_vals[:, :, -1]
