@@ -45,12 +45,18 @@ def loso_proba(factory, X, y, groups):
     return np.concatenate(yt), np.concatenate(pp), np.concatenate(gg)
 
 
-def within_subject_proba(factory, X, y, groups):
-    """Subject-mixed 5-fold on non-overlapping windows (the optimistic baseline)."""
-    keep = np.zeros(len(y), dtype=bool)
+def nonoverlap_mask(groups):
+    """Keep every other window per subject so the gap isn't a sample-size artifact."""
+    keep = np.zeros(len(groups), dtype=bool)
     for g in np.unique(groups):
         idx = np.where(groups == g)[0]
         keep[idx[::2]] = True
+    return keep
+
+
+def within_subject_proba(factory, X, y, groups):
+    """Subject-mixed 5-fold on non-overlapping windows (the optimistic baseline)."""
+    keep = nonoverlap_mask(groups)
     Xk, yk, gk = X[keep], y[keep], groups[keep]
 
     skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=SEED)
@@ -138,21 +144,28 @@ def loso_recalibrated_proba(factory, X, y, groups, method="isotonic"):
 def compute(X, y, groups, model="rf", n_bins=N_BINS):
     factory = lambda: build_pipeline(model)  # noqa: E731
 
+    # Headline: all windows (the deployment-relevant calibration).
     y_loso, p_loso, g_loso = loso_proba(factory, X, y, groups)
-    y_within, p_within, g_within = within_subject_proba(factory, X, y, groups)
     y_iso, p_iso = loso_recalibrated_proba(factory, X, y, groups, "isotonic")
     y_sig, p_sig = loso_recalibrated_proba(factory, X, y, groups, "sigmoid")
 
+    # Gap: LOSO vs within-subject on the SAME non-overlapping windows, so only the
+    # CV scheme differs (not the sample size).
+    m = nonoverlap_mask(groups)
+    y_within, p_within, g_within = within_subject_proba(factory, X, y, groups)
+    y_lm, p_lm, g_lm = loso_proba(factory, X[m], y[m], groups[m])
+
     loso = cal.summary(y_loso, p_loso, n_bins)
+    loso_matched = cal.summary(y_lm, p_lm, n_bins)
     within = cal.summary(y_within, p_within, n_bins)
     iso = cal.summary(y_iso, p_iso, n_bins)
     sig = cal.summary(y_sig, p_sig, n_bins)
     significance = gap_significance(
-        _subject_brier(y_loso, p_loso, g_loso),
+        _subject_brier(y_lm, p_lm, g_lm),
         _subject_brier(y_within, p_within, g_within),
     )
 
-    # All LOSO passes iterate identical splits, so labels line up; enforce it.
+    # All all-window LOSO passes iterate identical splits, so labels line up; enforce it.
     assert np.array_equal(y_loso, y_iso), "LOSO label order diverged across passes"
     thresholds = np.round(np.arange(0.05, 0.61, 0.05), 2)
     prevalence = float(np.mean(y_loso == 1))
@@ -169,10 +182,11 @@ def compute(X, y, groups, model="rf", n_bins=N_BINS):
         "n_windows": int(len(y_loso)),
         "n_bins": n_bins,
         "loso": loso,
+        "loso_matched": loso_matched,
         "within_subject": within,
         "recalibrated_isotonic": iso,
         "recalibrated_sigmoid": sig,
-        "calibration_optimism_gap_ece": round(loso["ece"] - within["ece"], 4),
+        "calibration_optimism_gap_ece": round(loso_matched["ece"] - within["ece"], 4),
         "recalibration_reduction_ece": round(loso["ece"] - iso["ece"], 4),
         "gap_significance": significance,
         "decision_curve": decision,
@@ -205,7 +219,7 @@ def _plot_reliability(out, path):
 
 
 def _plot_gap(out, path):
-    keys = ["within_subject", "loso", "recalibrated_isotonic"]
+    keys = ["within_subject", "loso_matched", "recalibrated_isotonic"]
     labels = ["Within-subject", "LOSO", "LOSO recalibrated"]
     eces = [out[k]["ece"] for k in keys]
     plt.figure(figsize=(4.5, 4))

@@ -143,6 +143,15 @@ def cnn_loso(x_raw, y, groups):
     }
 
 
+def nonoverlap_mask(groups):
+    """Every other window per subject — non-overlapping at 50% overlap."""
+    keep = np.zeros(len(groups), dtype=bool)
+    for g in np.unique(groups):
+        idx = np.where(groups == g)[0]
+        keep[idx[::2]] = True
+    return keep
+
+
 def kfold_accuracy(pipeline_factory, X, y, groups) -> float:
     """Subject-mixed 5-fold pooled accuracy for the optimism gap.
 
@@ -150,10 +159,7 @@ def kfold_accuracy(pipeline_factory, X, y, groups) -> float:
     non-overlapping windows (every other window per subject) so the gap reflects
     subject mixing, not leakage between near-duplicate neighbours.
     """
-    keep = np.zeros(len(y), dtype=bool)
-    for g in np.unique(groups):
-        idx = np.where(groups == g)[0]
-        keep[idx[::2]] = True
+    keep = nonoverlap_mask(groups)
     Xk, yk = X[keep], y[keep]
 
     skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=SEED)
@@ -368,11 +374,14 @@ def run():
         plot_embedding(X, y, cfg["names"], FIGURES_DIR / f"{task}_pca.png")
 
         if best[0] in CLASSIFIERS:
-            # Same aggregation (pooled) for both bars so the gap is comparable
-            loso_pooled = best[1]["pooled_accuracy"]
-            kf_acc = kfold_accuracy(lambda k=best[0]: build_pipeline(k), X, y, groups)
-            plot_gap(loso_pooled, kf_acc, FIGURES_DIR / f"{task}_optimism_gap.png")
+            # Same non-overlapping windows on both bars: only the CV scheme differs.
+            m = nonoverlap_mask(groups)
+            gap_factory = lambda k=best[0]: build_pipeline(k)  # noqa: E731
+            loso_matched = loso_evaluate(gap_factory, X[m], y[m], groups[m])["pooled_accuracy"]
+            kf_acc = kfold_accuracy(gap_factory, X, y, groups)
+            plot_gap(loso_matched, kf_acc, FIGURES_DIR / f"{task}_optimism_gap.png")
         else:
+            loso_matched = None
             kf_acc = None
 
         pd.DataFrame(rows).to_csv(RESULTS_DIR / f"{task}_model_comparison.csv", index=False)
@@ -386,9 +395,10 @@ def run():
             "best_model": best_key,
             "loso_accuracy": best[1]["accuracy_mean"],
             "loso_pooled_accuracy": best[1]["pooled_accuracy"],
+            "loso_matched_accuracy": loso_matched,
             "within_subject_accuracy": kf_acc,
             "optimism_gap_pts": (
-                round((kf_acc - best[1]["pooled_accuracy"]) * 100, 1) if kf_acc else None
+                round((kf_acc - loso_matched) * 100, 1) if kf_acc and loso_matched else None
             ),
             "per_subject": best[1]["per_subject"].to_dict("records"),
         }
