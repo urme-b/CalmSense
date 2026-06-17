@@ -5,7 +5,7 @@
 # (.github/workflows/deploy.yml); this image serves only the prediction API.
 # =============================================================================
 
-FROM python:3.11-slim-bookworm AS production
+FROM python:3.14-slim-bookworm AS production
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
