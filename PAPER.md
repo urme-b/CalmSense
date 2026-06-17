@@ -42,15 +42,22 @@ which is what an alerting system actually thresholds, is rarely examined under s
 ## 2. Data
 
 **WESAD** (Schmidt et al., 2018): 15 subjects, chest RespiBAN (700 Hz) and wrist Empatica E4
-(BVP 64 Hz, EDA/TEMP 4 Hz, ACC 32 Hz). We classify baseline, stress (TSST), and amusement; meditation
-is excluded. **PhysioNet Non-EEG** (Birjandtalab et al., 2016): 20 subjects, wrist EDA/temperature/ACC
-and heart rate, used for cross-dataset transfer (psychological stress vs. relaxation).
+(BVP 64 Hz, EDA/TEMP 4 Hz, ACC 32 Hz). We classify baseline, stress (TSST), and amusement. The fourth
+WESAD condition, **meditation**, is excluded: it is a guided post-stressor recovery state rather than a
+stressor contrast, and the original WESAD benchmark and most subsequent work report binary
+(baseline/stress) and three-class (baseline/stress/amusement) results, so excluding meditation keeps
+our numbers directly comparable to those baselines. **PhysioNet Non-EEG** (Birjandtalab et al., 2016):
+20 subjects, wrist EDA/temperature/ACC and heart rate, used for cross-dataset transfer (psychological
+stress vs. relaxation).
 
 ## 3. Method
 
 Signals are filtered, R-peaks detected (NeuroKit2) with ectopic correction, and EDA decomposed into
-tonic and phasic components. Recordings are segmented into 60-second windows at 50% overlap, kept only
-when at least 90% of a window shares one condition. The extractor emits 60 features; two respiration
+tonic and phasic components. Recordings are segmented into 60-second windows at 50% overlap. A window
+is kept only when at least 90% of its samples share one in-set condition; windows below that purity (or
+whose dominant label is outside {baseline, stress, amusement}) are dropped, as is the trailing partial
+window shorter than 60 s. Per-task window counts are recorded in `results/metrics.json` (`n_windows`).
+The extractor emits 60 features; two respiration
 features that need per-breath segmentation are always empty on this pipeline and dropped, leaving 58:
 30 HRV (time/frequency/nonlinear; Task Force, 1996), 15 EDA, 5 temperature, 3 respiration, 5 motion.
 Feature extraction never sees labels.
@@ -70,8 +77,11 @@ For calibration we pool the out-of-fold LOSO probabilities and report expected a
 error (ECE, MCE; 15 confidence bins) and the Brier score (Guo et al., 2017), against the same
 within-subject 5-fold baseline. The optimism gap is tested for significance on per-subject Brier scores
 (paired Wilcoxon across the 15 subjects, with a bootstrap 95% CI on the mean gap). Recalibration is
-leakage-free: inside each LOSO fold an isotonic (and, for comparison, a sigmoid) map is fit only on
-out-of-fold probabilities of the *training* subjects, then applied to the held-out subject. We also
+leakage-free: inside each LOSO fold a calibration map is fit only on out-of-fold probabilities of the
+*training* subjects, then applied to the held-out subject. **Isotonic regression is the pre-specified
+primary map**; a sigmoid (Platt) map is reported only as a robustness check, because isotonic can be
+unstable on the small per-fold calibration sets. The choice was fixed before inspecting test-fold
+calibration, not selected to maximise the reported improvement. We also
 test **few-shot personalization**: each subject keeps a fixed evaluation half, and a small labeled
 enrollment (5/10/20 windows) drawn from the other half fits a per-subject calibrator — never the
 evaluation windows. We close with a decision-curve analysis (Vickers & Elkin, 2006): net benefit
@@ -99,8 +109,11 @@ data scale. Three-class accuracy is far lower (0.63–0.67), matching the origin
 
 For the best model per task, replacing LOSO with within-subject 5-fold (non-overlapping windows,
 pooled identically, so only subject mixing changes) raises binary accuracy from 0.913 to 0.964
-(+5.1 pts) and three-class from 0.671 to 0.792 (+12.1 pts). This is conservative: studies that also
-split overlapping windows at random push the within-subject figure toward the reported 0.95–0.99.
+(+5.1 pts) and three-class from 0.671 to 0.792 (+12.1 pts). Both bars use the same non-overlapping
+windows (every other window per subject), so the gap reflects subject mixing, not near-duplicate
+overlapping windows. This is conservative: in prior work, *additionally* splitting overlapping windows
+at random pushes the within-subject figure toward the reported 0.95–0.99 (Bhanushali et al., 2021;
+Oliver & Dakshit, 2025) — we cite that as the mechanism rather than reproducing the inflated setting.
 
 ### 4.3 Motion-confound ablation
 
@@ -130,9 +143,11 @@ of the best chest model. A research-grade chest strap is not required.
 | WESAD   | 0.86                      | → Non-EEG: **0.57**      |
 | Non-EEG | 0.70                      | → WESAD: **0.50**        |
 
-On an 18-feature device-agnostic space, within-dataset accuracy is healthy but cross-dataset transfer
-collapses to near chance. This is a single, confounded transfer pair: the drop mixes genuine domain
-shift with differing label constructs (TSST vs. cognitive/emotional stress) and a reduced feature
+Both datasets are harmonized to a **binary stress vs. non-stress** contrast on an 18-feature
+device-agnostic space, which partly controls for label *granularity* (we are not asking a 3-class model
+to transfer). Within-dataset accuracy is healthy but cross-dataset transfer collapses to near chance.
+This remains a single, confounded transfer pair: even at binary granularity the drop still mixes domain
+shift with differing stressor *constructs* (TSST vs. cognitive/emotional stress) and a reduced feature
 space, and one pair cannot separate these causes. We therefore read it as illustrative, not as
 evidence of a specific domain-shift magnitude — a robust claim needs ≥3 corpora with matched stress
 constructs (Vos et al., 2023; Benchekroun et al., 2023; Prajod et al., 2024). Within-dataset success
@@ -209,11 +224,18 @@ base model; the table reports ECE and Brier versus enrollment size when run on W
   Every subject-level statistic (optimism gaps, calibration gap, personalization curve) rests on 15
   points, so confidence intervals are wide and tests are low-powered. All findings are preliminary and
   carry no claim to real-world or chronic stress.
-- **Multiplicity.** Beyond the primary model comparison (Friedman + Holm-corrected), the ablation,
-  calibration, and personalization analyses are exploratory and not corrected for multiple comparisons;
-  with N=15 some secondary effects may be noise.
-- **Cross-dataset.** A single confounded transfer pair cannot separate domain shift from label mismatch;
-  a robust leave-one-dataset-out claim needs ≥3 corpora with matched stress constructs.
+- **Multiplicity.** Only the primary model comparison is multiplicity-controlled (Friedman +
+  Holm-corrected Wilcoxon). The ablation, wrist-vs-chest, cross-dataset, calibration, and
+  personalization analyses are exploratory and **not** corrected for multiple comparisons; with N=15,
+  the small effects there (e.g. the 0.7–2.0-pt wrist gap) are within noise and should be read as
+  descriptive, not as significant findings.
+- **Short-window HRV.** Frequency-domain HRV (LF/HF) is estimated on 60-second windows; the LF band
+  (0.04–0.15 Hz) spans only ~2–9 cycles per window, so those features are noisier and less standardized
+  than the ≥2-minute segments the Task Force (1996) guidance assumes. They are used as relative
+  features within a consistent pipeline, not as clinical HRV measurements.
+- **Cross-dataset.** A single confounded transfer pair cannot separate domain shift from stressor-type
+  mismatch even at binary granularity; a robust leave-one-dataset-out claim needs ≥3 corpora with
+  matched stress constructs.
 - **Deep model.** A from-scratch 1D-CNN on 15 subjects is not a fair test of deep learning (no
   pretraining or transfer); it is a small-scale baseline only — no verdict on deep methods is implied.
 - **Calibration scope.** Calibration, decision-curve, and personalization numbers are binary, chest,
