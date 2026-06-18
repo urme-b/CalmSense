@@ -26,7 +26,7 @@ cd data/raw
 unzip WESAD.zip   # produces WESAD/S2 ... WESAD/S17
 ```
 
-No download at all? `make demo` runs the full calibration pipeline on synthetic data.
+No download at all? make demo runs the full calibration pipeline on synthetic data.
 
 ## Expected layout
 
@@ -41,18 +41,18 @@ data/raw/WESAD/
   S17/
 ```
 
-Subjects are S2–S17; S1 and S12 do not exist in the dataset.
+Subjects are S2 to S17; S1 and S12 do not exist in the dataset.
 
 ## Data format
 
-Each `S*.pkl` is a pickle (load with `encoding="latin1"`) containing:
+Each S*.pkl is a pickle (load with encoding="latin1") containing:
 
-- `signal.chest` at 700 Hz: `ACC`, `ECG`, `EMG`, `EDA`, `Temp`, `Resp`
-- `signal.wrist`: `ACC` (32 Hz), `BVP` (64 Hz), `EDA` (4 Hz), `TEMP` (4 Hz)
-- `label` at 700 Hz
+- signal.chest at 700 Hz: ACC, ECG, EMG, EDA, Temp, Resp
+- signal.wrist: ACC (32 Hz), BVP (64 Hz), EDA (4 Hz), TEMP (4 Hz)
+- label at 700 Hz
 
-> Security: unpickling runs arbitrary code. Only load `.pkl` files you downloaded from the official
-> WESAD source or generated yourself — never a `.pkl` from an untrusted third party.
+> Security: unpickling runs arbitrary code. Only load .pkl files you downloaded from the official
+> WESAD source or generated yourself, never a .pkl from an untrusted third party.
 
 ## Label encoding
 
@@ -62,9 +62,9 @@ Each `S*.pkl` is a pickle (load with `encoding="latin1"`) containing:
 | 2     | Stress     | binary, three-class       |
 | 3     | Amusement  | three-class               |
 | 4     | Meditation | excluded                  |
-| 0, 5–7| Other      | excluded                  |
+| 0, 5 to 7| Other      | excluded                  |
 
-`src/data/loader.py` reads this format directly; `make reproduce` then builds the feature
+src/data/loader.py reads this format directly; make reproduce then builds the feature
 matrix and runs the benchmark.
 
 ## Citation
