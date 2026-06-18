@@ -1,14 +1,9 @@
 # CalmSense
 
-[![CI](https://github.com/urme-b/CalmSense/actions/workflows/ci.yml/badge.svg)](https://github.com/urme-b/CalmSense/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue.svg)](pyproject.toml)
-[![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-261230.svg)](https://github.com/astral-sh/ruff)
+Detecting stress from wearable sensors, and measuring how much of the field's reported accuracy,
+and confidence, actually holds up on people the model has never seen.
 
-Detecting stress from wearable sensors, and measuring how much of the field's reported accuracy —
-and confidence — actually holds up on people the model has never seen.
-
-Most published results on the WESAD benchmark claim 95–99% accuracy. CalmSense shows that much of
+Most published results on the WESAD benchmark claim 95 to 99% accuracy. CalmSense shows that much of
 that vanishes under honest, subject-independent testing, traces exactly where it goes, and adds the
 part accuracy hides: whether the model's probabilities are calibrated enough to trigger an alert.
 
@@ -16,10 +11,10 @@ part accuracy hides: whether the model's probabilities are calibrated enough to 
 
 ## Why it matters
 
-A stress model is only useful if it works on a new person — and an alerting system is only safe if a
+A stress model is only useful if it works on a new person, and an alerting system is only safe if a
 "0.8 chance of stress" really means 0.8. CalmSense evaluates everything with Leave-One-Subject-Out
 validation (train on 14 people, test on the 15th) and quantifies four ways the usual numbers get
-inflated: subject leakage, motion confounds, dataset shift, and **calibration** — the same
+inflated: subject leakage, motion confounds, dataset shift, and **calibration**. The same
 within-subject testing that inflates accuracy also makes the model look better calibrated than it is.
 The result is a realistic picture of what wearable stress detection can and cannot do today.
 
@@ -39,8 +34,8 @@ Binary stress detection on held-out subjects (15 participants, 58 physiological 
 
 The four feature-based models land within noise of one another. The real contribution is that the
 number is honest: it was measured on people the model never trained on. These headline numbers use
-fixed, sensible hyperparameters (not per-fold tuned); `scripts/tuning.py` runs a separate leak-free
-nested-CV sweep (inner grouped search, outer LOSO) as a robustness check — its output regenerates on
+fixed, sensible hyperparameters (not per-fold tuned); scripts/tuning.py runs a separate leak-free
+nested-CV sweep (inner grouped search, outer LOSO) as a robustness check, its output regenerates on
 WESAD and is not committed.
 
 ## Key findings
@@ -51,13 +46,13 @@ WESAD and is not committed.
 | Testing within the same people inflates three-class accuracy from 0.66 to 0.79. | Remove every motion feature and accuracy barely moves (0.913 to 0.901). The signal is physiological. |
 | **A wrist band is enough** | **It does not transfer across datasets** |
 | ![Chest vs wrist](outputs/figures/chest_vs_wrist.png) | ![Cross-dataset](outputs/figures/cross_dataset.png) |
-| A wrist-only model reaches 0.893, about two points behind a research-grade chest strap. | Train on WESAD, test on a second dataset, and accuracy collapses to near chance — one confounded transfer pair, illustrative not conclusive. Within-dataset success is not generalization. |
+| A wrist-only model reaches 0.893, about two points behind a research-grade chest strap. | Train on WESAD, test on a second dataset, and accuracy collapses to near chance, one confounded transfer pair, illustrative not conclusive. Within-dataset success is not generalization. |
 
 ### Accuracy isn't the whole story: calibration
 
 An alerting system acts on the probability, not the label. On WESAD, a new person's predictions are
-significantly less calibrated than within-subject evaluation suggests — the per-subject Brier gap is
-**+0.066** (paired Wilcoxon **p < 0.001**) — and a **leakage-free isotonic recalibration** (fit only on
+significantly less calibrated than within-subject evaluation suggests, the per-subject Brier gap is
+**+0.066** (paired Wilcoxon **p < 0.001**), and a **leakage-free isotonic recalibration** (fit only on
 out-of-fold training subjects, never the test subject) cuts expected calibration error from **0.070 to
 0.025**.
 
@@ -66,7 +61,7 @@ out-of-fold training subjects, never the test subject) cuts expected calibration
 | ![Reliability](outputs/figures/calibration_reliability.png) | ![Personalization](outputs/figures/personalization.png) |
 | LOSO ECE 0.070 → 0.025 after a leak-free isotonic map. | A short per-subject enrollment takes ECE 0.146 → 0.069, beating global recalibration (0.108). |
 
-See [paper §4.7–4.8](PAPER.md). Regenerate with `make reproduce` (needs the WESAD download); `make demo`
+See [paper §4.7 to 4.8](PAPER.md). Regenerate with make reproduce (needs the WESAD download); make demo
 runs the identical pipeline on synthetic data.
 
 ## What the model relies on
@@ -109,12 +104,12 @@ expected under acute stress.
 pip install -e .
 make demo         # full pipeline (features → LOSO → calibration → personalization) on synthetic data
 make data         # PhysioNet Non-EEG for the cross-dataset transfer (downloads on run)
-make reproduce    # regenerate every WESAD number, figure, and model — requires the WESAD download
+make reproduce    # regenerate every WESAD number, figure, and model, requires the WESAD download
 ```
 
-From a clean clone, **`make demo` is what runs offline** — it exercises the entire pipeline on a
+From a clean clone, **make demo is what runs offline**, it exercises the entire pipeline on a
 seeded synthetic generator, like the [Colab notebook](notebooks/CalmSense.ipynb). The headline WESAD
-results in [`results/`](results/) are a **committed snapshot**; regenerating them needs the ~2 GB WESAD
+results in [results/](results/) are a **committed snapshot**; regenerating them needs the ~2 GB WESAD
 dataset (see [data/raw/README.md](data/raw/README.md)), which is not redistributed. Everything is seeded.
 
 ## Limitations
@@ -136,22 +131,20 @@ Methodology, statistics, and references are in the [paper](PAPER.md).
 
 Physiological signals are sensitive personal data, and CalmSense is a research benchmark, not a product:
 it should support people, not surveil them. We endorse **data minimization** (collect and keep only what
-an analysis needs) and a **no-surveillance** stance — stress inference must not be used to monitor or
+an analysis needs) and a **no-surveillance** stance: stress inference must not be used to monitor or
 penalize individuals without informed consent. Honest, subject-independent evaluation is itself part of
 this: a model validated only within-subject overstates its reliability for the people it is meant to help.
 
-The **code is MIT-licensed** ([LICENSE](LICENSE)), but the **datasets carry their own terms** — WESAD is
+The **code is MIT-licensed** ([LICENSE](LICENSE)), but the **datasets carry their own terms**, WESAD is
 research-only under its provider's agreement and PhysioNet Non-EEG under the PhysioNet license; neither is
 redistributed here (see [data/raw/README.md](data/raw/README.md)).
 
 ## Citation
 
 If you use CalmSense, please cite it via [CITATION.cff](CITATION.cff). A versioned DOI is minted by
-Zenodo on each tagged GitHub release. Once you enable Zenodo for the repo and publish the `v0.1.0`
-release, paste the minted DOI into `CITATION.cff` and add the badge below to the top of this README:
-
-<!-- [![DOI](https://zenodo.org/badge/1152348155.svg)](https://zenodo.org/badge/latestdoi/1152348155) -->
+Zenodo on each tagged GitHub release; once the v0.1.0 release is published with Zenodo enabled, paste the
+minted DOI into CITATION.cff.
 
 ## License
 
-MIT — [LICENSE](LICENSE).
+MIT, [LICENSE](LICENSE).
