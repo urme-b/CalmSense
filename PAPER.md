@@ -4,24 +4,24 @@
 
 ## Abstract
 
-Wearable stress-detection studies routinely report 95–99% accuracy on WESAD, but much of it comes
+Wearable stress-detection studies routinely report 95 to 99% accuracy on WESAD, but much of it comes
 from evaluation that leaks information about the test set. This work measures how much performance
 survives honest evaluation, peeling back four layers of optimism. **Subject leakage:** moving from
 within-subject to Leave-One-Subject-Out (LOSO) cross-validation drops three-class accuracy from 0.79
 to 0.66 and binary from 0.96 to 0.91; allowing overlapping windows inflates it further toward the
-reported 0.95–0.99. **Motion confound:** an ablation shows accelerometer features alone reach 0.88,
+reported 0.95 to 0.99. **Motion confound:** an ablation shows accelerometer features alone reach 0.88,
 yet removing motion entirely still gives 0.90, so the signal is autonomic, not just movement.
-**Dataset shift:** a leakage-free model trained on WESAD falls to 0.50–0.57 balanced accuracy on a
+**Dataset shift:** a leakage-free model trained on WESAD falls to 0.50 to 0.57 balanced accuracy on a
 second dataset (near chance). **Calibration:** accuracy is not the whole story for a model meant to
 trigger alerts. Per subject, LOSO probabilities are significantly less calibrated than under
 within-subject evaluation (Brier gap +0.066, paired Wilcoxon p < 0.001), and a leakage-free
-recalibration cuts expected calibration error from 0.070 to 0.025. A **few-shot personalization** step —
-a per-subject calibrator from a short labeled enrollment — improves further (ECE 0.146 → 0.069 at 20
+recalibration cuts expected calibration error from 0.070 to 0.025. A **few-shot personalization** step, 
+a per-subject calibrator from a short labeled enrollment, improves further (ECE 0.146 → 0.069 at 20
 windows), beating global recalibration without retraining.
 A wrist-only model reaches 0.89, about two points behind the chest sensor, and the four feature-based
 models are statistically indistinguishable (Friedman p = 0.81). The contribution
-is a reproducible account of what subject-independent stress detection actually delivers — in accuracy
-*and* in calibrated confidence — plus a simple personalization recipe to recover it. All results are on
+is a reproducible account of what subject-independent stress detection actually delivers, in accuracy
+*and* in calibrated confidence, plus a simple personalization recipe to recover it. All results are on
 15 lab subjects and should be read as preliminary; we make no real-world or clinical claim.
 
 ## 1. Background
@@ -33,7 +33,7 @@ appear in both train and test, and the model learns person-specific signatures r
 (Bhanushali et al., 2021; Vos et al., 2023). One study reported 99.9% with a random split that did not
 separate subjects (Oliver & Dakshit, 2025). Models also degrade sharply across corpora, with stressor
 type driving most of the drop (Benchekroun et al., 2023; Prajod et al., 2024). Under proper LOSO the
-original WESAD authors reported roughly 93% binary and 80% three-class — the realistic reference points.
+original WESAD authors reported roughly 93% binary and 80% three-class, the realistic reference points.
 Almost all of this work reports accuracy or F1 alone; the *calibration* of the predicted probabilities,
 which is what an alerting system actually thresholds, is rarely examined under subject-independent evaluation.
 
@@ -54,7 +54,7 @@ Signals are filtered, R-peaks detected (NeuroKit2) with ectopic correction, and 
 tonic and phasic components. Recordings are segmented into 60-second windows at 50% overlap. A window
 is kept only when at least 90% of its samples share one in-set condition; windows below that purity (or
 whose dominant label is outside {baseline, stress, amusement}) are dropped, as is the trailing partial
-window shorter than 60 s. Per-task window counts are recorded in `results/metrics.json` (`n_windows`).
+window shorter than 60 s. Per-task window counts are recorded in results/metrics.json (n_windows).
 The extractor emits 60 features; two respiration
 features that need per-breath segmentation are always empty on this pipeline and dropped, leaving 58:
 30 HRV (time/frequency/nonlinear; Task Force, 1996), 15 EDA, 5 temperature, 3 respiration, 5 motion.
@@ -63,8 +63,8 @@ Feature extraction never sees labels.
 Models are logistic regression, random forest, XGBoost, LightGBM, and a compact 1D-CNN on raw windows.
 All scoring is 15-fold LOSO; median imputation, standardization, and class balancing are fit inside
 each fold. The headline benchmark uses fixed, sensible hyperparameters (not per-fold tuned); a separate
-nested-CV analysis (`scripts/tuning.py`) selects hyperparameters with an inner grouped CV over training
-subjects while the held-out subject stays untouched — so tuning cannot leak — and is reported as a
+nested-CV analysis (scripts/tuning.py) selects hyperparameters with an inner grouped CV over training
+subjects while the held-out subject stays untouched, so tuning cannot leak, and is reported as a
 robustness check. We report
 accuracy and macro-F1 (mean over subjects), bootstrap 95% CIs, a Friedman omnibus test with
 Holm-corrected pairwise Wilcoxon tests, and a within-subject 5-fold baseline for the optimism gap. The
@@ -81,7 +81,7 @@ primary map**; a sigmoid (Platt) map is reported only as a robustness check, bec
 unstable on the small per-fold calibration sets. The choice was fixed before inspecting test-fold
 calibration, not selected to maximise the reported improvement. We also
 test **few-shot personalization**: each subject keeps a fixed evaluation half, and a small labeled
-enrollment (5/10/20 windows) drawn from the other half fits a per-subject calibrator — never the
+enrollment (5/10/20 windows) drawn from the other half fits a per-subject calibrator, never the
 evaluation windows. We close with a decision-curve analysis (Vickers & Elkin, 2006): net benefit
 across alert thresholds for the uncalibrated and recalibrated models versus the alert-everyone and
 alert-no-one policies.
@@ -97,16 +97,16 @@ alert-no-one policies.
 | XGBoost             | 0.903      | 0.873     | 0.633       | 0.552      |
 | LightGBM            | 0.894      | 0.860     | 0.658       | 0.568      |
 | 1D-CNN              | 0.718      | 0.648     | 0.626       | 0.543      |
-| _Majority class_    | _0.647_    | —         | _0.545_     | —          |
-| _Chance_            | _0.500_    | —         | _0.333_     | —          |
+| _Majority class_    | _0.647_    | n/a | _0.545_     | n/a |
+| _Chance_            | _0.500_    | n/a | _0.333_     | n/a |
 
 Context: the binary task is imbalanced (562 baseline / 307 stress windows; 64.7% majority), and the
 three-class task is 562 / 307 / 163 (54.5% majority). So the 0.913 binary result is ~27 points above the
-majority-class baseline and the 0.67 three-class result ~13 points above it — both well clear of chance,
+majority-class baseline and the 0.67 three-class result ~13 points above it, both well clear of chance,
 but the three-class margin is modest. Random Forest is nominally best on binary (0.913, 95% CI
 [0.860, 0.960]), but the four feature models are statistically indistinguishable (Friedman p = 0.81; no
 significant Holm-corrected pair), so we report the family rather than a winner. All beat the from-scratch
-1D-CNN, which underperforms at this data scale. Three-class accuracy is far lower (0.63–0.67), matching
+1D-CNN, which underperforms at this data scale. Three-class accuracy is far lower (0.63 to 0.67), matching
 the original WESAD LOSO results.
 
 ### 4.2 Subject-leakage optimism gap
@@ -116,11 +116,11 @@ pooled identically, so only subject mixing changes) raises binary accuracy from 
 (+5.7 pts) and three-class from 0.658 to 0.792 (+13.3 pts). Both bars use the same non-overlapping
 windows (every other window per subject), so the gap reflects subject mixing, not near-duplicate
 overlapping windows. This is conservative: in prior work, *additionally* splitting overlapping windows
-at random pushes the within-subject figure toward the reported 0.95–0.99 (Bhanushali et al., 2021;
-Oliver & Dakshit, 2025) — we cite that as the mechanism rather than reproducing the inflated setting.
+at random pushes the within-subject figure toward the reported 0.95 to 0.99 (Bhanushali et al., 2021;
+Oliver & Dakshit, 2025), we cite that as the mechanism rather than reproducing the inflated setting.
 
-Per-subject LOSO accuracy varies widely — the headline mean hides subjects the model handles poorly
-(binary 0.71–1.00; three-class 0.43–0.96), which is why every subject-level statistic carries wide
+Per-subject LOSO accuracy varies widely, the headline mean hides subjects the model handles poorly
+(binary 0.71 to 1.00; three-class 0.43 to 0.96), which is why every subject-level statistic carries wide
 intervals (§5).
 
 | Subject | Binary acc | 3-class acc |
@@ -161,7 +161,7 @@ is detectable from autonomic physiology alone.
 
 ### 4.4 Wrist-only deployability
 
-Using only Empatica E4 wrist signals, a random forest reaches 0.893 versus 0.913 for the chest — a
+Using only Empatica E4 wrist signals, a random forest reaches 0.893 versus 0.913 for the chest, a
 2.0-point drop, within CI noise at N = 15. The best wrist model (XGBoost, 0.906) is within 0.7 points
 of the best chest model. A research-grade chest strap is not required.
 
@@ -178,24 +178,24 @@ to transfer). Within-dataset accuracy is healthy but cross-dataset transfer coll
 This remains a single, confounded transfer pair: even at binary granularity the drop still mixes domain
 shift with differing stressor *constructs* (TSST vs. cognitive/emotional stress) and a reduced feature
 space, and one pair cannot separate these causes. We therefore read it as illustrative, not as
-evidence of a specific domain-shift magnitude — a robust claim needs ≥3 corpora with matched stress
+evidence of a specific domain-shift magnitude, a robust claim needs ≥3 corpora with matched stress
 constructs (Vos et al., 2023; Benchekroun et al., 2023; Prajod et al., 2024). Within-dataset success
 does not imply generalization.
 
 ### 4.6 Interpretability
 
-SHAP values (Lundberg & Lee, 2017) rank a motion descriptor (`ACC_zero_crossings`) first, then
-heart-rate level (`HRV_MedianNN`, `HRV_MeanNN`), skin-conductance responses, and respiration rate —
+SHAP values (Lundberg & Lee, 2017) rank a motion descriptor (ACC_zero_crossings) first, then
+heart-rate level (HRV_MedianNN, HRV_MeanNN), skin-conductance responses, and respiration rate, 
 physiologically sensible for acute stress, and the motivation for the §4.3 ablation.
 
 ### 4.7 Calibration: a fourth layer of optimism
 
 Accuracy says nothing about whether a predicted probability of 0.8 means roughly 80% of such windows
-are truly stress — yet that calibrated confidence is what an alerting system acts on. We measure it on
+are truly stress, yet that calibrated confidence is what an alerting system acts on. We measure it on
 the pooled out-of-fold probabilities of the binary random forest. The optimism is clearest in the
 **Brier score**: per subject, LOSO is significantly less calibrated than the within-subject 5-fold
 baseline (mean Brier gap **+0.066**, 95% CI [0.035, 0.106], paired Wilcoxon **p < 0.001**, on matched
-non-overlapping windows). Pooled ECE tells a softer story — within-subject 0.085 vs LOSO 0.070 — so the
+non-overlapping windows). Pooled ECE tells a softer story, within-subject 0.085 vs LOSO 0.070, so the
 effect is a per-subject Brier phenomenon rather than a large pooled-ECE gap, which is why we rest the
 claim on the significance test, not a single pooled number. A leakage-free isotonic recalibration, fit
 only on out-of-fold *training*-subject probabilities and never touching the held-out subject, cuts LOSO
@@ -213,7 +213,7 @@ ECE from **0.070 to 0.025** (sigmoid: 0.035, the robustness check).
 
 A decision-curve analysis illustrates why calibration matters for any thresholded use: we compare net
 benefit across alert thresholds for the uncalibrated versus recalibrated LOSO model. This is a
-methodological illustration on lab data, not a clinical claim — WESAD is acute induced stress in 15
+methodological illustration on lab data, not a clinical claim, WESAD is acute induced stress in 15
 people, so the curve shows the *shape* of the cost of miscalibration, not a deployable operating point.
 
 ![Decision curve](outputs/figures/calibration_decision_curve.png)
@@ -224,7 +224,7 @@ Global recalibration cannot adapt to a person it never saw. We test whether a pe
 can: each subject keeps a fixed evaluation half, with a short labeled enrollment (5/10/20 windows)
 drawn only from non-overlapping windows in the other half, so enrollment never overlaps the evaluation
 set. It works: ECE falls from **0.146** (uncalibrated) to **0.108** with global recalibration and to
-**0.069** with a 20-window few-shot calibrator — improving monotonically with enrollment size and
+**0.069** with a 20-window few-shot calibrator, improving monotonically with enrollment size and
 overtaking global recalibration within ~10 windows. This turns the calibration diagnosis into a cheap
 per-subject fix that needs no retraining of the base model.
 
@@ -240,24 +240,24 @@ per-subject fix that needs no retraining of the base model.
 
 ## 5. Limitations
 
-- **Sample size.** 15 subjects and lab-induced (TSST) stress; per-subject accuracy ranges 0.71–1.00.
+- **Sample size.** 15 subjects and lab-induced (TSST) stress; per-subject accuracy ranges 0.71 to 1.00.
   Every subject-level statistic (optimism gaps, calibration gap, personalization curve) rests on 15
   points, so confidence intervals are wide and tests are low-powered. All findings are preliminary and
   carry no claim to real-world or chronic stress.
 - **Multiplicity.** Only the primary model comparison is multiplicity-controlled (Friedman +
   Holm-corrected Wilcoxon). The ablation, wrist-vs-chest, cross-dataset, calibration, and
   personalization analyses are exploratory and **not** corrected for multiple comparisons; with N=15,
-  the small effects there (e.g. the 0.7–2.0-pt wrist gap) are within noise and should be read as
+  the small effects there (e.g. the 0.7 to 2.0-pt wrist gap) are within noise and should be read as
   descriptive, not as significant findings.
 - **Short-window HRV.** Frequency-domain HRV (LF/HF) is estimated on 60-second windows; the LF band
-  (0.04–0.15 Hz) spans only ~2–9 cycles per window, so those features are noisier and less standardized
+  (0.04 to 0.15 Hz) spans only ~2 to 9 cycles per window, so those features are noisier and less standardized
   than the ≥2-minute segments the Task Force (1996) guidance assumes. They are used as relative
   features within a consistent pipeline, not as clinical HRV measurements.
 - **Cross-dataset.** A single confounded transfer pair cannot separate domain shift from stressor-type
   mismatch even at binary granularity; a robust leave-one-dataset-out claim needs ≥3 corpora with
   matched stress constructs.
 - **Deep model.** A from-scratch 1D-CNN on 15 subjects is not a fair test of deep learning (no
-  pretraining or transfer); it is a small-scale baseline only — no verdict on deep methods is implied.
+  pretraining or transfer); it is a small-scale baseline only, no verdict on deep methods is implied.
 - **Calibration scope.** Calibration, decision-curve, and personalization numbers are binary, chest,
   random forest; isotonic recalibration can be unstable on small folds, so a sigmoid map is the check.
 
@@ -267,11 +267,11 @@ per-subject fix that needs no retraining of the base model.
 pip install -e .
 make demo                 # full pipeline on synthetic data, no download (runs offline from a clone)
 make data                 # PhysioNet Non-EEG for cross-dataset transfer (WESAD: see data/raw/README.md)
-make reproduce            # regenerates every WESAD number and figure — requires the WESAD download
+make reproduce            # regenerates every WESAD number and figure, requires the WESAD download
 ```
 
-All randomness is seeded. The headline WESAD results in `results/` are a committed snapshot; a clean
-clone reproduces the full pipeline only on synthetic data via `make demo` (also the one-click Colab
+All randomness is seeded. The headline WESAD results in results/ are a committed snapshot; a clean
+clone reproduces the full pipeline only on synthetic data via make demo (also the one-click Colab
 notebook and CI path), since WESAD is not redistributed. WESAD and PhysioNet Non-EEG are public and
 downloaded separately.
 
