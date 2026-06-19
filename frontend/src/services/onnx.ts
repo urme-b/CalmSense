@@ -3,8 +3,9 @@ import * as ort from 'onnxruntime-web';
 import meta from '../model_meta.json';
 import { PredictionResponse } from '../types';
 
-// Serve the matching WASM from CDN (works on static hosting)
-ort.env.wasm.wasmPaths = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.19.2/dist/';
+// Serve the matching WASM from our own origin (public/ort) so the in-browser demo
+// has no runtime CDN dependency — it keeps working if jsdelivr is blocked or down.
+ort.env.wasm.wasmPaths = `${process.env.PUBLIC_URL || ''}/ort/`;
 
 const NAMES: string[] = (meta as any).features;
 const MEDIANS: number[] = (meta as any).medians;
