@@ -44,7 +44,7 @@ dependencies = [
     "scikit-learn==1.6.1",  # pinned: the saved model pickle is version-coupled
 
     # Biosignal processing
-    "neurokit2==0.2.7",
+    "neurokit2==0.2.12",
     "wfdb>=4.1,<5.0",  # reads the PhysioNet Non-EEG dataset (WESAD ships as pickle, loaded separately)
 
     # Models
@@ -58,7 +58,7 @@ dependencies = [
     # In-browser model export
     "skl2onnx==1.20.0",
     "onnx==1.19.1",
-    "onnxruntime==1.19.2",  # matches the browser's onnxruntime-web 1.19.2
+    "onnxruntime==1.20.1",  # matches the browser's onnxruntime-web 1.19.2
 
     # Figures
     "matplotlib>=3.7,<4.0",
@@ -71,7 +71,7 @@ dependencies = [
 
     # Utilities
     "joblib>=1.3,<2.0",
-    "structlog>=23.1,<25.0",
+    "structlog>=23.1,<26.0",
 ]
 
 [project.optional-dependencies]
