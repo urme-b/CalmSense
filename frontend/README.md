@@ -19,7 +19,7 @@ Live demo: https://urme-b.github.io/CalmSense/
 
 ```bash
 npm install
-npm start        # http://localhost:3000
+npm run dev      # http://localhost:5173
 npm run build    # production build (also run in CI deploy)
 ```
 

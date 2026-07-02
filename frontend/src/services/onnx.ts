@@ -1,11 +1,11 @@
 // Runs the trained Random Forest entirely in the browser via ONNX Runtime Web.
-import * as ort from 'onnxruntime-web';
+import * as ort from 'onnxruntime-web/wasm';
 import meta from '../model_meta.json';
 import { PredictionResponse } from '../types';
 
 // Serve the matching WASM from our own origin (public/ort) so the in-browser demo
 // has no runtime CDN dependency — it keeps working if jsdelivr is blocked or down.
-ort.env.wasm.wasmPaths = `${process.env.PUBLIC_URL || ''}/ort/`;
+ort.env.wasm.wasmPaths = `${import.meta.env.BASE_URL}ort/`;
 
 const NAMES: string[] = (meta as any).features;
 const MEDIANS: number[] = (meta as any).medians;
@@ -19,7 +19,7 @@ let session: ort.InferenceSession | null = null;
 
 async function getSession(): Promise<ort.InferenceSession> {
   if (!session) {
-    const url = `${process.env.PUBLIC_URL || ''}/model.onnx`;
+    const url = `${import.meta.env.BASE_URL}model.onnx`;
     session = await ort.InferenceSession.create(url, { executionProviders: ['wasm'] });
   }
   return session;

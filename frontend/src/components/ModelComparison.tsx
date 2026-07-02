@@ -143,7 +143,7 @@ const ModelComparison: React.FC = () => {
               <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
               <XAxis dataKey="name" angle={-30} textAnchor="end" height={80} tick={{ fontSize: 11 }} />
               <YAxis domain={[0, 100]} unit="%" />
-              <Tooltip formatter={(v: number) => `${v}%`} />
+              <Tooltip formatter={(v) => `${v}%`} />
               <Legend />
               <Bar dataKey="accuracy" name="Accuracy" radius={[4, 4, 0, 0]}>
                 {barData.map((_: any, i: number) => (
