@@ -17,5 +17,5 @@ What you expected, and what happened instead (paste the error/output).
 **Environment**
 - OS:
 - Python version:
-- Install method (`pip install -e .` / Docker):
+- Install method (`pip install -e .`):
 - Commit / version:
