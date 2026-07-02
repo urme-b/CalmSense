@@ -134,6 +134,9 @@ outputs/models/*
 # IDE / Editor
 # =============================================================================
 
+# Local agent workspace
+.claude/
+
 # VS Code
 .vscode/*
 !.vscode/settings.json
