@@ -1,5 +1,10 @@
 # CalmSense
 
+[![CI](https://github.com/urme-b/CalmSense/actions/workflows/ci.yml/badge.svg)](https://github.com/urme-b/CalmSense/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue.svg)](pyproject.toml)
+[![Release](https://img.shields.io/github/v/release/urme-b/CalmSense)](https://github.com/urme-b/CalmSense/releases/latest)
+
 > Wearable stress detection scored on people it has never seen, so the accuracy you read is the accuracy you get.
 
 [Live demo](https://urme-b.github.io/CalmSense/) · [Colab](https://colab.research.google.com/github/urme-b/CalmSense/blob/main/notebooks/CalmSense.ipynb) · [Paper](PAPER.md)
