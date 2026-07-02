@@ -27,6 +27,7 @@ from scripts.run_experiment import (
 )
 from src import calibration as cal
 from src.config import FIGURES_DIR
+from src.utils import provenance
 
 SEED = 42
 K_VALUES = [5, 10, 20]
@@ -155,6 +156,7 @@ def run(synthetic=False, model="rf"):
     X, y, groups, _, _ = prepare_task(features_df, x_raw, [1, 2])
     out = compute(X, y, groups, model=model)
 
+    out["provenance"] = provenance()
     with open(RESULTS_DIR / "personalization.json", "w") as f:
         json.dump(out, f, indent=2)
     _plot(out, FIGURES_DIR / "personalization.png")

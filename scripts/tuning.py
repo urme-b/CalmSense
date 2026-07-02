@@ -27,6 +27,7 @@ from scripts.run_experiment import (
     load_cached,
     prepare_task,
 )
+from src.utils import provenance
 
 GRIDS = {
     "lr": {"clf__C": [0.1, 1.0, 10.0]},
@@ -136,6 +137,7 @@ def run(synthetic=False, inner_splits=3):
     tuned = compute(X, y, groups, inner_splits)
     defaults = _defaults()
 
+    tuned["provenance"] = provenance()
     with open(RESULTS_DIR / "tuning.json", "w") as f:
         json.dump(tuned, f, indent=2)
     if defaults:

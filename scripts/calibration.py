@@ -28,7 +28,7 @@ from scripts.run_experiment import (
 )
 from src import calibration as cal
 from src.config import FIGURES_DIR, SEED
-from src.utils import set_seed
+from src.utils import paired_effect_size, provenance, set_seed
 
 POSITIVE = "stress"
 N_BINS = 15
@@ -80,6 +80,7 @@ def gap_significance(loso, within):
         "mean_brier_gap": float(gap.mean()),
         "ci95": [float(np.percentile(means, 2.5)), float(np.percentile(means, 97.5))],
         "wilcoxon_p": pval,
+        "effect_size": paired_effect_size(a, b),
         "per_subject": {s: {"loso": loso[s], "within": within[s]} for s in subjects},
     }
 
@@ -182,6 +183,7 @@ def compute(X, y, groups, model="rf", n_bins=N_BINS):
         "recalibration_reduction_ece": round(loso["ece"] - iso["ece"], 4),
         "gap_significance": significance,
         "decision_curve": decision,
+        "provenance": provenance(),
     }
 
 

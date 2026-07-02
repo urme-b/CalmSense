@@ -17,6 +17,7 @@ from scripts.run_experiment import FIGURES_DIR, RESULTS_DIR, build_pipeline, los
 from src.config import PROCESSED_DATA_DIR
 from src.datasets import non_eeg
 from src.portable import wesad_portable
+from src.utils import provenance
 
 META = ["subject", "label"]
 
@@ -77,6 +78,7 @@ def run():
         "wesad_to_noneeg": transfer(wesad, noneeg, feature_cols),
         "noneeg_to_wesad": transfer(noneeg, wesad, feature_cols),
     }
+    out["provenance"] = provenance()
     with open(RESULTS_DIR / "cross_dataset.json", "w") as f:
         json.dump(out, f, indent=2)
 

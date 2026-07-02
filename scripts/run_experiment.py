@@ -30,7 +30,7 @@ from sklearn.utils.class_weight import compute_sample_weight
 from src.config import FIGURES_DIR, MODELS_DIR, PROJECT_ROOT, SEED
 from src.dataset import WindowedDataset, load_cached
 from src.models.ml.classifiers import get_classifier
-from src.utils import set_seed
+from src.utils import provenance, set_seed
 
 RESULTS_DIR = PROJECT_ROOT / "results"
 
@@ -425,6 +425,7 @@ def run():
             )
             print(f"  Saved API model ({CLF_NAMES[top_clf]}) + SHAP.")
 
+    summary["provenance"] = provenance()
     with open(results_dir / "metrics.json", "w") as f:
         json.dump(summary, f, indent=2)
 

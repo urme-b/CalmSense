@@ -21,6 +21,7 @@ from scripts.run_experiment import (
     loso_evaluate,
 )
 from src.dataset_wrist import WristDataset, load_wrist
+from src.utils import provenance
 
 META = ["subject_id", "window_id", "label", "label_name"]
 
@@ -78,6 +79,7 @@ def run():
         },
         "best_per_arm_drop_pts": (chest_best["accuracy_mean"] - best["accuracy_mean"]) * 100,
     }
+    out["provenance"] = provenance()
     with open(RESULTS_DIR / "wrist.json", "w") as f:
         json.dump(out, f, indent=2)
 

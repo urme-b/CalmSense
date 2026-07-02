@@ -19,6 +19,7 @@ from scripts.run_experiment import (
     loso_evaluate,
     prepare_task,
 )
+from src.utils import paired_effect_size, provenance
 
 SEED = 42
 
@@ -84,9 +85,11 @@ def run():
                 "delta_mean": float(vecs[a].mean() - vecs[b].mean()),
                 "p_raw": raw[(a, b)],
                 "p_holm": corrected[(a, b)],
+                "effect_size": paired_effect_size(vecs[a], vecs[b]),
             }
             for a, b in combinations(CLASSIFIERS, 2)
         },
+        "provenance": provenance(),
     }
 
     print(f"Best: {CLF_NAMES[best]}  acc={vecs[best].mean():.3f}  95% CI [{lo:.3f}, {hi:.3f}]")
