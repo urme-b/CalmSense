@@ -9,6 +9,13 @@ from ..logging_config import LoggerMixin
 
 
 class EDAProcessor(LoggerMixin):
+    """Electrodermal-activity processing: low-pass filtering, artifact removal, and
+    tonic/phasic decomposition with skin-conductance-response (SCR) peak detection.
+
+    All methods take 1-D arrays sampled at ``sampling_rate`` Hz. The tonic component
+    tracks slow skin-conductance level; the phasic component carries the fast SCRs.
+    """
+
     def __init__(self, sampling_rate: float = FS.WRIST_EDA):
         self.sampling_rate = sampling_rate
         self.logger.info(f"EDAProcessor initialized with fs={sampling_rate} Hz")
@@ -47,6 +54,16 @@ class EDAProcessor(LoggerMixin):
     def decompose_eda(
         self, eda: np.ndarray, method: str = "highpass"
     ) -> Tuple[np.ndarray, np.ndarray]:
+        """Split EDA into tonic (slow level) and phasic (fast SCR) components.
+
+        Args:
+            eda: Filtered EDA signal.
+            method: ``"highpass"`` (default), ``"median"``, or ``"cvxeda"``
+                (NeuroKit2; falls back to median if unavailable).
+
+        Returns:
+            ``(tonic, phasic)`` arrays with the same length as ``eda``.
+        """
         eda = np.asarray(eda).flatten()
 
         if method == "cvxeda":
