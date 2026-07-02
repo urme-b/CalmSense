@@ -18,7 +18,6 @@ contourpy==1.3.0
 coverage==7.10.7
 cycler==0.12.1
 exceptiongroup==1.3.1
-fastapi==0.128.8
 filelock==3.19.1
 flatbuffers==25.12.19
 fonttools==4.60.2
@@ -60,8 +59,6 @@ propcache==0.4.1
 protobuf==6.33.6
 pyarrow==21.0.0
 pycparser==2.23
-pydantic==2.13.4
-pydantic_core==2.46.4
 Pygments==2.20.0
 pyparsing==3.3.2
 pytest==8.4.2
@@ -81,7 +78,6 @@ six==1.17.0
 skl2onnx==1.20.0
 slicer==0.0.8
 soundfile==0.13.1
-starlette==0.49.3
 structlog==24.4.0
 sympy==1.14.0
 threadpoolctl==3.6.0
@@ -92,7 +88,6 @@ typing-inspection==0.4.2
 typing_extensions==4.15.0
 tzdata==2026.2
 urllib3==2.6.3
-uvicorn==0.39.0
 uvloop==0.22.1
 vulture==2.16
 watchfiles==1.1.1
