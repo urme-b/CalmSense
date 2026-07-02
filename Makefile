@@ -25,8 +25,12 @@ install-dev:
 experiment:
 	python scripts/run_experiment.py
 
-# Regenerate every number, figure, model, and the dashboard data in order
+# Regenerate every number, figure, model, and the dashboard data in order.
+# Prerequisites: WESAD (make wesad) and PhysioNet Non-EEG (make data) must be downloaded first;
+# on macOS, xgboost/lightgbm also need OpenMP (brew install libomp).
 reproduce:
+	@test -f data/raw/WESAD/S2/S2.pkl || test -f data/processed/features.parquet || \
+		{ echo "ERROR: WESAD not found. Run 'make wesad' (and 'make data' for cross_dataset) first; see data/raw/README.md."; exit 1; }
 	python scripts/run_experiment.py
 	python scripts/ablation.py
 	python scripts/wrist.py
