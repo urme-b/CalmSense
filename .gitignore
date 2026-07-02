@@ -214,8 +214,13 @@ temp/
 *.temp
 
 # API keys and secrets
+.env
+.env.*
+!.env.example
 secrets.yaml
 credentials.json
+*.pem
+*.key
 
 # Configuration overrides (local)
 configs/local/
