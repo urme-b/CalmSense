@@ -6,14 +6,14 @@
 
 ## What this is
 
-- Detects `stress` vs `baseline` from wearable signals: ECG, EDA (skin conductance), temperature, respiration, motion.
+- Detects stress vs baseline from wearable signals: ECG, EDA (skin conductance), temperature, respiration, motion.
 - Scored Leave-One-Subject-Out (LOSO): train on 14 people, test on the 15th, rotate.
 - Shows where the usual high numbers come from: subject leakage, motion, dataset shift, calibration.
-- Runs in the browser (ONNX, no backend). `make demo` runs the full pipeline offline on synthetic signals.
+- Runs in the browser (ONNX, no backend). make demo runs the full pipeline offline on synthetic signals.
 
 ## Results
 
-Binary (`baseline` vs `stress`), 15 subjects, LOSO, mean over held-out subjects.
+Binary (baseline vs stress), 15 subjects, LOSO, mean over held-out subjects.
 
 <table width="100%">
 <tr><th align="left">Model</th><th align="left">Accuracy</th><th align="left">F1 (macro)</th></tr>
@@ -49,7 +49,7 @@ Key findings, one per check:
 <tr><td>1D-CNN</td><td>Deep net on raw signal</td><td>Residual blocks, AdamW, early stopping</td></tr>
 </table>
 
-- Every model runs inside `impute (median) to scale to classifier`, fit per fold, seeded.
+- Every model runs inside an impute (median) to scale to classifier pipeline, fit per fold, seeded.
 
 ## Features (58)
 

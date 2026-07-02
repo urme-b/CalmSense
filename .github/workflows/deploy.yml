@@ -10,10 +10,11 @@ permissions:
   pages: write
   id-token: write
 
-# One production deployment at a time; don't cancel an in-progress deploy.
+# Supersede stale queued deploys so rapid pushes don't pile up and trip
+# GitHub Pages' "deployment already in progress" race.
 concurrency:
   group: pages
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   build:
