@@ -15,70 +15,84 @@
 
 Binary (`baseline` vs `stress`), 15 subjects, LOSO, mean over held-out subjects.
 
-| Model | Accuracy | F1 (macro) |
-|---|---|---|
-| Random Forest | 0.913 | 0.898 |
-| XGBoost | 0.903 | 0.873 |
-| Logistic Regression | 0.902 | 0.883 |
-| LightGBM | 0.894 | 0.860 |
-| 1D-CNN (raw signal) | 0.718 | 0.648 |
+<table width="100%">
+<tr><th align="left">Model</th><th align="left">Accuracy</th><th align="left">F1 (macro)</th></tr>
+<tr><td>Random Forest</td><td>0.913</td><td>0.898</td></tr>
+<tr><td>XGBoost</td><td>0.903</td><td>0.873</td></tr>
+<tr><td>Logistic Regression</td><td>0.902</td><td>0.883</td></tr>
+<tr><td>LightGBM</td><td>0.894</td><td>0.860</td></tr>
+<tr><td>1D-CNN (raw signal)</td><td>0.718</td><td>0.648</td></tr>
+</table>
 
 - The 4 feature models are a statistical tie (Friedman p = 0.81). RF 95% CI: [0.860, 0.960].
 
 Key findings, one per check:
 
-| Check | Question | Result |
-|---|---|---|
-| Subject leakage | Does same-person testing inflate scores? | 3-class 0.66 to 0.79 (+13 pts) |
-| Motion confound | Is it just movement? | Drop all motion: 0.913 to 0.901 |
-| Wrist vs chest | Is a cheap sensor enough? | 0.893 vs 0.913 (2 pts lower) |
-| Dataset shift | Does it transfer to another dataset? | Near chance (0.50 balanced) |
-| Calibration | Are the probabilities trustworthy? | ECE 0.070; isotonic map to 0.025 |
-| Personalization | Does a short enrollment help? | 20 windows: ECE 0.146 to 0.069 |
+<table width="100%">
+<tr><th align="left">Check</th><th align="left">Question</th><th align="left">Result</th></tr>
+<tr><td>Subject leakage</td><td>Does same-person testing inflate scores?</td><td>3-class 0.66 to 0.79 (+13 pts)</td></tr>
+<tr><td>Motion confound</td><td>Is it just movement?</td><td>Drop all motion: 0.913 to 0.901</td></tr>
+<tr><td>Wrist vs chest</td><td>Is a cheap sensor enough?</td><td>0.893 vs 0.913 (2 pts lower)</td></tr>
+<tr><td>Dataset shift</td><td>Does it transfer to another dataset?</td><td>Near chance (0.50 balanced)</td></tr>
+<tr><td>Calibration</td><td>Are the probabilities trustworthy?</td><td>ECE 0.070; isotonic map to 0.025</td></tr>
+<tr><td>Personalization</td><td>Does a short enrollment help?</td><td>20 windows: ECE 0.146 to 0.069</td></tr>
+</table>
 
 ## Models
 
-| Model | Type | Key settings |
-|---|---|---|
-| Logistic Regression | Linear | C=1.0, L2, class-balanced |
-| Random Forest | Bagged trees | 200 trees, depth 10, class-balanced |
-| XGBoost | Boosted trees | 200 trees, depth 7, lr 0.1 |
-| LightGBM | Boosted trees | 200 trees, 50 leaves, lr 0.1 |
-| 1D-CNN | Deep net on raw signal | Residual blocks, AdamW, early stopping |
+<table width="100%">
+<tr><th align="left">Model</th><th align="left">Type</th><th align="left">Key settings</th></tr>
+<tr><td>Logistic Regression</td><td>Linear</td><td>C=1.0, L2, class-balanced</td></tr>
+<tr><td>Random Forest</td><td>Bagged trees</td><td>200 trees, depth 10, class-balanced</td></tr>
+<tr><td>XGBoost</td><td>Boosted trees</td><td>200 trees, depth 7, lr 0.1</td></tr>
+<tr><td>LightGBM</td><td>Boosted trees</td><td>200 trees, 50 leaves, lr 0.1</td></tr>
+<tr><td>1D-CNN</td><td>Deep net on raw signal</td><td>Residual blocks, AdamW, early stopping</td></tr>
+</table>
 
 - Every model runs inside `impute (median) to scale to classifier`, fit per fold, seeded.
 
 ## Features (58)
 
-| Group | Count | Examples |
-|---|---|---|
-| HRV time domain | 12 | MeanNN, SDNN, RMSSD, pNN50 |
-| HRV frequency | 8 | LF/HF power, LF/HF ratio |
-| HRV nonlinear | 10 | SampEn, DFA, SD1/SD2, CSI |
-| EDA (skin conductance) | 15 | SCL level, SCR count, SCR amplitude |
-| Temperature + respiration | 8 | temp slope, respiration rate |
-| Accelerometer (motion) | 5 | magnitude mean, std, energy |
+<table width="100%">
+<tr><th align="left">Group</th><th align="left">Count</th><th align="left">Examples</th></tr>
+<tr><td>HRV time domain</td><td>12</td><td>MeanNN, SDNN, RMSSD, pNN50</td></tr>
+<tr><td>HRV frequency</td><td>8</td><td>LF/HF power, LF/HF ratio</td></tr>
+<tr><td>HRV nonlinear</td><td>10</td><td>SampEn, DFA, SD1/SD2, CSI</td></tr>
+<tr><td>EDA (skin conductance)</td><td>15</td><td>SCL level, SCR count, SCR amplitude</td></tr>
+<tr><td>Temperature + respiration</td><td>8</td><td>temp slope, respiration rate</td></tr>
+<tr><td>Accelerometer (motion)</td><td>5</td><td>magnitude mean, std, energy</td></tr>
+</table>
 
 ## Graphs & charts
 
-| | | |
-|:---:|:---:|:---:|
-| ![Model comparison](outputs/figures/binary_model_comparison.png) | ![Optimism gap](outputs/figures/binary_optimism_gap.png) | ![Ablation](outputs/figures/ablation.png) |
-| Model comparison (LOSO) | Optimism gap (leakage) | Feature ablation |
-| ![Wrist vs chest](outputs/figures/chest_vs_wrist.png) | ![Cross-dataset](outputs/figures/cross_dataset.png) | ![Reliability](outputs/figures/calibration_reliability.png) |
-| Wrist vs chest | Cross-dataset transfer | Calibration reliability |
-| ![Personalization](outputs/figures/personalization.png) | ![SHAP](outputs/figures/shap_beeswarm.png) | ![Confusion](outputs/figures/binary_confusion.png) |
-| Few-shot personalization | Top features (SHAP) | Confusion matrix |
+<table>
+<tr>
+<td align="center"><img src="outputs/figures/binary_model_comparison.png" width="260" alt="Model comparison"><br>Model comparison (LOSO)</td>
+<td align="center"><img src="outputs/figures/binary_optimism_gap.png" width="260" alt="Optimism gap"><br>Optimism gap (leakage)</td>
+<td align="center"><img src="outputs/figures/ablation.png" width="260" alt="Ablation"><br>Feature ablation</td>
+</tr>
+<tr>
+<td align="center"><img src="outputs/figures/chest_vs_wrist.png" width="260" alt="Wrist vs chest"><br>Wrist vs chest</td>
+<td align="center"><img src="outputs/figures/cross_dataset.png" width="260" alt="Cross-dataset"><br>Cross-dataset transfer</td>
+<td align="center"><img src="outputs/figures/calibration_reliability.png" width="260" alt="Reliability"><br>Calibration reliability</td>
+</tr>
+<tr>
+<td align="center"><img src="outputs/figures/personalization.png" width="260" alt="Personalization"><br>Few-shot personalization</td>
+<td align="center"><img src="outputs/figures/shap_beeswarm.png" width="260" alt="SHAP"><br>Top features (SHAP)</td>
+<td align="center"><img src="outputs/figures/binary_confusion.png" width="260" alt="Confusion"><br>Confusion matrix</td>
+</tr>
+</table>
 
 ## Tech stack
 
-| Area | Tools |
-|---|---|
-| Modelling | scikit-learn, XGBoost, LightGBM, PyTorch |
-| Signal processing | NeuroKit2, SciPy |
-| Explainability | SHAP |
-| Dashboard | React, TypeScript, ONNX Runtime Web |
-| Tooling | GitHub Actions, ruff, mypy, pytest |
+<table width="100%">
+<tr><th align="left">Area</th><th align="left">Tools</th></tr>
+<tr><td>Modelling</td><td>scikit-learn, XGBoost, LightGBM, PyTorch</td></tr>
+<tr><td>Signal processing</td><td>NeuroKit2, SciPy</td></tr>
+<tr><td>Explainability</td><td>SHAP</td></tr>
+<tr><td>Dashboard</td><td>React, TypeScript, ONNX Runtime Web</td></tr>
+<tr><td>Tooling</td><td>GitHub Actions, ruff, mypy, pytest</td></tr>
+</table>
 
 ## Limitations
 
@@ -86,6 +100,12 @@ Key findings, one per check:
 - Ablation, calibration, and personalization are exploratory, not multiplicity-corrected.
 - The 1D-CNN is a small baseline, not a fair test of deep learning.
 - Cross-dataset uses one confounded pair. Illustrative, not conclusive.
+
+## Future work
+
+- A third corpus (SWELL / AffectiveROAD) for leave-one-dataset-out generalization.
+- Real-world, non-lab stress data beyond the 15-subject benchmark.
+- Real-time streaming inference from a live wearable.
 
 ## Ethics & data use
 
