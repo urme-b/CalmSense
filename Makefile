@@ -8,7 +8,7 @@ help:
 	@echo "  experiment     Run the LOSO benchmark from raw WESAD"
 	@echo "  reproduce      Regenerate every result and figure (full pipeline)"
 	@echo "  demo           Run the calibration pipeline on synthetic data (no download)"
-	@echo "  data           Download the PhysioNet Non-EEG dataset"
+	@echo "  data           Download PhysioNet Non-EEG (cross-dataset transfer only)"
 	@echo "  frontend       Start the React dashboard"
 	@echo "  test           Run tests"
 	@echo "  lint           Lint with ruff"

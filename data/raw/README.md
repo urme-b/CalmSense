@@ -4,6 +4,11 @@ WESAD (Wearable Stress and Affect Detection) is a public multimodal dataset of 1
 recorded with a chest (RespiBAN) and wrist (Empatica E4) device across baseline, stress,
 amusement, and meditation conditions. It is not redistributed with this repository.
 
+**Two distinct datasets, two distinct roles.** WESAD is the **primary** dataset for the
+Leave-One-Subject-Out benchmark and every headline result. The **PhysioNet Non-EEG** dataset
+(Birjandtalab et al.) is used **only** for the cross-dataset transfer experiment
+(`scripts/cross_dataset.py`); it is a separate corpus (read via `wfdb`, whereas WESAD ships as `.pkl`).
+
 Reference: Schmidt et al., "Introducing WESAD, a Multimodal Dataset for Wearable Stress and
 Affect Detection," ICMI 2018.
 
