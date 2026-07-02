@@ -2,8 +2,8 @@ cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
 type: software
 title: "CalmSense: Subject-Independent Stress Detection and Calibration on WESAD"
-version: 0.1.0
-date-released: 2026-07-02
+version: 1.0.0
+date-released: 2026-07-03
 url: "https://github.com/urme-b/CalmSense"
 repository-code: "https://github.com/urme-b/CalmSense"
 license: MIT
