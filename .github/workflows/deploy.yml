@@ -24,7 +24,6 @@ jobs:
       - name: Build
         working-directory: frontend
         env:
-          REACT_APP_API_URL: ""
           CI: false
         run: npm run build
 
