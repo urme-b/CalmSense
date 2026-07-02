@@ -14,12 +14,12 @@ Affect Detection," ICMI 2018.
 
 ## Download
 
-The cross-dataset PhysioNet Non-EEG set downloads directly; WESAD is behind a
-one-time research agreement.
+WESAD (the primary dataset, needed for `make experiment`/`make reproduce`) is behind a one-time
+research agreement; the cross-dataset PhysioNet Non-EEG set downloads directly.
 
 ```bash
-make data                                 # PhysioNet Non-EEG -> data/external/noneeg
-python scripts/download_data.py --wesad   # WESAD (~2 GB) -> data/raw/WESAD
+make wesad   # WESAD (~2 GB) -> data/raw/WESAD          (primary; required for reproduce)
+make data    # PhysioNet Non-EEG -> data/external/noneeg (cross-dataset transfer only)
 ```
 
 Prefer to fetch WESAD manually? Request it from the UCI Machine Learning Repository

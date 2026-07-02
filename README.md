@@ -116,8 +116,9 @@ outputs/figures/   committed result figures
 ```bash
 pip install -e .
 make demo         # full pipeline (features → LOSO → calibration → personalization) on synthetic data
-make data         # PhysioNet Non-EEG for the cross-dataset transfer (downloads on run)
-make reproduce    # regenerate every WESAD number, figure, and model, requires the WESAD download
+make wesad        # download WESAD (~2 GB, research agreement) — the primary dataset
+make data         # PhysioNet Non-EEG for the cross-dataset transfer
+make reproduce    # regenerate every WESAD number, figure, and model (run make wesad first)
 ```
 
 From a clean clone, **make demo is what runs offline**, it exercises the entire pipeline on a
