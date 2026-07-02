@@ -255,7 +255,7 @@ const PredictionPanel: React.FC = () => {
       setCurrentPrediction(result);
       setHistory((prev) => [result, ...prev].slice(0, 10));
     } catch (err: any) {
-      setError(err.message || 'Prediction failed — check API connection');
+      setError(err.message || 'Prediction failed — check the input feature values');
     } finally {
       setLoading(false);
     }

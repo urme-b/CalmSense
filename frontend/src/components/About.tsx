@@ -74,7 +74,7 @@ const About: React.FC = () => {
           <ul className="space-y-2 text-gray-600 dark:text-gray-400">
             <li>• WESAD: Wearable Stress and Affect Detection</li>
             <li>• 15 subjects with multimodal signals</li>
-            <li>• ECG, EDA, EMG, TEMP, RESP, ACC</li>
+            <li>• ECG, EDA, TEMP, RESP, ACC</li>
             <li>• Three conditions: Baseline, Stress, Amusement</li>
           </ul>
         </div>
@@ -220,7 +220,7 @@ const About: React.FC = () => {
 
       {/* Footer */}
       <div className="text-center text-gray-500 dark:text-gray-500 text-sm">
-        <p>© 2024 CalmSense Project. Licensed under MIT License.</p>
+        <p>© 2026 CalmSense Project. Licensed under MIT License.</p>
         <p className="mt-1">Built with React, TypeScript, Tailwind CSS, ONNX, and PyTorch.</p>
       </div>
     </div>
