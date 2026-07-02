@@ -57,3 +57,36 @@ def ensure_directory(path: Union[str, Path]) -> Path:
     path = Path(path)
     path.mkdir(parents=True, exist_ok=True)
     return path
+
+
+def provenance() -> dict:
+    """Git commit + UTC timestamp for stamping result artifacts, so every committed
+    JSON records exactly which code produced it."""
+    import subprocess
+    from datetime import datetime, timezone
+
+    root = Path(__file__).resolve().parent.parent
+    try:
+        sha = subprocess.check_output(
+            ["git", "rev-parse", "HEAD"], cwd=root, text=True, stderr=subprocess.DEVNULL
+        ).strip()
+    except Exception:
+        sha = "unknown"
+    return {"git_sha": sha, "generated_at": datetime.now(timezone.utc).isoformat()}
+
+
+def paired_effect_size(a, b) -> dict:
+    """Paired Cohen's d and (small-sample-corrected) Hedges' g for two per-subject vectors.
+
+    Complements p-values: reports the standardized magnitude of a - b, which is what
+    matters at N=15 where significance is low-powered.
+    """
+    import numpy as np
+
+    a, b = np.asarray(a, dtype=float), np.asarray(b, dtype=float)
+    diff = a - b
+    n = len(diff)
+    sd = diff.std(ddof=1)
+    d = float(diff.mean() / sd) if sd > 0 else 0.0
+    g = d * (1 - 3 / (4 * n - 1)) if n > 1 else d  # Hedges correction for small n
+    return {"cohens_d": d, "hedges_g": float(g), "n": int(n)}
