@@ -29,6 +29,22 @@ inference. Each stage is a small module with one job.
 
 ## Data flow at a glance
 
+```mermaid
+flowchart TD
+    A[raw WESAD signals] --> B[preprocess<br/>filter · R-peaks · EDA decomposition]
+    B --> C[window<br/>60s · 50% overlap · purity ≥ 90%]
+    C --> D[58 features<br/>HRV / EDA / TEMP / RESP / motion]
+    D --> E[leakage-free LOSO benchmark<br/>LR · RF · XGBoost · LightGBM · 1D-CNN]
+    E --> F[metrics.json]
+    E --> G[calibration + few-shot personalization]
+    E --> H[SHAP · ablation · wrist · cross-dataset]
+    E --> I[best model]
+    I --> J[ONNX export]
+    J --> K[React dashboard<br/>runs in the browser, no backend]
+```
+
+Plain-text fallback:
+
 ```
 raw WESAD ─▶ preprocess ─▶ window ─▶ features ─▶ LOSO benchmark ─▶ metrics.json
                                               └─▶ calibration / personalization ─▶ calibration.json
