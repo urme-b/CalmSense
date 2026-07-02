@@ -23,9 +23,9 @@ jobs:
           pip install -e ".[dev]"
           pip install ruff mypy
       - name: Ruff lint
-        run: ruff check src/ api/ tests/ scripts/
+        run: ruff check src/ tests/ scripts/
       - name: Ruff format check
-        run: ruff format --check src/ api/ tests/ scripts/
+        run: ruff format --check src/ tests/ scripts/
       - name: mypy
         run: mypy src/ --ignore-missing-imports
 
@@ -113,7 +113,7 @@ jobs:
         run: npm run build
 
   clean-clone:
-    name: Clean-clone smoke (pip install -e . -> demo -> predict)
+    name: Clean-clone smoke (pip install -e . -> demo)
     runs-on: ubuntu-latest
     needs: lint
     steps:
@@ -130,10 +130,3 @@ jobs:
           pip install -e .
       - name: make demo (offline synthetic pipeline)
         run: make demo
-      - name: Serve the API and get one prediction
-        run: |
-          uvicorn api.main:app --host 127.0.0.1 --port 8000 &
-          for i in $(seq 1 30); do curl -sf http://127.0.0.1:8000/health && break; sleep 1; done
-          curl -sf -X POST http://127.0.0.1:8000/predict \
-            -H 'Content-Type: application/json' \
-            -d '{"features":{"HRV_MeanNN":690,"EDA_SCR_count":8,"RESP_rate":20}}'

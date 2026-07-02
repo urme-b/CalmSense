@@ -1,4 +1,4 @@
-.PHONY: help install install-dev test lint format experiment reproduce demo data api frontend frontend-build docker clean
+.PHONY: help install install-dev test lint format experiment reproduce demo data frontend frontend-build clean
 
 help:
 	@echo "CalmSense - subject-independent stress detection"
@@ -9,12 +9,10 @@ help:
 	@echo "  reproduce      Regenerate every result and figure (full pipeline)"
 	@echo "  demo           Run the calibration pipeline on synthetic data (no download)"
 	@echo "  data           Download the PhysioNet Non-EEG dataset"
-	@echo "  api            Start the prediction API"
 	@echo "  frontend       Start the React dashboard"
 	@echo "  test           Run tests"
 	@echo "  lint           Lint with ruff"
 	@echo "  format         Format with ruff"
-	@echo "  docker         Build and run with Docker"
 	@echo "  clean          Remove caches and build artifacts"
 
 install:
@@ -52,23 +50,17 @@ test:
 	pytest tests/ -q
 
 lint:
-	ruff check src/ api/ tests/ scripts/
+	ruff check src/ tests/ scripts/
 
 format:
-	ruff format src/ api/ tests/ scripts/
-	ruff check --fix src/ api/ tests/ scripts/
-
-api:
-	uvicorn api.main:app --reload --host 0.0.0.0 --port 8000
+	ruff format src/ tests/ scripts/
+	ruff check --fix src/ tests/ scripts/
 
 frontend:
 	cd frontend && npm start
 
 frontend-build:
 	cd frontend && npm run build
-
-docker:
-	docker compose up --build
 
 clean:
 	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
