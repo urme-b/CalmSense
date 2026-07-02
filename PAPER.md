@@ -86,19 +86,21 @@ Random forest is nominally best on binary (0.913, 95% CI [0.860, 0.960]), but th
 | _Majority class_ | _0.647_ | n/a | _0.545_ | n/a |
 | _Chance_ | _0.500_ | n/a | _0.333_ | n/a |
 
-![Binary comparison](outputs/figures/binary_model_comparison.png)
+<table>
+<tr>
+<td align="center"><img src="outputs/figures/binary_model_comparison.png" width="410" alt="Binary comparison"><br><em>Fig. 1. Binary accuracy by model, with error bars over subjects.</em></td>
+<td align="center"><img src="outputs/figures/multiclass_model_comparison.png" width="410" alt="Three-class comparison"><br><em>Fig. 2. Three-class accuracy by model.</em></td>
+</tr>
+</table>
 
-*Fig. 1. Binary accuracy by model, with error bars over subjects.*
+<table>
+<tr>
+<td align="center"><img src="outputs/figures/binary_confusion.png" width="340" alt="Binary confusion"></td>
+<td align="center"><img src="outputs/figures/multiclass_confusion.png" width="340" alt="Three-class confusion"></td>
+</tr>
+</table>
 
-![Three-class comparison](outputs/figures/multiclass_model_comparison.png)
-
-*Fig. 2. Three-class accuracy by model.*
-
-| | |
-|:--:|:--:|
-| ![Binary confusion](outputs/figures/binary_confusion.png) | ![Three-class confusion](outputs/figures/multiclass_confusion.png) |
-
-*Fig. 3. Confusion matrices, binary (left) and three-class (right).*
+<p align="center"><em>Fig. 3. Confusion matrices, binary (left) and three-class (right).</em></p>
 
 ### B. Subject-Leakage Optimism Gap
 
@@ -111,9 +113,7 @@ Within-subject 5-fold on the same non-overlapping windows lifts binary accuracy 
 | Binary | 0.964 | 0.907 | +5.7 pts |
 | 3-class | 0.792 | 0.658 | +13.3 pts |
 
-![Per-subject accuracy](outputs/figures/binary_per_subject.png)
-
-*Fig. 4. Per-subject LOSO accuracy; the line marks the mean.*
+<p align="center"><img src="outputs/figures/binary_per_subject.png" width="560" alt="Per-subject accuracy"><br><em>Fig. 4. Per-subject LOSO accuracy; the line marks the mean.</em></p>
 
 ### C. Motion-Confound Ablation
 
@@ -130,9 +130,7 @@ Motion alone reaches 0.885, but removing all motion still gives 0.901: the signa
 | HRV only (30) | 0.810 |
 | Motion only (5) | 0.885 |
 
-![Ablation](outputs/figures/ablation.png)
-
-*Fig. 5. Accuracy for feature subsets.*
+<p align="center"><img src="outputs/figures/ablation.png" width="520" alt="Ablation"><br><em>Fig. 5. Accuracy for feature subsets.</em></p>
 
 ### D. Wrist-Only Deployability
 
@@ -146,9 +144,7 @@ Wrist-only trails chest by 2 points (0.893 vs 0.913; best wrist 0.906), within n
 | Wrist | Random Forest | 0.893 |
 | Wrist | XGBoost (best) | 0.906 |
 
-![Chest vs wrist](outputs/figures/chest_vs_wrist.png)
-
-*Fig. 6. Chest and wrist accuracy.*
+<p align="center"><img src="outputs/figures/chest_vs_wrist.png" width="520" alt="Chest vs wrist"><br><em>Fig. 6. Chest and wrist accuracy.</em></p>
 
 ### E. Cross-Dataset Generalization
 
@@ -161,17 +157,13 @@ On a shared 18-feature binary space, within-dataset accuracy holds but transfer 
 | WESAD | 0.86 | → Non-EEG: **0.57** |
 | Non-EEG | 0.70 | → WESAD: **0.50** |
 
-![Cross-dataset](outputs/figures/cross_dataset.png)
-
-*Fig. 7. Within-dataset accuracy holds; transfer collapses.*
+<p align="center"><img src="outputs/figures/cross_dataset.png" width="520" alt="Cross-dataset"><br><em>Fig. 7. Within-dataset accuracy holds; transfer collapses.</em></p>
 
 ### F. Interpretability
 
 SHAP [12], computed on a model fit to all data and read as global importance, ranks motion, heart-rate level, skin-conductance responses, and respiration rate, all sensible for acute stress (Fig. 8).
 
-![SHAP](outputs/figures/shap_beeswarm.png)
-
-*Fig. 8. SHAP feature importance for the gradient-boosted model.*
+<p align="center"><img src="outputs/figures/shap_beeswarm.png" width="560" alt="SHAP"><br><em>Fig. 8. SHAP feature importance for the gradient-boosted model.</em></p>
 
 ### G. Calibration
 
@@ -187,13 +179,12 @@ LOSO is less calibrated than within-subject (per-subject Brier gap +0.066, paire
 | LOSO + leak-free recalibration | 0.025 | 0.271 | 0.129 |
 <!-- AUTOGEN:calibration END -->
 
-![Reliability](outputs/figures/calibration_reliability.png)
-
-*Fig. 9. Reliability before and after recalibration.*
-
-![Decision curve](outputs/figures/calibration_decision_curve.png)
-
-*Fig. 10. Decision-curve net benefit across alert thresholds.*
+<table>
+<tr>
+<td align="center"><img src="outputs/figures/calibration_reliability.png" width="410" alt="Reliability"><br><em>Fig. 9. Reliability before and after recalibration.</em></td>
+<td align="center"><img src="outputs/figures/calibration_decision_curve.png" width="410" alt="Decision curve"><br><em>Fig. 10. Decision-curve net benefit across alert thresholds.</em></td>
+</tr>
+</table>
 
 ### H. Few-Shot Personalization
 
@@ -211,9 +202,7 @@ A per-subject calibrator beats a global one: ECE falls from 0.146 to 0.108 (glob
 | Few-shot, 20 windows | 0.069 | 0.058 |
 <!-- AUTOGEN:personalization END -->
 
-![Personalization](outputs/figures/personalization.png)
-
-*Fig. 11. Calibration error versus enrollment size.*
+<p align="center"><img src="outputs/figures/personalization.png" width="520" alt="Personalization"><br><em>Fig. 11. Calibration error versus enrollment size.</em></p>
 
 ## V. Limitations and Future Work
 
