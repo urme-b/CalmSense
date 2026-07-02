@@ -91,7 +91,7 @@ const OptimismGapChart: React.FC = () => {
           <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
           <XAxis dataKey="name" tick={{ fontSize: 11 }} interval={0} />
           <YAxis domain={[0, 1]} tickFormatter={(v) => `${(v * 100).toFixed(0)}%`} />
-          <Tooltip formatter={(v: number) => pct(v)} />
+          <Tooltip formatter={(v) => pct(Number(v))} />
           <Bar dataKey="value" radius={[4, 4, 0, 0]}>
             {data.map((entry, index) => (
               <Cell key={`cell-${index}`} fill={entry.color} />

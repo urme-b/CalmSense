@@ -119,7 +119,7 @@ const PredictionResultCard: React.FC<{ prediction: PredictionResponse }> = ({ pr
               <XAxis type="number" domain={[0, 100]} hide />
               <YAxis type="category" dataKey="name" tick={{ fontSize: 12 }} width={80} />
               <Tooltip
-                formatter={(value: number) => `${value.toFixed(1)}%`}
+                formatter={(value) => `${Number(value).toFixed(1)}%`}
                 contentStyle={{ fontSize: 12 }}
               />
               <Bar dataKey="value" radius={[0, 4, 4, 0]}>

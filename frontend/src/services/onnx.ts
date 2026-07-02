@@ -1,5 +1,5 @@
 // Runs the trained Random Forest entirely in the browser via ONNX Runtime Web.
-import * as ort from 'onnxruntime-web';
+import * as ort from 'onnxruntime-web/wasm';
 import meta from '../model_meta.json';
 import { PredictionResponse } from '../types';
 
