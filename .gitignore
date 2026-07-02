@@ -231,9 +231,6 @@ credentials.json
 configs/local/
 *.local.yaml
 
-# Docker
-.docker/
-
 # Node.js (for frontend)
 frontend/node_modules/
 frontend/build/
