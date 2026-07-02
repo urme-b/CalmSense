@@ -97,5 +97,4 @@ Key findings, one per check:
 
 ## License
 
-- Code: MIT ([LICENSE](LICENSE)).
-- Datasets: their own terms (WESAD research-only, PhysioNet Non-EEG).
+[MIT License](LICENSE)
