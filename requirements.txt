@@ -3,17 +3,17 @@
 
 # Scientific core
 numpy>=1.24,<3.0
-scipy>=1.10,<1.15  # neurokit2 0.2.7 uses scipy.signal.daub, removed in scipy 1.15
+scipy>=1.10,<1.16  # neurokit2 0.2.7 uses scipy.signal.daub, removed in scipy 1.15
 pandas>=2.0,<3.0
 pyarrow>=14.0
-scikit-learn==1.6.1  # pinned: the saved model pickle is version-coupled
+scikit-learn==1.7.2  # pinned: the saved model pickle is version-coupled
 
 # Biosignal processing
-neurokit2==0.2.7
+neurokit2==0.2.13
 wfdb>=4.1,<5.0  # reads the PhysioNet Non-EEG dataset only (WESAD ships as pickle, loaded separately)
 
 # Models
-xgboost>=2.0,<3.0
+xgboost>=2.0,<4.0
 lightgbm>=4.0,<5.0
 torch>=2.0,<3.0
 
@@ -23,8 +23,8 @@ shap>=0.43,<1.0
 # Export the trained model to ONNX for in-browser inference
 # Pinned: onnxruntime matches the browser's onnxruntime-web 1.19.2 so results agree
 skl2onnx==1.20.0
-onnx==1.19.1
-onnxruntime==1.19.2
+onnx==1.22.0
+onnxruntime==1.24.3
 
 # Figures
 matplotlib>=3.7,<4.0
@@ -32,4 +32,4 @@ seaborn>=0.12,<1.0
 
 # Utilities
 joblib>=1.3,<2.0
-structlog>=23.1,<25.0
+structlog>=23.1,<27.0
