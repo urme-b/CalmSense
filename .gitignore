@@ -222,7 +222,6 @@ temp/
 # API keys and secrets
 .env
 .env.*
-!.env.example
 secrets.yaml
 credentials.json
 *.pem
