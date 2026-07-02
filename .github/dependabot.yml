@@ -28,15 +28,6 @@ updates:
       npm:
         patterns: ["*"]
 
-  # Base image in the Dockerfile
-  - package-ecosystem: "docker"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-    commit-message:
-      prefix: "deps"
-
   # GitHub Actions used in the workflows
   - package-ecosystem: "github-actions"
     directory: "/"
