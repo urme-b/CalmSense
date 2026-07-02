@@ -43,7 +43,8 @@ class ECGProcessor(LoggerMixin):
         self.logger.debug(f"Applied bandpass filter: {low}-{high} Hz, order={order}")
         return filtered
 
-    def detect_r_peaks(self, ecg: np.ndarray, method: str = "pantompkins") -> np.ndarray:
+    def detect_r_peaks(self, ecg: np.ndarray) -> np.ndarray:
+        """Detect R-peaks (NeuroKit2 if available, else Pan-Tompkins). Returns sample indices."""
         ecg = np.asarray(ecg).flatten()
         duration_sec = len(ecg) / self.sampling_rate
 

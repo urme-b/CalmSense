@@ -86,7 +86,7 @@ class RespirationFeatureExtractor(LoggerMixin):
                 features["RESP_amplitude"] = float(np.std(resp))
 
             if breath_peaks is not None and breath_troughs is not None:
-                ie_ratio = self._compute_ie_ratio(resp, breath_peaks, breath_troughs)
+                ie_ratio = self._compute_ie_ratio(breath_peaks, breath_troughs)
                 features["RESP_inhale_exhale_ratio"] = ie_ratio
 
             features["RESP_apnea_index"] = self._compute_apnea_index(resp, breath_intervals)
@@ -124,7 +124,7 @@ class RespirationFeatureExtractor(LoggerMixin):
 
         return float(peak_freq * 60.0)
 
-    def _compute_ie_ratio(self, resp: np.ndarray, peaks: np.ndarray, troughs: np.ndarray) -> float:
+    def _compute_ie_ratio(self, peaks: np.ndarray, troughs: np.ndarray) -> float:
         inspiration_times = []
         expiration_times = []
 
