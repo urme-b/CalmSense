@@ -30,6 +30,20 @@ def test_loso_evaluate_holds_out_each_subject():
     assert set(res["per_subject"]["subject"]) == set(groups)
 
 
+def test_loso_splits_have_disjoint_subjects():
+    # The core leakage guard: no subject may appear in both train and test of any fold.
+    from sklearn.model_selection import LeaveOneGroupOut
+
+    groups = np.repeat([f"S{i}" for i in range(5)], 30)
+    X = np.zeros((len(groups), 3))
+    y = np.zeros(len(groups))
+    for train_idx, test_idx in LeaveOneGroupOut().split(X, y, groups):
+        train_subjects = set(groups[train_idx])
+        test_subjects = set(groups[test_idx])
+        assert train_subjects.isdisjoint(test_subjects)
+        assert len(test_subjects) == 1  # exactly one subject held out per fold
+
+
 def test_nonoverlap_mask_keeps_every_other_window_per_subject():
     # uneven per-subject block sizes (5 and 4) to catch off-by-one slicing
     groups = np.array(["S0", "S0", "S0", "S0", "S0", "S1", "S1", "S1", "S1"])
