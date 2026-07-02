@@ -33,7 +33,7 @@ const About: React.FC = () => {
 
       {/* Badges */}
       <div className="flex flex-wrap justify-center gap-2">
-        {['Python 3.9+', 'PyTorch', 'FastAPI', 'React', 'WESAD Dataset'].map((badge) => (
+        {['Python 3.9+', 'PyTorch', 'React', 'ONNX', 'WESAD Dataset'].map((badge) => (
           <span
             key={badge}
             className="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 rounded-full text-sm font-medium"
@@ -53,8 +53,7 @@ const About: React.FC = () => {
           accuracy survives honest, subject-independent evaluation. Using the WESAD dataset, it runs a
           complete pipeline — signal preprocessing, feature extraction, and a leakage-free
           Leave-One-Subject-Out comparison of classical models and a 1D-CNN — and exports the trained
-          model to run entirely in the browser via ONNX, with an optional FastAPI service for
-          server-side prediction.
+          model to run entirely in the browser via ONNX.
         </p>
         <p className="mt-4 text-gray-600 dark:text-gray-400 leading-relaxed">
           Every result uses <strong>Leave-One-Subject-Out</strong> cross-validation, so models are always tested
@@ -141,8 +140,7 @@ const About: React.FC = () => {
   SHAP interpretation  +  calibration & decision-curve analysis
       │
       ▼
-  ONNX export  ──▶  React dashboard (runs in the browser, no backend)
-                    FastAPI service (optional, for server-side prediction)`}
+  ONNX export  ──▶  React dashboard (runs in the browser, no backend)`}
           </pre>
         </div>
       </div>
@@ -218,22 +216,12 @@ const About: React.FC = () => {
           <span>GitHub Repository</span>
           <ExternalLink className="w-4 h-4" />
         </a>
-        <a
-          href="https://github.com/urme-b/CalmSense/blob/main/api/main.py"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          <BookOpen className="w-5 h-5" />
-          <span>API Documentation</span>
-          <ExternalLink className="w-4 h-4" />
-        </a>
       </div>
 
       {/* Footer */}
       <div className="text-center text-gray-500 dark:text-gray-500 text-sm">
         <p>© 2024 CalmSense Project. Licensed under MIT License.</p>
-        <p className="mt-1">Built with React, TypeScript, Tailwind CSS, FastAPI, and PyTorch.</p>
+        <p className="mt-1">Built with React, TypeScript, Tailwind CSS, ONNX, and PyTorch.</p>
       </div>
     </div>
   );
