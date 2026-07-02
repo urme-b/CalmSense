@@ -144,6 +144,7 @@ const Header: React.FC<{ onMenuClick: () => void }> = ({ onMenuClick }) => {
       <div className="flex items-center justify-between px-4 py-3">
         <button
           onClick={onMenuClick}
+          aria-label="Open navigation menu"
           className="lg:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
         >
           <Menu className="w-6 h-6 text-gray-600 dark:text-gray-300" />

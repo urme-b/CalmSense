@@ -358,7 +358,11 @@ const PredictionPanel: React.FC = () => {
 
             {/* Error Message */}
             {error && (
-              <div className="mt-4 flex items-center space-x-2 p-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg">
+              <div
+                role="alert"
+                aria-live="assertive"
+                className="mt-4 flex items-center space-x-2 p-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg"
+              >
                 <AlertCircle className="w-5 h-5" />
                 <span className="text-sm">{error}</span>
               </div>
@@ -415,6 +419,7 @@ const PredictionPanel: React.FC = () => {
                 disabled={history.length === 0}
                 className="p-1.5 text-gray-400 hover:text-blue-500 disabled:opacity-50"
                 title="Download History"
+                aria-label="Download history"
               >
                 <Download className="w-4 h-4" />
               </button>
@@ -423,6 +428,7 @@ const PredictionPanel: React.FC = () => {
                 disabled={history.length === 0}
                 className="p-1.5 text-gray-400 hover:text-red-500 disabled:opacity-50"
                 title="Clear History"
+                aria-label="Clear history"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
