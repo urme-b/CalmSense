@@ -12,12 +12,7 @@ downloading WESAD; make demo reproduces the same pipeline on synthetic data inst
 | wrist.json | scripts/wrist.py |
 | cross_dataset.json | scripts/cross_dataset.py |
 | stats.json | scripts/stats.py |
+| calibration.json | scripts/calibration.py |
+| personalization.json | scripts/personalize.py |
 
-**Not committed** (regenerate on WESAD): calibration.json, personalization.json, tuning.json
-and their figures, these require the WESAD download. Until then the paper's §4.7 to 4.8 tables are
-placeholders.
-
-> **Known staleness:** metrics.json was generated before the optimism-gap calculation was refined
-> to use matched, non-overlapping windows (now in scripts/run_experiment.py, which writes a
-> loso_matched_accuracy field). Re-running on WESAD adds that field and may shift the reported gap
-> slightly, the live code is the source of truth.
+**Not committed** (regenerate on WESAD): tuning.json and its figures, which require the WESAD download.
