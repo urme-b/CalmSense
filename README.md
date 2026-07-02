@@ -94,9 +94,8 @@ expected under acute stress.
 | Modelling | scikit-learn, XGBoost, LightGBM, PyTorch |
 | Signal processing | NeuroKit2, SciPy |
 | Interpretability | SHAP |
-| Service | FastAPI |
-| Dashboard | React, TypeScript, Plotly |
-| Tooling | Docker, GitHub Actions, ruff, pytest |
+| Dashboard | React, TypeScript, Plotly, ONNX Runtime Web |
+| Tooling | GitHub Actions, ruff, pytest |
 
 ## Project structure
 
@@ -106,27 +105,10 @@ src/               signal processing, features, datasets, models, calibration
   features/          58 HRV / EDA / temperature / respiration / motion features
   models/            classical (scikit-learn) + 1D-CNN (PyTorch)
 scripts/           LOSO benchmark, ablation, calibration, personalization, ONNX export
-api/               FastAPI service (serves the trained model)
 frontend/          React + TypeScript dashboard, in-browser ONNX inference
 tests/             pytest suite, incl. the leakage/methodology guards
 results/           committed WESAD metrics (JSON/CSV)
 outputs/figures/   committed result figures
-```
-
-## API
-
-The dashboard runs the model in-browser via ONNX, so the live demo needs no server. A FastAPI
-service is provided for local or programmatic use:
-
-| Method | Route | Purpose |
-| --- | --- | --- |
-| GET | `/health` | liveness and whether the model is loaded |
-| GET | `/model` | class names and the expected feature list |
-| POST | `/predict` | `{"features": {name: value}}` → label + probabilities |
-| POST | `/explain` | same input → prediction + SHAP contributions |
-
-```bash
-make api   # uvicorn api.main:app on http://localhost:8000
 ```
 
 ## Reproduce
