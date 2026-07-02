@@ -71,9 +71,29 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install pip-audit
-      - name: Audit installed dependencies
-        run: pip-audit --desc
-        continue-on-error: true  # advisory-only rollout; remove this line to make CVEs block the build
+      - name: Audit installed dependencies (blocking)
+        # Ignored IDs are all onnx untrusted-model-loading CVEs (fixed in onnx 1.21). We
+        # load only our own committed model, and onnx is version-locked to onnxruntime-web
+        # 1.19.2 for browser parity; revisit when bumping to onnx>=1.21. Any other CVE fails CI.
+        run: |
+          pip-audit --desc \
+            --ignore-vuln PYSEC-2026-104 \
+            --ignore-vuln PYSEC-2026-103 \
+            --ignore-vuln CVE-2026-34446 \
+            --ignore-vuln GHSA-q56x-g2fj-4rj6 \
+            --ignore-vuln CVE-2026-27489 \
+            --ignore-vuln CVE-2026-34445
+
+  secrets:
+    name: Secret scan (gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # scan full history, not just the tip commit
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   frontend:
     name: Frontend build
@@ -92,8 +112,8 @@ jobs:
           CI: false  # CRA treats warnings as errors under CI; match the Pages deploy
         run: npm run build
 
-  demo:
-    name: Demo pipeline (synthetic, no download)
+  clean-clone:
+    name: Clean-clone smoke (pip install -e . -> demo -> predict)
     runs-on: ubuntu-latest
     needs: lint
     steps:
@@ -102,10 +122,18 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
-      - name: Install
+      - name: Install the advertised way (pyproject only, no requirements.txt)
+        # Catches dependency-resolution regressions a stranger would hit, e.g. an
+        # unpinned scipy pulling a version that dropped scipy.signal.daub.
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
           pip install -e .
-      - name: make demo (end-to-end on synthetic data)
+      - name: make demo (offline synthetic pipeline)
         run: make demo
+      - name: Serve the API and get one prediction
+        run: |
+          uvicorn api.main:app --host 127.0.0.1 --port 8000 &
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:8000/health && break; sleep 1; done
+          curl -sf -X POST http://127.0.0.1:8000/predict \
+            -H 'Content-Type: application/json' \
+            -d '{"features":{"HRV_MeanNN":690,"EDA_SCR_count":8,"RESP_rate":20}}'
