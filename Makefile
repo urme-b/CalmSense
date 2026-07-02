@@ -66,7 +66,7 @@ format:
 	ruff check --fix src/ tests/ scripts/
 
 frontend:
-	cd frontend && npm start
+	cd frontend && npm run dev
 
 frontend-build:
 	cd frontend && npm run build

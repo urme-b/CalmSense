@@ -180,7 +180,7 @@ const App: React.FC = () => {
   const toggleDarkMode = () => setDarkMode(!darkMode);
 
   return (
-    <Router basename={process.env.PUBLIC_URL}>
+    <Router basename={import.meta.env.BASE_URL}>
       <div className={`min-h-screen bg-gray-50 dark:bg-gray-900 ${darkMode ? 'dark' : ''}`}>
         <div className="flex h-screen overflow-hidden">
           {/* Sidebar */}
