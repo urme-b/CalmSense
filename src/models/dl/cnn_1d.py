@@ -96,6 +96,7 @@ class CNN1DClassifier(LoggerMixin):
 
     def fit(self, X: np.ndarray, y: np.ndarray) -> "CNN1DClassifier":
         torch.manual_seed(self.random_state)
+        torch.cuda.manual_seed_all(self.random_state)
         np.random.seed(self.random_state)
 
         X = np.asarray(X, dtype=np.float32)
@@ -128,7 +129,10 @@ class CNN1DClassifier(LoggerMixin):
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, self.max_epochs)
 
         tr = torch.utils.data.TensorDataset(torch.from_numpy(x_tr), torch.from_numpy(y_tr).long())
-        loader = torch.utils.data.DataLoader(tr, batch_size=self.batch_size, shuffle=True)
+        gen = torch.Generator().manual_seed(self.random_state)
+        loader = torch.utils.data.DataLoader(
+            tr, batch_size=self.batch_size, shuffle=True, generator=gen
+        )
         x_val_t = torch.from_numpy(x_val).to(self.device)
         y_val_t = torch.from_numpy(y_val).long().to(self.device)
 

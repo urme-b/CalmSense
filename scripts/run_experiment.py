@@ -27,12 +27,12 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.utils.class_weight import compute_sample_weight
 
-from src.config import FIGURES_DIR, MODELS_DIR, PROJECT_ROOT
+from src.config import FIGURES_DIR, MODELS_DIR, PROJECT_ROOT, SEED
 from src.dataset import WindowedDataset, load_cached
 from src.models.ml.classifiers import get_classifier
+from src.utils import set_seed
 
 RESULTS_DIR = PROJECT_ROOT / "results"
-SEED = 42
 
 TASKS = {
     "binary": {"keep": [1, 2], "names": ["baseline", "stress"]},
@@ -303,6 +303,7 @@ def run():
     parser.add_argument("--no-cnn", action="store_true")
     parser.add_argument("--synthetic", action="store_true", help="run on generated data, no WESAD")
     args = parser.parse_args()
+    set_seed(SEED)
 
     # Synthetic runs write to demo/ so they never overwrite the committed real-WESAD results.
     results_dir = RESULTS_DIR / "demo" if args.synthetic else RESULTS_DIR

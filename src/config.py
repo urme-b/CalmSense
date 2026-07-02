@@ -4,6 +4,9 @@ from typing import Dict, List
 
 PROJECT_ROOT = Path(__file__).parent.parent.absolute()
 
+# Global random seed for reproducible runs; imported by scripts and set_seed().
+SEED: int = 42
+
 DATA_DIR = PROJECT_ROOT / "data"
 RAW_DATA_DIR = DATA_DIR / "raw"
 PROCESSED_DATA_DIR = DATA_DIR / "processed"

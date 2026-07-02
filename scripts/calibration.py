@@ -27,9 +27,9 @@ from scripts.run_experiment import (
     prepare_task,
 )
 from src import calibration as cal
-from src.config import FIGURES_DIR
+from src.config import FIGURES_DIR, SEED
+from src.utils import set_seed
 
-SEED = 42
 POSITIVE = "stress"
 N_BINS = 15
 
@@ -243,6 +243,7 @@ def _plot_decision(out, path):
 
 
 def run(synthetic=False, model="rf", n_bins=N_BINS):
+    set_seed(SEED)
     # Synthetic runs write to demo/ so they never overwrite the committed real-WESAD snapshot.
     results_dir = RESULTS_DIR / "demo" if synthetic else RESULTS_DIR
     figures_dir = FIGURES_DIR / "demo" if synthetic else FIGURES_DIR
