@@ -15,7 +15,7 @@ inference. Each stage is a small module with one job.
 | 5. Benchmark | Leakage-free LOSO; in-fold impute/scale/balance; LR/RF/XGBoost/LightGBM + 1D-CNN | scripts/run_experiment.py, src/models/ml/classifiers.py, src/models/dl/cnn_1d.py |
 | 6. Calibration | ECE/MCE/Brier, decision-curve net benefit, leak-free recalibration, few-shot personalization | src/calibration.py, scripts/{calibration,personalize}.py |
 | 7. Analysis | Optimism gap, ablation, wrist-vs-chest, cross-dataset, SHAP, stats | scripts/{ablation,wrist,cross_dataset,stats,tuning}.py |
-| 8. Export & serve | ONNX export (browser parity), FastAPI service, React dashboard | scripts/export_onnx.py, src/portable.py, api/, frontend/ |
+| 8. Export & serve | ONNX export (browser parity), React dashboard (in-browser inference) | scripts/export_onnx.py, src/portable.py, frontend/ |
 
 ## Cross-cutting
 
@@ -33,5 +33,5 @@ inference. Each stage is a small module with one job.
 raw WESAD ─▶ preprocess ─▶ window ─▶ features ─▶ LOSO benchmark ─▶ metrics.json
                                               └─▶ calibration / personalization ─▶ calibration.json
                                               └─▶ SHAP / ablation / wrist / cross-dataset
-trained model ─▶ ONNX export ─▶ React dashboard (browser)  ·  FastAPI service (optional)
+trained model ─▶ ONNX export ─▶ React dashboard (runs in the browser, no backend)
 ```

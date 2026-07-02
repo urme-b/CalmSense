@@ -31,9 +31,9 @@ pytest tests/test_determinism.py -q
 # 6 tracked artifacts
 git ls-files | grep -iE 'logs/|\.log$|\.pt$|\.ckpt$|__pycache__|ipynb_checkpoints|\.DS_Store'   # -> empty
 # 8 de-AI
-ruff check src/ api/ && vulture src/ api/ --min-confidence 80 && mypy src/ --ignore-missing-imports
+ruff check src/ && vulture src/ --min-confidence 80 && mypy src/ --ignore-missing-imports
 # 9 CI locally
-ruff check src/ api/ tests/ scripts/ && pytest -q
+ruff check src/ tests/ scripts/ && pytest -q
 ```
 
 ## Other repos
