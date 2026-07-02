@@ -35,7 +35,10 @@ def _calibration_table() -> str:
         ("LOSO (subject-independent)", "loso"),
         ("LOSO + leak-free recalibration", "recalibrated_isotonic"),
     ]
-    lines = [f"| {label} | {_f(d[k]['ece'])} | {_f(d[k]['mce'])} | {_f(d[k]['brier'])} |" for label, k in rows]
+    lines = [
+        f"| {label} | {_f(d[k]['ece'])} | {_f(d[k]['mce'])} | {_f(d[k]['brier'])} |"
+        for label, k in rows
+    ]
     return "\n".join([head] + lines)
 
 
@@ -52,7 +55,10 @@ def _personalization_table() -> str:
 
 
 def main() -> None:
-    if not (RESULTS / "calibration.json").exists() or not (RESULTS / "personalization.json").exists():
+    if (
+        not (RESULTS / "calibration.json").exists()
+        or not (RESULTS / "personalization.json").exists()
+    ):
         sys.exit("Missing results: run scripts/calibration.py and scripts/personalize.py first.")
     text = PAPER.read_text()
     text = _replace(text, "calibration", _calibration_table())
