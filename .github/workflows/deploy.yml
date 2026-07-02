@@ -3,6 +3,11 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [main]
+    # Only rebuild/redeploy the site when the app (or this workflow) changes,
+    # so doc/README commits don't trigger deploys that race on the Pages backend.
+    paths:
+      - "frontend/**"
+      - ".github/workflows/deploy.yml"
   workflow_dispatch:
 
 permissions:
