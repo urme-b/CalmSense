@@ -1,4 +1,4 @@
-.PHONY: help install install-dev test lint format experiment reproduce demo data frontend frontend-build clean
+.PHONY: help install install-dev test lint format experiment reproduce demo wesad data frontend frontend-build clean
 
 help:
 	@echo "CalmSense - subject-independent stress detection"
@@ -8,6 +8,7 @@ help:
 	@echo "  experiment     Run the LOSO benchmark from raw WESAD"
 	@echo "  reproduce      Regenerate every result and figure (full pipeline)"
 	@echo "  demo           Run the calibration pipeline on synthetic data (no download)"
+	@echo "  wesad          Download WESAD (~2 GB, primary dataset; needed for experiment/reproduce)"
 	@echo "  data           Download PhysioNet Non-EEG (cross-dataset transfer only)"
 	@echo "  frontend       Start the React dashboard"
 	@echo "  test           Run tests"
@@ -41,6 +42,10 @@ reproduce:
 # Run the calibration pipeline on synthetic data, no dataset required
 demo:
 	python scripts/calibration.py --synthetic
+
+# Download WESAD (~2 GB, research-only agreement) — the primary dataset for experiment/reproduce
+wesad:
+	python scripts/download_data.py --wesad
 
 # Download the PhysioNet Non-EEG dataset for cross-dataset transfer
 data:

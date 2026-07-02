@@ -90,15 +90,21 @@ def _check(url) -> None:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--wesad", action="store_true", help="also fetch WESAD (~2 GB)")
+    parser = argparse.ArgumentParser(description="Fetch CalmSense datasets.")
+    parser.add_argument("--wesad", action="store_true", help="fetch WESAD (~2 GB, primary dataset)")
+    parser.add_argument(
+        "--noneeg", action="store_true", help="fetch PhysioNet Non-EEG (cross-dataset transfer)"
+    )
     parser.add_argument("--check", action="store_true", help="only verify the download links")
     args = parser.parse_args()
 
     if args.check:
         _check(NONEEG_URL)
         _check(WESAD_URL)
+    elif not args.wesad and not args.noneeg:
+        download_noneeg()  # default with no flags, keeps `make data` fetching Non-EEG
     else:
-        download_noneeg()
+        if args.noneeg:
+            download_noneeg()
         if args.wesad:
             download_wesad()
