@@ -304,9 +304,13 @@ def run():
     parser.add_argument("--synthetic", action="store_true", help="run on generated data, no WESAD")
     args = parser.parse_args()
 
-    RESULTS_DIR.mkdir(exist_ok=True)
-    FIGURES_DIR.mkdir(parents=True, exist_ok=True)
-    MODELS_DIR.mkdir(parents=True, exist_ok=True)
+    # Synthetic runs write to demo/ so they never overwrite the committed real-WESAD results.
+    results_dir = RESULTS_DIR / "demo" if args.synthetic else RESULTS_DIR
+    figures_dir = FIGURES_DIR / "demo" if args.synthetic else FIGURES_DIR
+    models_dir = MODELS_DIR / "demo" if args.synthetic else MODELS_DIR
+    results_dir.mkdir(parents=True, exist_ok=True)
+    figures_dir.mkdir(parents=True, exist_ok=True)
+    models_dir.mkdir(parents=True, exist_ok=True)
 
     if args.synthetic:
         from src.synthetic import features as synth_features
@@ -367,12 +371,12 @@ def run():
         best = max(results.items(), key=lambda kv: kv[1]["accuracy_mean"])
 
         # Figures
-        plot_model_comparison(rows, FIGURES_DIR / f"{task}_model_comparison.png")
+        plot_model_comparison(rows, figures_dir / f"{task}_model_comparison.png")
         plot_confusion(
-            best[1], cfg["names"], f"{task} ({best_key})", FIGURES_DIR / f"{task}_confusion.png"
+            best[1], cfg["names"], f"{task} ({best_key})", figures_dir / f"{task}_confusion.png"
         )
-        plot_per_subject(best[1]["per_subject"], FIGURES_DIR / f"{task}_per_subject.png")
-        plot_embedding(X, y, cfg["names"], FIGURES_DIR / f"{task}_pca.png")
+        plot_per_subject(best[1]["per_subject"], figures_dir / f"{task}_per_subject.png")
+        plot_embedding(X, y, cfg["names"], figures_dir / f"{task}_pca.png")
 
         if best[0] in CLASSIFIERS:
             # Same non-overlapping windows on both bars: only the CV scheme differs.
@@ -380,13 +384,13 @@ def run():
             gap_factory = lambda k=best[0]: build_pipeline(k)  # noqa: E731
             loso_matched = loso_evaluate(gap_factory, X[m], y[m], groups[m])["pooled_accuracy"]
             kf_acc = kfold_accuracy(gap_factory, X, y, groups)
-            plot_gap(loso_matched, kf_acc, FIGURES_DIR / f"{task}_optimism_gap.png")
+            plot_gap(loso_matched, kf_acc, figures_dir / f"{task}_optimism_gap.png")
         else:
             loso_matched = None
             kf_acc = None
 
-        pd.DataFrame(rows).to_csv(RESULTS_DIR / f"{task}_model_comparison.csv", index=False)
-        best[1]["per_subject"].to_csv(RESULTS_DIR / f"{task}_per_subject.csv", index=False)
+        pd.DataFrame(rows).to_csv(results_dir / f"{task}_model_comparison.csv", index=False)
+        best[1]["per_subject"].to_csv(results_dir / f"{task}_per_subject.csv", index=False)
 
         summary[task] = {
             "n_windows": int(len(y)),
@@ -410,20 +414,20 @@ def run():
                 [(k, results[k]) for k in CLASSIFIERS],
                 key=lambda kv: kv[1]["accuracy_mean"],
             )[0]
-            importance = shap_analysis(X, y, feature_cols, cfg["names"], FIGURES_DIR)
-            importance.to_csv(RESULTS_DIR / "shap_top_features.csv", index=False)
+            importance = shap_analysis(X, y, feature_cols, cfg["names"], figures_dir)
+            importance.to_csv(results_dir / "shap_top_features.csv", index=False)
             final = build_pipeline(top_clf)
             final.fit(X, y, **_fit_params(final, y))
             joblib.dump(
                 {"pipeline": final, "features": feature_cols, "classes": cfg["names"]},
-                MODELS_DIR / "stress_classifier.joblib",
+                models_dir / "stress_classifier.joblib",
             )
             print(f"  Saved API model ({CLF_NAMES[top_clf]}) + SHAP.")
 
-    with open(RESULTS_DIR / "metrics.json", "w") as f:
+    with open(results_dir / "metrics.json", "w") as f:
         json.dump(summary, f, indent=2)
 
-    print(f"\nResults written to {RESULTS_DIR}")
+    print(f"\nResults written to {results_dir}")
     print("Run scripts/build_dashboard_data.py to refresh the dashboard.")
 
 

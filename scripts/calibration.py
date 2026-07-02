@@ -243,8 +243,11 @@ def _plot_decision(out, path):
 
 
 def run(synthetic=False, model="rf", n_bins=N_BINS):
-    RESULTS_DIR.mkdir(exist_ok=True)
-    FIGURES_DIR.mkdir(parents=True, exist_ok=True)
+    # Synthetic runs write to demo/ so they never overwrite the committed real-WESAD snapshot.
+    results_dir = RESULTS_DIR / "demo" if synthetic else RESULTS_DIR
+    figures_dir = FIGURES_DIR / "demo" if synthetic else FIGURES_DIR
+    results_dir.mkdir(parents=True, exist_ok=True)
+    figures_dir.mkdir(parents=True, exist_ok=True)
 
     if synthetic:
         from src.synthetic import features
@@ -260,11 +263,11 @@ def run(synthetic=False, model="rf", n_bins=N_BINS):
     X, y, groups, _, _ = prepare_task(features_df, x_raw, [1, 2])
     out = compute(X, y, groups, model=model, n_bins=n_bins)
 
-    _plot_reliability(out, FIGURES_DIR / "calibration_reliability.png")
-    _plot_gap(out, FIGURES_DIR / "calibration_gap.png")
-    _plot_decision(out, FIGURES_DIR / "calibration_decision_curve.png")
+    _plot_reliability(out, figures_dir / "calibration_reliability.png")
+    _plot_gap(out, figures_dir / "calibration_gap.png")
+    _plot_decision(out, figures_dir / "calibration_decision_curve.png")
 
-    with open(RESULTS_DIR / "calibration.json", "w") as f:
+    with open(results_dir / "calibration.json", "w") as f:
         json.dump(out, f, indent=2)
 
     print(
@@ -286,7 +289,7 @@ def run(synthetic=False, model="rf", n_bins=N_BINS):
             "Note: synthetic stress is near-separable, so ECE is ~0 and the optimism gap is not "
             "meaningful. Run `make reproduce` on real WESAD for the paper's numbers."
         )
-    print(f"Wrote {RESULTS_DIR / 'calibration.json'} and 3 figures.")
+    print(f"Wrote {results_dir / 'calibration.json'} and 3 figures.")
 
 
 if __name__ == "__main__":

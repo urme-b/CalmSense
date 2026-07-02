@@ -203,6 +203,11 @@ outputs/figures/*
 !outputs/figures/.gitkeep
 !outputs/figures/*.png
 
+# Demo (synthetic) outputs — never overwrite the committed real-WESAD results
+results/demo/
+outputs/figures/demo/
+outputs/models/demo/
+
 # Reports
 outputs/reports/*
 !outputs/reports/.gitkeep
