@@ -32,6 +32,16 @@ def window_label(labels: np.ndarray, purity: float) -> Optional[int]:
 
 
 class WindowedDataset(LoggerMixin):
+    """Build the WESAD chest feature matrix and raw CNN tensors, subject by subject.
+
+    For each subject the raw signals are filtered and processed (ECG R-peaks + ectopic
+    correction, EDA tonic/phasic + SCR peaks, temperature, respiration, ACC magnitude),
+    segmented into overlapping windows, and kept only when at least ``purity`` of a
+    window's samples share one in-set condition. Each kept window yields a feature row
+    and a fixed-length raw tensor for the 1D-CNN. Processing is strictly per-subject, so
+    no cross-subject statistic ever leaks into feature construction.
+    """
+
     def __init__(
         self,
         window_sec: float = FEATURE_PARAMS.WINDOW_SIZE_SEC,

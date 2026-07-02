@@ -22,6 +22,13 @@ def _class_shap(values, idx: int) -> np.ndarray:
 
 
 class StressModel:
+    """Serve the trained stress classifier from its joblib bundle.
+
+    Wraps the fitted ``impute -> scale -> clf`` pipeline plus its feature order and
+    class names. Callers pass a feature-name to value mapping; unknown names are
+    ignored and missing ones imputed, matching training and the in-browser ONNX path.
+    """
+
     def __init__(self, path: Path = MODEL_PATH):
         import joblib
 
@@ -58,6 +65,10 @@ class StressModel:
     def predict_and_explain(
         self, features: Dict[str, float], top_k: int = 8
     ) -> Tuple[Dict, List[Dict]]:
+        if top_k < 1:
+            raise ValueError(f"top_k must be >= 1, got {top_k}")
+        top_k = min(top_k, len(self.features))
+
         import shap
 
         x = self._vectorize(features)

@@ -18,6 +18,15 @@ from .temperature_features import TemperatureFeatureExtractor
 
 
 class FeatureExtractionPipeline(LoggerMixin):
+    """Turn one preprocessed window into a flat, prefixed feature dict.
+
+    Composes seven per-modality extractors (HRV time/frequency/nonlinear, EDA,
+    temperature, respiration, accelerometer) and namespaces their outputs with
+    ``HRV_``/``EDA_``/``TEMP_``/``RESP_``/``ACC_`` prefixes. Groups can be toggled
+    via ``feature_config``; a disabled or unavailable group yields NaN placeholders
+    so the feature columns stay stable across windows. Extraction never sees labels.
+    """
+
     DEFAULT_CONFIG = {
         "hrv_time": True,
         "hrv_frequency": True,
@@ -35,6 +44,13 @@ class FeatureExtractionPipeline(LoggerMixin):
         wrist_eda_fs: float = FS.WRIST_EDA,
         wrist_acc_fs: float = FS.WRIST_ACC,
     ):
+        if feature_config:
+            unknown = set(feature_config) - set(self.DEFAULT_CONFIG)
+            if unknown:
+                raise ValueError(
+                    f"Unknown feature_config keys: {sorted(unknown)}. "
+                    f"Valid keys: {sorted(self.DEFAULT_CONFIG)}"
+                )
         self.feature_config = {**self.DEFAULT_CONFIG, **(feature_config or {})}
 
         self.extractors: Dict[str, Any] = {
@@ -56,6 +72,16 @@ class FeatureExtractionPipeline(LoggerMixin):
         )
 
     def extract_window_features(self, window_data: Dict[str, Any]) -> Dict[str, float]:
+        """Extract all enabled features for a single window.
+
+        Args:
+            window_data: One window's signals (``rr_intervals``, ``eda_tonic``,
+                ``eda_phasic``, ``temperature``, ``respiration``, ``accelerometer``,
+                ...). Missing modalities produce NaN placeholders.
+
+        Returns:
+            Prefixed feature-name to value mapping for this window.
+        """
         rr = window_data.get("rr_intervals")
 
         features: Dict[str, float] = {}

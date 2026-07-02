@@ -9,6 +9,13 @@ from ..logging_config import LoggerMixin
 
 
 class ECGProcessor(LoggerMixin):
+    """ECG processing for HRV analysis: bandpass filtering, R-peak detection, and
+    RR-interval extraction with ectopic-beat correction.
+
+    R-peaks are detected with NeuroKit2 when available, falling back to a built-in
+    Pan-Tompkins detector. All methods take 1-D arrays sampled at ``sampling_rate`` Hz.
+    """
+
     def __init__(self, sampling_rate: float = FS.CHEST):
         self.sampling_rate = sampling_rate
         self.logger.info(f"ECGProcessor initialized with fs={sampling_rate} Hz")
@@ -115,6 +122,18 @@ class ECGProcessor(LoggerMixin):
         return np.array(r_peaks)
 
     def extract_rr_intervals(self, r_peaks: np.ndarray, unit: str = "ms") -> np.ndarray:
+        """Convert R-peak sample indices to successive RR intervals.
+
+        Args:
+            r_peaks: R-peak sample indices (ascending).
+            unit: Output unit, one of ``"ms"``, ``"s"``, or ``"samples"``.
+
+        Returns:
+            RR intervals in the requested unit; empty array if fewer than two peaks.
+        """
+        if unit not in ("ms", "s", "samples"):
+            raise ValueError(f"unit must be 'ms', 's', or 'samples', got {unit!r}")
+
         r_peaks = np.asarray(r_peaks).flatten()
 
         if len(r_peaks) < 2:
@@ -127,7 +146,7 @@ class ECGProcessor(LoggerMixin):
             rr_intervals = (rr_samples / self.sampling_rate) * 1000
         elif unit == "s":
             rr_intervals = rr_samples / self.sampling_rate
-        else:
+        else:  # "samples"
             rr_intervals = rr_samples.astype(float)
 
         self.logger.debug(
