@@ -155,9 +155,7 @@ redistributed here (see [data/raw/README.md](data/raw/README.md)).
 
 ## Citation
 
-If you use CalmSense, please cite it via [CITATION.cff](CITATION.cff). A versioned DOI is minted by
-Zenodo on each tagged GitHub release; once the v0.1.0 release is published with Zenodo enabled, paste the
-minted DOI into CITATION.cff.
+If you use CalmSense, please cite it via [CITATION.cff](CITATION.cff).
 
 ## License
 
