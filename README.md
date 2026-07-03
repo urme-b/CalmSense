@@ -1,6 +1,6 @@
 # CalmSense
 
-> The Accuracy You Read Is Not the Accuracy You Get: Leakage, Motion, Shift, and Calibration
+### The Accuracy You Read Is Not the Accuracy You Get: Leakage, Motion, Shift, and Calibration
 
 ML: Logistic Regression, Random Forest, XGBoost, LightGBM
 
