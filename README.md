@@ -1,6 +1,6 @@
 # CalmSense
 
-> Wearable stress detection scored on people it has never seen, so the accuracy you read is the accuracy you get.
+> The Accuracy You Read Is Not the Accuracy You Get: Leakage, Motion, Shift, and Calibration
 
 [Live demo](https://urme-b.github.io/CalmSense/) · [Colab](https://colab.research.google.com/github/urme-b/CalmSense/blob/main/notebooks/CalmSense.ipynb) · [Paper](PAPER.md)
 
