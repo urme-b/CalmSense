@@ -20,7 +20,7 @@ import {
   Download,
   Trash2,
 } from 'lucide-react';
-import { parseCSV } from '../services/api';
+import { parseCSV } from '../services/csv';
 import { predictLocal } from '../services/onnx';
 import { PredictionResponse } from '../types';
 

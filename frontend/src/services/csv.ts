@@ -1,5 +1,5 @@
 // Client-side CSV parsing for the prediction panel. The dashboard runs the
-// model in-browser (see services/onnx.ts), so no backend calls are needed.
+// model in-browser (see services/onnx.ts), so there is no backend or API.
 
 // parseFloat("1.2x") returns 1.2 (silent truncation), so validate the whole token
 // is numeric; anything else becomes NaN and is imputed downstream like a missing value.
